@@ -1,0 +1,126 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="16dp">
+
+    <!-- Botón para regresar al menú principal -->
+    <Button
+        android:id="@+id/btnMainMenu"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Menú Principal"
+        android:layout_marginBottom="16dp"
+        android:backgroundTint="#FF0000"
+        android:textColor="@android:color/white" />
+
+    <!-- Contenedor del mapa -->
+    <FrameLayout
+        android:id="@+id/mapContainer"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:background="@android:color/darker_gray" />
+
+    <!-- Mostrar posición del jugador -->
+    <TextView
+        android:id="@+id/tvPlayerPosition"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Posición: (0, 0)"
+        android:textSize="18sp"
+        android:layout_marginBottom="24dp" />
+
+    <!-- Controles de movimiento -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <!-- Botón Norte -->
+        <Button
+            android:id="@+id/btnNorth"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Norte"
+            android:backgroundTint="#00FF00"
+            android:textColor="@android:color/black"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Botones Oeste, Interacción y Este -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <Button
+                android:id="@+id/btnWest"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Oeste"
+                android:backgroundTint="#FFFF00"
+                android:textColor="@android:color/black"
+                android:layout_marginEnd="8dp" />
+
+            <Button
+                android:id="@+id/btnInteract"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="A"
+                android:backgroundTint="#FFA500"
+                android:textColor="@android:color/black"
+                android:layout_marginEnd="8dp"
+                android:layout_marginStart="8dp" />
+
+            <Button
+                android:id="@+id/btnEast"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Este"
+                android:backgroundTint="#0000FF"
+                android:textColor="@android:color/white"
+                android:layout_marginStart="8dp" />
+        </LinearLayout>
+
+        <!-- Botón Sur -->
+        <Button
+            android:id="@+id/btnSouth"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sur"
+            android:backgroundTint="#FF00FF"
+            android:textColor="@android:color/white"
+            android:layout_marginTop="8dp" />
+    </LinearLayout>
+
+    <!-- Controles de zoom -->
+    <LinearLayout
+        android:id="@+id/zoomControls"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginTop="16dp">
+
+        <Button
+            android:id="@+id/btnZoomIn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="+"
+            android:backgroundTint="#008000"
+            android:textColor="@android:color/white"
+            android:layout_marginEnd="8dp" />
+
+        <Button
+            android:id="@+id/btnZoomOut"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="-"
+            android:backgroundTint="#800000"
+            android:textColor="@android:color/white"
+            android:layout_marginStart="8dp" />
+    </LinearLayout>
+</LinearLayout>

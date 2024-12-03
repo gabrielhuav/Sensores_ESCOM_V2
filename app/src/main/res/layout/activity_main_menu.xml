@@ -1,0 +1,22 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="16dp">
+
+    <!-- Botón para el modo de un jugador -->
+    <Button
+        android:id="@+id/btnSinglePlayer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Un Jugador" />
+
+    <!-- Botón para el modo Bluetooth -->
+    <Button
+        android:id="@+id/btnBluetooth"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Multijugador Bluetooth" />
+</LinearLayout>

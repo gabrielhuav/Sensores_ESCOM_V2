@@ -1,0 +1,29 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Botón para escanear dispositivos -->
+    <Button
+        android:id="@+id/btnScanDevices"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Buscar Dispositivos" />
+
+    <!-- Lista de dispositivos encontrados -->
+    <ListView
+        android:id="@+id/deviceListView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- Botón para regresar -->
+    <Button
+        android:id="@+id/btnBackToMenu"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Regresar al Menú"
+        android:layout_gravity="center" />
+</LinearLayout>
