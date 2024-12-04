@@ -17,15 +17,22 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
     private val paintGrid = Paint().apply {
         color = Color.GRAY
         strokeWidth = 2f
+        style = Paint.Style.STROKE
     }
-    private val paintPlayer = Paint().apply {
+    private val paintLocalPlayer = Paint().apply {
         color = Color.RED
         style = Paint.Style.FILL
     }
-    private var playerPosition: Pair<Int, Int> = Pair(0, 0)
+    private val paintRemotePlayer = Paint().apply {
+        color = Color.BLUE
+        style = Paint.Style.FILL
+    }
+
     private var offsetX = 0f
     private var offsetY = 0f
     var scaleFactor: Float = 1.0f
+    private var localPlayerPosition: Pair<Int, Int>? = null
+    private var remotePlayerPosition: Pair<Int, Int>? = null
 
     private val backgroundBitmap: Bitmap? = try {
         BitmapFactory.decodeResource(resources, R.drawable.escom_mapa)
@@ -33,11 +40,14 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
         null
     }
 
-    private val gestureDetector: GestureDetectorCompat
-    private lateinit var scaleGestureDetector: ScaleGestureDetector // Declaración como lateinit
+    private lateinit var gestureDetector: GestureDetectorCompat
+    private lateinit var scaleGestureDetector: ScaleGestureDetector
 
     init {
-        // Inicializa gestureDetector
+        initializeDetectors()
+    }
+
+    private fun initializeDetectors() {
         gestureDetector = GestureDetectorCompat(context, object : GestureDetector.SimpleOnGestureListener() {
             override fun onScroll(
                 e1: MotionEvent?,
@@ -45,30 +55,21 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
                 distanceX: Float,
                 distanceY: Float
             ): Boolean {
-                // Solo permite desplazamiento si no está haciendo zoom
-                if (!scaleGestureDetector.isInProgress) {
+                if (!::scaleGestureDetector.isInitialized || !scaleGestureDetector.isInProgress) {
                     offsetX -= distanceX / scaleFactor
                     offsetY -= distanceY / scaleFactor
-
-                    // Limita los movimientos
                     constrainOffset()
-
                     invalidate()
                 }
                 return true
             }
         })
 
-        // Inicializa scaleGestureDetector
         scaleGestureDetector = ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
             override fun onScale(detector: ScaleGestureDetector): Boolean {
-                // Calcula el nuevo factor de zoom
                 scaleFactor *= detector.scaleFactor
-
-                // Limita el nivel de zoom
                 scaleFactor = scaleFactor.coerceIn(0.5f, 3.0f)
 
-                // Ajusta el desplazamiento para centrar en el punto del gesto
                 val focusX = detector.focusX
                 val focusY = detector.focusY
 
@@ -76,7 +77,6 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
                 offsetY += (focusY - offsetY) * (1 - detector.scaleFactor)
 
                 constrainOffset()
-
                 invalidate()
                 return true
             }
@@ -86,15 +86,12 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
     private fun constrainOffset() {
         if (backgroundBitmap == null) return
 
-        val maxOffsetX = -(backgroundBitmap.width.toFloat() * scaleFactor - width)
-        val maxOffsetY = -(backgroundBitmap.height.toFloat() * scaleFactor - height)
+        val maxOffsetX = -(backgroundBitmap.width * scaleFactor - width)
+        val maxOffsetY = -(backgroundBitmap.height * scaleFactor - height)
 
         offsetX = offsetX.coerceIn(maxOffsetX, 0f)
         offsetY = offsetY.coerceIn(maxOffsetY, 0f)
     }
-
-    val cellSize: Float
-        get() = backgroundBitmap?.width?.div(10f) ?: 50f
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
@@ -120,30 +117,43 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
 
         canvas.drawBitmap(backgroundBitmap, 0f, 0f, null)
 
-        val cellWidth = cellSize
+        val cellWidth = backgroundBitmap.width / 10f
         val cellHeight = backgroundBitmap.height / 10f
         for (i in 0..10) {
             canvas.drawLine(i * cellWidth, 0f, i * cellWidth, backgroundBitmap.height.toFloat(), paintGrid)
             canvas.drawLine(0f, i * cellHeight, backgroundBitmap.width.toFloat(), i * cellHeight, paintGrid)
         }
 
-        val playerX = playerPosition.first * cellWidth + cellWidth / 2
-        val playerY = playerPosition.second * cellHeight + cellHeight / 2
-        canvas.drawCircle(playerX, playerY, cellWidth / 4f, paintPlayer)
+        // Dibujar jugador local (rojo)
+        localPlayerPosition?.let {
+            val playerX = it.first * cellWidth + cellWidth / 2
+            val playerY = it.second * cellHeight + cellHeight / 2
+            canvas.drawCircle(playerX, playerY, cellWidth / 4f, paintLocalPlayer)
+        }
+
+        // Dibujar jugador remoto (azul)
+        remotePlayerPosition?.let {
+            val playerX = it.first * cellWidth + cellWidth / 2
+            val playerY = it.second * cellHeight + cellHeight / 2
+            canvas.drawCircle(playerX, playerY, cellWidth / 4f, paintRemotePlayer)
+        }
 
         canvas.restore()
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        // Maneja tanto scroll como gestos de zoom
         var handled = scaleGestureDetector.onTouchEvent(event)
         handled = gestureDetector.onTouchEvent(event) || handled
         return handled || super.onTouchEvent(event)
     }
 
-    fun updatePlayerPosition(position: Pair<Int, Int>) {
-        playerPosition = position
-        centerOnPlayer()
+    fun updateLocalPlayerPosition(position: Pair<Int, Int>?) {
+        localPlayerPosition = position
+        invalidate()
+    }
+
+    fun updateRemotePlayerPosition(position: Pair<Int, Int>?) {
+        remotePlayerPosition = position
         invalidate()
     }
 
@@ -151,19 +161,5 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
         scaleFactor = scale.coerceIn(0.5f, 3.0f)
         constrainOffset()
         invalidate()
-    }
-
-    private fun centerOnPlayer() {
-        if (backgroundBitmap == null) return
-
-        val cellWidth = cellSize
-        val cellHeight = backgroundBitmap.height / 10f
-        val playerX = playerPosition.first * cellWidth + cellWidth / 2
-        val playerY = playerPosition.second * cellHeight + cellHeight / 2
-
-        offsetX = (width / 2f - playerX * scaleFactor)
-        offsetY = (height / 2f - playerY * scaleFactor)
-
-        constrainOffset()
     }
 }

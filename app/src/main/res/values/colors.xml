@@ -1,5 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <!-- Colores principales -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="dark_gray">#2C2C2C</color>
+    <color name="light_gray">#F5F5F5</color>
+    <color name="white_transparent">#B3FFFFFF</color> <!-- Blanco semi-transparente -->
+
+    <!-- Colores temáticos -->
+    <color name="dark_red">#D32F2F</color>
+    <color name="light_red">#F44336</color>
+    <color name="hover_red">#B71C1C</color>
+
+    <color name="dark_blue">#283593</color>
+    <color name="light_blue">#64B5F6</color>
+    <color name="hover_blue">#1565C0</color>
+
+    <!-- Tonos de morado -->
+    <color name="purple_500">#6200EE</color>
+    <color name="purple_700">#3700B3</color>
+    <color name="purple_200">#BB86FC</color>
+
+    <!-- Tonos adicionales -->
+    <color name="teal_200">#03DAC5</color>
+    <color name="teal_700">#018786</color>
+    <color name="yellow">#FFEB3B</color>
+    <color name="orange">#FF9800</color>
+    <color name="gray">#9E9E9E</color>
+
+    <!-- Colores para superposiciones y transparencias -->
+    <color name="background_overlay">#4DFF0000</color> <!-- Rojo transparente -->
+    <color name="background_overlay_dark">#4D000000</color> <!-- Negro transparente -->
+    <color name="orange_transparent">#88FF9800</color> <!-- Naranja con transparencia -->
+
 </resources>
