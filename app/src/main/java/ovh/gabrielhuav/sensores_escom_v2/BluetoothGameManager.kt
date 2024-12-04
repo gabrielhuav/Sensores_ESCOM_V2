@@ -41,32 +41,21 @@ class BluetoothGameManager private constructor() {
     }
 
     fun startServer() {
-        if (!hasPermission(Manifest.permission.BLUETOOTH_SCAN) ||
-            !hasPermission(Manifest.permission.BLUETOOTH_CONNECT)) {
+        if (!hasPermission(Manifest.permission.BLUETOOTH_SCAN) || !hasPermission(Manifest.permission.BLUETOOTH_CONNECT)) {
             Log.e(TAG, "Faltan permisos de Bluetooth para iniciar el servidor.")
-            requestPermissionsIfNeeded()
+            handler.post { connectionListener?.onConnectionFailed("Faltan permisos para iniciar el servidor.") }
             return
         }
 
         if (bluetoothAdapter == null) {
             Log.e(TAG, "Bluetooth no es compatible con este dispositivo.")
-            handler.post {
-                connectionListener?.onConnectionFailed("Bluetooth no es compatible con este dispositivo.")
-            }
+            handler.post { connectionListener?.onConnectionFailed("Bluetooth no es compatible con este dispositivo.") }
             return
         }
 
         Thread {
             try {
                 serverSocket = bluetoothAdapter.listenUsingRfcommWithServiceRecord(NAME, MY_UUID)
-                if (serverSocket == null) {
-                    Log.e(TAG, "Error al obtener el socket del servidor.")
-                    handler.post {
-                        connectionListener?.onConnectionFailed("Error al obtener el socket del servidor.")
-                    }
-                    return@Thread
-                }
-
                 Log.d(TAG, "Esperando conexión de cliente...")
                 clientSocket = serverSocket!!.accept()
 
@@ -86,24 +75,16 @@ class BluetoothGameManager private constructor() {
                         val jsonData = JSONObject(data)
                         val x = jsonData.getInt("x")
                         val y = jsonData.getInt("y")
-                        handler.post {
-                            connectionListener?.onPositionReceived(remoteDevice, x, y)
-                        }
+                        handler.post { connectionListener?.onPositionReceived(remoteDevice, x, y) }
                     } catch (e: Exception) {
                         Log.e(TAG, "Error procesando datos JSON: ${e.message}")
                     }
                 }
             } catch (e: IOException) {
                 Log.e(TAG, "Error al iniciar el servidor: ${e.message}")
-                handler.post {
-                    connectionListener?.onConnectionFailed("Error al iniciar el servidor.")
-                }
+                handler.post { connectionListener?.onConnectionFailed("Error al iniciar el servidor.") }
             } finally {
-                try {
-                    serverSocket?.close()
-                } catch (e: IOException) {
-                    Log.e(TAG, "Error al cerrar el socket del servidor: ${e.message}")
-                }
+                closeServerSocket()
             }
         }.start()
     }
@@ -111,7 +92,7 @@ class BluetoothGameManager private constructor() {
     fun connectToDevice(device: BluetoothDevice) {
         if (!hasPermission(Manifest.permission.BLUETOOTH_CONNECT)) {
             Log.e(TAG, "Faltan permisos de Bluetooth para conectarse al dispositivo.")
-            requestPermissionsIfNeeded()
+            handler.post { connectionListener?.onConnectionFailed("Faltan permisos para conectarse al dispositivo.") }
             return
         }
 
@@ -135,18 +116,14 @@ class BluetoothGameManager private constructor() {
                         val jsonData = JSONObject(data)
                         val x = jsonData.getInt("x")
                         val y = jsonData.getInt("y")
-                        handler.post {
-                            connectionListener?.onPositionReceived(device, x, y)
-                        }
+                        handler.post { connectionListener?.onPositionReceived(device, x, y) }
                     } catch (e: Exception) {
                         Log.e(TAG, "Error procesando datos JSON: ${e.message}")
                     }
                 }
             } catch (e: IOException) {
                 Log.e(TAG, "Error al conectar al dispositivo: ${e.message}")
-                handler.post {
-                    connectionListener?.onConnectionFailed("Error al conectar a ${getDeviceName(device)}")
-                }
+                handler.post { connectionListener?.onConnectionFailed("Error al conectar a ${getDeviceName(device)}") }
             }
         }.start()
     }
@@ -187,15 +164,19 @@ class BluetoothGameManager private constructor() {
         return ActivityCompat.checkSelfPermission(appContext, permission) == PackageManager.PERMISSION_GRANTED
     }
 
-    private fun requestPermissionsIfNeeded() {
-        Log.e(TAG, "Debe implementar la solicitud de permisos en su actividad principal.")
-    }
-
     private fun getDeviceName(device: BluetoothDevice?): String {
         return if (hasPermission(Manifest.permission.BLUETOOTH_CONNECT)) {
             device?.name ?: "Dispositivo Desconocido"
         } else {
             "Permiso no otorgado"
+        }
+    }
+
+    private fun closeServerSocket() {
+        try {
+            serverSocket?.close()
+        } catch (e: IOException) {
+            Log.e(TAG, "Error al cerrar el socket del servidor: ${e.message}")
         }
     }
 

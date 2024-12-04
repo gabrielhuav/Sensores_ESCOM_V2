@@ -20,11 +20,11 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
         style = Paint.Style.STROKE
     }
     private val paintLocalPlayer = Paint().apply {
-        color = Color.RED
+        color = Color.BLUE
         style = Paint.Style.FILL
     }
     private val paintRemotePlayer = Paint().apply {
-        color = Color.BLUE
+        color = Color.RED
         style = Paint.Style.FILL
     }
 
@@ -124,14 +124,14 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
             canvas.drawLine(0f, i * cellHeight, backgroundBitmap.width.toFloat(), i * cellHeight, paintGrid)
         }
 
-        // Dibujar jugador local (rojo)
+        // Dibujar jugador local (azul)
         localPlayerPosition?.let {
             val playerX = it.first * cellWidth + cellWidth / 2
             val playerY = it.second * cellHeight + cellHeight / 2
             canvas.drawCircle(playerX, playerY, cellWidth / 4f, paintLocalPlayer)
         }
 
-        // Dibujar jugador remoto (azul)
+        // Dibujar jugador remoto (rojo)
         remotePlayerPosition?.let {
             val playerX = it.first * cellWidth + cellWidth / 2
             val playerY = it.second * cellHeight + cellHeight / 2

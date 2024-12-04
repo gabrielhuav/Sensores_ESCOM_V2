@@ -21,17 +21,25 @@ class BluetoothActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLi
     private lateinit var btnStartServer: Button
     private lateinit var btnConnectDevice: Button
     private lateinit var btnBackToMenu: Button
+    private lateinit var btnNorth: Button
+    private lateinit var btnSouth: Button
+    private lateinit var btnEast: Button
+    private lateinit var btnWest: Button
     private lateinit var tvBluetoothStatus: TextView
+    private lateinit var tvPlayerPosition: TextView
     private lateinit var mapContainer: FrameLayout
     private lateinit var mapView: MapView
 
     private var isConnected = false
-    private var isServer = false
     private var isAttemptingConnection = false
     private val connectionTimeout = 60000L // 1 minuto
     private val handler = Handler(Looper.getMainLooper())
 
-    // Launcher para manejar la solicitud de habilitar Bluetooth
+    // Posiciones iniciales de los jugadores
+    private var localPlayerPosition = Pair(5, 5)
+    private var remotePlayerPosition: Pair<Int, Int>? = null
+
+    // Launcher para habilitar Bluetooth
     private val enableBluetoothLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
@@ -42,7 +50,7 @@ class BluetoothActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLi
             }
         }
 
-    // Launcher para manejar la selección de dispositivo
+    // Launcher para seleccionar dispositivo
     private val selectDeviceLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
@@ -59,39 +67,60 @@ class BluetoothActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLi
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_bluetooth)
 
-        // Inicializar componentes UI
+        // Inicializar componentes
         btnStartServer = findViewById(R.id.btnStartServer)
         btnConnectDevice = findViewById(R.id.btnConnectToDevice)
         btnBackToMenu = findViewById(R.id.btnBackToMenu)
         tvBluetoothStatus = findViewById(R.id.tvBluetoothStatus)
+        tvPlayerPosition = findViewById(R.id.tvPlayerPosition)
         mapContainer = findViewById(R.id.mapContainer)
+        btnNorth = findViewById(R.id.btnNorth)
+        btnSouth = findViewById(R.id.btnSouth)
+        btnEast = findViewById(R.id.btnEast)
+        btnWest = findViewById(R.id.btnWest)
 
-        // Crear y agregar MapView al contenedor
         mapView = MapView(this)
         mapContainer.addView(mapView)
 
-        // Configuración inicial
         setupButtonListeners()
         checkBluetoothSupport()
 
-        // Establecer contexto para BluetoothGameManager
+        // Configurar BluetoothGameManager
         BluetoothGameManager.appContext = applicationContext
         BluetoothGameManager.getInstance().setConnectionListener(this)
+
+        // Dibujar posición inicial del jugador local
+        mapView.updateLocalPlayerPosition(localPlayerPosition)
     }
 
     private fun setupButtonListeners() {
-        btnStartServer.setOnClickListener {
-            startServer()
-        }
-
+        btnStartServer.setOnClickListener { startServer() }
         btnConnectDevice.setOnClickListener {
-            // Usar el nuevo launcher
             val intent = Intent(this, DeviceListActivity::class.java)
             selectDeviceLauncher.launch(intent)
         }
+        btnBackToMenu.setOnClickListener { navigateToMainMenu() }
+        setupMovementButtons()
+    }
 
-        btnBackToMenu.setOnClickListener {
-            navigateToMainMenu()
+    private fun setupMovementButtons() {
+        btnNorth.setOnClickListener { movePlayer(0, -1) }
+        btnSouth.setOnClickListener { movePlayer(0, 1) }
+        btnEast.setOnClickListener { movePlayer(1, 0) }
+        btnWest.setOnClickListener { movePlayer(-1, 0) }
+    }
+
+    private fun movePlayer(deltaX: Int, deltaY: Int) {
+        val newX = (localPlayerPosition.first + deltaX).coerceIn(0, 9)
+        val newY = (localPlayerPosition.second + deltaY).coerceIn(0, 9)
+
+        localPlayerPosition = Pair(newX, newY)
+        mapView.updateLocalPlayerPosition(localPlayerPosition)
+        tvPlayerPosition.text = "Posición: (${localPlayerPosition.first}, ${localPlayerPosition.second})"
+
+        // Enviar posición al jugador remoto
+        if (isConnected) {
+            BluetoothGameManager.getInstance().sendPlayerPosition(newX, newY)
         }
     }
 
@@ -120,149 +149,68 @@ class BluetoothActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLi
 
     private fun checkPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED ||
-                ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED
-            ) {
-                requestPermissions(
-                    arrayOf(
-                        Manifest.permission.BLUETOOTH_SCAN,
-                        Manifest.permission.BLUETOOTH_CONNECT
-                    ), REQUEST_BLUETOOTH_PERMISSIONS
+            if (!hasRequiredPermissions()) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT),
+                    REQUEST_BLUETOOTH_PERMISSIONS
                 )
-                return
-            }
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(
-                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), REQUEST_LOCATION_PERMISSION
-                )
-                return
             }
         }
+    }
+
+    private fun hasRequiredPermissions(): Boolean {
+        return ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun startServer() {
-        if (!checkPermissionsGranted()) {
+        if (!hasRequiredPermissions()) {
             checkPermissions()
-            Toast.makeText(this, "Faltan permisos para iniciar el servidor", Toast.LENGTH_SHORT).show()
             return
         }
-
-        try {
-            updateBluetoothStatus("Iniciando servidor Bluetooth...")
-            BluetoothGameManager.getInstance().startServer()
-            isServer = true
-            updateBluetoothStatus("Servidor iniciado. Esperando conexión...")
-            Toast.makeText(this, "Servidor iniciado", Toast.LENGTH_SHORT).show()
-
-            handler.postDelayed({
-                if (!isConnected) {
-                    updateBluetoothStatus("Conexión fallida. Tiempo agotado.")
-                }
-            }, connectionTimeout)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error al iniciar el servidor", e)
-            updateBluetoothStatus("Error al iniciar el servidor: ${e.message}")
-            Toast.makeText(this, "Error al iniciar el servidor: ${e.message}", Toast.LENGTH_LONG).show()
-        }
+        BluetoothGameManager.getInstance().startServer()
+        updateBluetoothStatus("Servidor iniciado. Esperando conexión...")
     }
 
     private fun connectToDevice(device: BluetoothDevice) {
-        if (isAttemptingConnection) return
-
-        isAttemptingConnection = true
-        val deviceName = getDeviceName(device)
-
-        updateBluetoothStatus("Intentando conectar a $deviceName...")
-        Toast.makeText(this, "Conectando a $deviceName...", Toast.LENGTH_SHORT).show()
-
+        if (!hasRequiredPermissions()) {
+            checkPermissions()
+            return
+        }
         BluetoothGameManager.getInstance().connectToDevice(device)
-
-        handler.postDelayed({
-            if (isAttemptingConnection && !isConnected) {
-                isAttemptingConnection = false
-                updateBluetoothStatus("Conexión fallida: tiempo agotado.")
-                Toast.makeText(this, "No se pudo conectar al dispositivo.", Toast.LENGTH_SHORT).show()
-            }
-        }, connectionTimeout)
-    }
-
-    private fun getDeviceName(device: BluetoothDevice): String {
-        return if (ActivityCompat.checkSelfPermission(
-                this, Manifest.permission.BLUETOOTH_CONNECT
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            device.name ?: "Dispositivo Desconocido"
-        } else {
-            "Permiso no otorgado"
-        }
-    }
-
-    private fun checkPermissionsGranted(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED &&
-                    ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
-        } else {
-            true
-        }
+        updateBluetoothStatus("Intentando conectar a ${device.name ?: "Desconocido"}...")
     }
 
     private fun updateBluetoothStatus(status: String) {
-        runOnUiThread {
-            tvBluetoothStatus.text = status
-            Log.d(TAG, "Status: $status")
-        }
+        tvBluetoothStatus.text = status
+        Log.d(TAG, status)
     }
 
     override fun onDeviceConnected(device: BluetoothDevice) {
-        isAttemptingConnection = false
         isConnected = true
-        val deviceName = getDeviceName(device)
-
-        updateBluetoothStatus("Conectado a: $deviceName")
-        Toast.makeText(this, "Conectado a $deviceName", Toast.LENGTH_SHORT).show()
+        updateBluetoothStatus("Conectado a ${device.name ?: "Desconocido"}")
     }
 
     override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
-        runOnUiThread {
-            mapView.updateRemotePlayerPosition(Pair(x, y))
-            updateBluetoothStatus("Posición recibida: ($x, $y)")
-        }
+        remotePlayerPosition = Pair(x, y)
+        mapView.updateRemotePlayerPosition(remotePlayerPosition)
     }
 
     override fun onConnectionComplete() {
         runOnUiThread {
             updateBluetoothStatus("Conexión establecida completamente.")
-            Toast.makeText(this, "Conexión establecida", Toast.LENGTH_SHORT).show()
+            mapView.updateLocalPlayerPosition(localPlayerPosition)
+            mapView.updateRemotePlayerPosition(Pair(5, 5)) // Posición inicial del otro jugador
         }
     }
 
     override fun onConnectionFailed(message: String) {
-        isAttemptingConnection = false
         isConnected = false
-        runOnUiThread {
-            updateBluetoothStatus("Conexión fallida: $message")
-            Toast.makeText(this, "Error al conectar: $message", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_BLUETOOTH_PERMISSIONS && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-            startServer()
-        } else {
-            Toast.makeText(this, "Permisos denegados.", Toast.LENGTH_SHORT).show()
-        }
+        updateBluetoothStatus("Conexión fallida: $message")
     }
 
     companion object {
         const val TAG = "BluetoothActivity"
-        const val REQUEST_CONNECT_DEVICE = 1
         const val REQUEST_BLUETOOTH_PERMISSIONS = 101
-        const val REQUEST_LOCATION_PERMISSION = 102
     }
 }
