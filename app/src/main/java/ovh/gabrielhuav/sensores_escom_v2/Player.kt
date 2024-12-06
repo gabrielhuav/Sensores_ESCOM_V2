@@ -6,6 +6,14 @@ data class Player(
     val mapWidth: Int,
     val mapHeight: Int
 ) {
+    init {
+        // Coloca al jugador en una posición aleatoria si no se especifica
+        //if (x == 0 && y == 0) {
+            x = (0 until mapWidth).random()
+            y = (0 until mapHeight).random()
+        //}
+    }
+
     // Movimiento hacia el norte
     fun moveNorth() {
         if (y > 0) y--

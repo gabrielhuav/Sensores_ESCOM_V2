@@ -32,10 +32,13 @@ class SinglePlayerActivity : AppCompatActivity() {
         mapView = MapView(this)
         mapContainer.addView(mapView)
 
+        // Mostrar diálogo para elegir posición inicial
+        showCoordinateDialog()
+
         // Observar los cambios en la posición del jugador
         gameViewModel.playerPosition.observe(this) { position ->
             position?.let {
-                mapView.updateLocalPlayerPosition(it)
+                mapView.updateLocalPlayerPosition(it) // Usar el método correcto de MapView
                 tvPlayerPosition.text = "Posición: (${it.first}, ${it.second})"
             }
         }
@@ -78,5 +81,17 @@ class SinglePlayerActivity : AppCompatActivity() {
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
         startActivity(intent)
         finish() // Finalizar la actividad actual para evitar volver con el botón "Atrás"
+    }
+
+    private fun showCoordinateDialog() {
+        val mapWidth = 10
+        val mapHeight = 10
+
+        // Crear y mostrar el diálogo
+        val coordinateDialog = CoordinateInputDialog(this, mapWidth, mapHeight) { x, y ->
+            // Establecer la posición inicial del jugador con las coordenadas ingresadas
+            gameViewModel.setPlayerPosition(x, y)
+        }
+        coordinateDialog.show()
     }
 }

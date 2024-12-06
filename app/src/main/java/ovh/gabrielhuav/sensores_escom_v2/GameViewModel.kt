@@ -39,6 +39,13 @@ class GameViewModel : ViewModel() {
         updatePlayerPosition()
     }
 
+    fun setPlayerPosition(x: Int, y: Int) {
+        player.x = x
+        player.y = y
+        updatePlayerPosition()
+    }
+
+
     private fun updatePlayerPosition() {
         _playerPosition.value = Pair(player.x, player.y)
     }
