@@ -17,13 +17,14 @@
         android:layout_gravity="start" />
 
     <!-- Contenedor del mapa -->
+
+    <!-- Mostrar posición del jugador -->
     <FrameLayout
         android:id="@+id/mapContainer"
         android:layout_width="match_parent"
         android:layout_height="300dp"
         android:background="@android:color/darker_gray" />
 
-    <!-- Mostrar posición del jugador -->
     <TextView
         android:id="@+id/tvPlayerPosition"
         android:layout_width="wrap_content"

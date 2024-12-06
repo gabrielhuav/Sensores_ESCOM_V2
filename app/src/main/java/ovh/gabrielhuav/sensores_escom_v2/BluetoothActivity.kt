@@ -78,6 +78,8 @@ class BluetoothActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLi
         btnSouth = findViewById(R.id.btnSouth)
         btnEast = findViewById(R.id.btnEast)
         btnWest = findViewById(R.id.btnWest)
+        val btnZoomIn: Button = findViewById(R.id.btnZoomIn)////////////////////
+        val btnZoomOut: Button = findViewById(R.id.btnZoomOut)///////////////
 
         mapView = MapView(this)
         mapContainer.addView(mapView)
@@ -91,6 +93,8 @@ class BluetoothActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLi
 
         // Dibujar posición inicial del jugador local
         mapView.updateLocalPlayerPosition(localPlayerPosition)
+
+        setupZoomButtons(btnZoomIn, btnZoomOut)
     }
 
     private fun setupButtonListeners() {
@@ -178,6 +182,20 @@ class BluetoothActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLi
             return
         }
         BluetoothGameManager.getInstance().connectToDevice(device)
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return
+        }
         updateBluetoothStatus("Intentando conectar a ${device.name ?: "Desconocido"}...")
     }
 
@@ -188,6 +206,20 @@ class BluetoothActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLi
 
     override fun onDeviceConnected(device: BluetoothDevice) {
         isConnected = true
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return
+        }
         updateBluetoothStatus("Conectado a ${device.name ?: "Desconocido"}")
     }
 
@@ -212,5 +244,14 @@ class BluetoothActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLi
     companion object {
         const val TAG = "BluetoothActivity"
         const val REQUEST_BLUETOOTH_PERMISSIONS = 101
+    }
+
+    private fun setupZoomButtons(btnZoomIn: Button, btnZoomOut: Button) {
+        btnZoomIn.setOnClickListener {
+            mapView.updateScaleFactor(mapView.scaleFactor + 0.2f)
+        }
+        btnZoomOut.setOnClickListener {
+            mapView.updateScaleFactor(mapView.scaleFactor - 0.2f)
+        }
     }
 }

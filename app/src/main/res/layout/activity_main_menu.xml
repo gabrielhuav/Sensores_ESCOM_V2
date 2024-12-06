@@ -6,6 +6,13 @@
     android:gravity="center"
     android:padding="16dp">
 
+    <TextView
+        android:id="@+id/practica6"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/practica_6"
+        android:textSize="30dp"/>
+
     <!-- Botón para el modo de un jugador -->
     <Button
         android:id="@+id/btnSinglePlayer"
