@@ -68,7 +68,7 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
         scaleGestureDetector = ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
             override fun onScale(detector: ScaleGestureDetector): Boolean {
                 scaleFactor *= detector.scaleFactor
-                scaleFactor = scaleFactor.coerceIn(0.5f, 3.0f)
+                scaleFactor = scaleFactor.coerceIn(0.1f, 3.0f)
 
                 val focusX = detector.focusX
                 val focusY = detector.focusY
@@ -159,7 +159,7 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
     }
 
     fun updateScaleFactor(scale: Float) {
-        scaleFactor = scale.coerceIn(0.5f, 3.0f)
+        scaleFactor = scale.coerceIn(0.1f, 3.0f)
         constrainOffset()
         invalidate()
     }
