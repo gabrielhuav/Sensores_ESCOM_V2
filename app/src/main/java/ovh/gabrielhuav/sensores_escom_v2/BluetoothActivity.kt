@@ -1,6 +1,7 @@
 package ovh.gabrielhuav.sensores_escom_v2
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
@@ -67,6 +68,9 @@ class BluetoothActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLi
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_bluetooth)
 
+        val btnZoomIn: Button = findViewById(R.id.btnZoomIn)
+        val btnZoomOut: Button = findViewById(R.id.btnZoomOut)
+
         // Inicializar componentes
         btnStartServer = findViewById(R.id.btnStartServer)
         btnConnectDevice = findViewById(R.id.btnConnectToDevice)
@@ -78,6 +82,7 @@ class BluetoothActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLi
         btnSouth = findViewById(R.id.btnSouth)
         btnEast = findViewById(R.id.btnEast)
         btnWest = findViewById(R.id.btnWest)
+
 
         mapView = MapView(this)
         mapContainer.addView(mapView)
@@ -91,6 +96,9 @@ class BluetoothActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLi
 
         // Dibujar posición inicial del jugador local
         mapView.updateLocalPlayerPosition(localPlayerPosition)
+
+        // Configurar botones de zoom
+        setupZoomButtons(btnZoomIn, btnZoomOut)
     }
 
     private fun setupButtonListeners() {
@@ -172,6 +180,7 @@ class BluetoothActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLi
         updateBluetoothStatus("Servidor iniciado. Esperando conexión...")
     }
 
+    @SuppressLint("MissingPermission")
     private fun connectToDevice(device: BluetoothDevice) {
         if (!hasRequiredPermissions()) {
             checkPermissions()
@@ -186,6 +195,7 @@ class BluetoothActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLi
         Log.d(TAG, status)
     }
 
+    @SuppressLint("MissingPermission")
     override fun onDeviceConnected(device: BluetoothDevice) {
         isConnected = true
         updateBluetoothStatus("Conectado a ${device.name ?: "Desconocido"}")
@@ -207,6 +217,15 @@ class BluetoothActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLi
     override fun onConnectionFailed(message: String) {
         isConnected = false
         updateBluetoothStatus("Conexión fallida: $message")
+    }
+
+    private fun setupZoomButtons(btnZoomIn: Button, btnZoomOut: Button) {
+        btnZoomIn.setOnClickListener {
+            mapView.updateScaleFactor(mapView.scaleFactor + 0.2f)
+        }
+        btnZoomOut.setOnClickListener {
+            mapView.updateScaleFactor(mapView.scaleFactor - 0.2f)
+        }
     }
 
     companion object {
