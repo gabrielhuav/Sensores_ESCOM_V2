@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "ovh.gabrielhuav.sensores_escom_v2"
-    compileSdk = 35
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "ovh.gabrielhuav.sensores_escom_v2"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -42,7 +42,6 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
-    implementation(libs.androidx.media3.common.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

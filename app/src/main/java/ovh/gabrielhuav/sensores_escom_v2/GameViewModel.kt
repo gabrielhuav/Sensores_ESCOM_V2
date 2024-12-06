@@ -4,10 +4,11 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 
+
 class GameViewModel : ViewModel() {
-    // Tamaño dinámico del mapa
-    private var mapWidth = 10 // EJE X Cambiar a un tamaño más grande según sea necesario
-    private var mapHeight = 10 // EJE Y Cambiar a un tamaño más grande según sea necesario
+    // Tamaño del mapa
+    private val mapWidth = 10
+    private val mapHeight = 10
 
     // Jugador inicializado en el centro del mapa
     private val player = Player(mapWidth / 2, mapHeight / 2, mapWidth, mapHeight)
@@ -41,13 +42,5 @@ class GameViewModel : ViewModel() {
 
     private fun updatePlayerPosition() {
         _playerPosition.value = Pair(player.x, player.y)
-    }
-
-    // Método para actualizar dinámicamente el tamaño del mapa
-    fun setMapSize(newWidth: Int, newHeight: Int) {
-        mapWidth = newWidth
-        mapHeight = newHeight
-        player.updateMapBounds(mapWidth, mapHeight) // Actualizar límites del jugador
-        updatePlayerPosition()
     }
 }

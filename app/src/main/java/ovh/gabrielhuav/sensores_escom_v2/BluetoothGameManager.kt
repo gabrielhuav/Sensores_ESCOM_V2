@@ -71,7 +71,14 @@ class BluetoothGameManager private constructor() {
                 Log.d(TAG, "Cliente conectado: ${getDeviceName(remoteDevice)}")
 
                 receiveData { data ->
-                    processReceivedData(data, remoteDevice)
+                    try {
+                        val jsonData = JSONObject(data)
+                        val x = jsonData.getInt("x")
+                        val y = jsonData.getInt("y")
+                        handler.post { connectionListener?.onPositionReceived(remoteDevice, x, y) }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error procesando datos JSON: ${e.message}")
+                    }
                 }
             } catch (e: IOException) {
                 Log.e(TAG, "Error al iniciar el servidor: ${e.message}")
@@ -105,7 +112,14 @@ class BluetoothGameManager private constructor() {
                 Log.d(TAG, "Conectado al servidor: ${getDeviceName(device)}")
 
                 receiveData { data ->
-                    processReceivedData(data, device)
+                    try {
+                        val jsonData = JSONObject(data)
+                        val x = jsonData.getInt("x")
+                        val y = jsonData.getInt("y")
+                        handler.post { connectionListener?.onPositionReceived(device, x, y) }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error procesando datos JSON: ${e.message}")
+                    }
                 }
             } catch (e: IOException) {
                 Log.e(TAG, "Error al conectar al dispositivo: ${e.message}")
@@ -144,19 +158,6 @@ class BluetoothGameManager private constructor() {
                 Log.e(TAG, "Error al recibir datos: ${e.message}")
             }
         }.start()
-    }
-
-    private fun processReceivedData(data: String, device: BluetoothDevice) {
-        try {
-            val jsonData = JSONObject(data)
-            val x = jsonData.getInt("x")
-            val y = jsonData.getInt("y")
-            handler.post {
-                connectionListener?.onPositionReceived(device, x, y)
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error procesando datos JSON: ${e.message}")
-        }
     }
 
     private fun hasPermission(permission: String): Boolean {

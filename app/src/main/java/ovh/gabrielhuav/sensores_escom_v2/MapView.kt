@@ -1,5 +1,6 @@
 package ovh.gabrielhuav.sensores_escom_v2
 
+import android.app.AlertDialog
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -17,22 +18,15 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
     private val paintGrid = Paint().apply {
         color = Color.GRAY
         strokeWidth = 2f
-        style = Paint.Style.STROKE
     }
-    private val paintLocalPlayer = Paint().apply {
-        color = Color.BLUE
-        style = Paint.Style.FILL
-    }
-    private val paintRemotePlayer = Paint().apply {
+    private val paintPlayer = Paint().apply {
         color = Color.RED
         style = Paint.Style.FILL
     }
-
+    private var playerPosition: Pair<Int, Int> = Pair(0, 0)
     private var offsetX = 0f
     private var offsetY = 0f
     var scaleFactor: Float = 1.0f
-    private var localPlayerPosition: Pair<Int, Int>? = null
-    private var remotePlayerPosition: Pair<Int, Int>? = null
 
     private val backgroundBitmap: Bitmap? = try {
         BitmapFactory.decodeResource(resources, R.drawable.escom_mapa)
@@ -40,14 +34,19 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
         null
     }
 
-    private lateinit var gestureDetector: GestureDetectorCompat
+    private val gestureDetector: GestureDetectorCompat
     private lateinit var scaleGestureDetector: ScaleGestureDetector
 
-    init {
-        initializeDetectors()
-    }
+    // Zonas de interés
+    private val zonesOfInterest = listOf(
+        Zone(1, 1, "Laboratorio", Color.BLUE),
+        Zone(3, 4, "Cafetería", Color.GREEN),
+        Zone(7, 8, "Auditorio", Color.YELLOW)
+    )
 
-    private fun initializeDetectors() {
+    data class Zone(val x: Int, val y: Int, val name: String, val color: Int)
+
+    init {
         gestureDetector = GestureDetectorCompat(context, object : GestureDetector.SimpleOnGestureListener() {
             override fun onScroll(
                 e1: MotionEvent?,
@@ -55,9 +54,10 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
                 distanceX: Float,
                 distanceY: Float
             ): Boolean {
-                if (!::scaleGestureDetector.isInitialized || !scaleGestureDetector.isInProgress) {
+                if (!scaleGestureDetector.isInProgress) {
                     offsetX -= distanceX / scaleFactor
                     offsetY -= distanceY / scaleFactor
+
                     constrainOffset()
                     invalidate()
                 }
@@ -86,12 +86,15 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
     private fun constrainOffset() {
         if (backgroundBitmap == null) return
 
-        val maxOffsetX = -(backgroundBitmap.width * scaleFactor - width)
-        val maxOffsetY = -(backgroundBitmap.height * scaleFactor - height)
+        val maxOffsetX = -(backgroundBitmap.width.toFloat() * scaleFactor - width)
+        val maxOffsetY = -(backgroundBitmap.height.toFloat() * scaleFactor - height)
 
         offsetX = offsetX.coerceIn(maxOffsetX, 0f)
         offsetY = offsetY.coerceIn(maxOffsetY, 0f)
     }
+
+    val cellSize: Float
+        get() = backgroundBitmap?.width?.div(10f) ?: 50f
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
@@ -102,12 +105,7 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
                 color = Color.WHITE
                 textSize = 32f
             }
-            canvas.drawText(
-                "Error: Mapa no encontrado",
-                50f,
-                50f,
-                errorPaint
-            )
+            canvas.drawText("Error: Mapa no encontrado", 50f, 50f, errorPaint)
             return
         }
 
@@ -115,31 +113,30 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
         canvas.scale(scaleFactor, scaleFactor)
         canvas.translate(offsetX / scaleFactor, offsetY / scaleFactor)
 
-        canvas.drawBitmap(backgroundBitmap, 0f, 0f, null)
+        // Escala el mapa para que sea más pequeño si es necesario
+        val scaledBitmap = Bitmap.createScaledBitmap(
+            backgroundBitmap,
+            (backgroundBitmap.width * 0.8).toInt(), // Reduce el tamaño del mapa al 80%
+            (backgroundBitmap.height * 0.8).toInt(),
+            true
+        )
+        canvas.drawBitmap(scaledBitmap, 0f, 0f, null)
 
-        val cellWidth = backgroundBitmap.width / 20f // Tamaño dinámico de celdas
-        val cellHeight = backgroundBitmap.height / 20f
-        for (i in 0..20) {
-            canvas.drawLine(i * cellWidth, 0f, i * cellWidth, backgroundBitmap.height.toFloat(), paintGrid)
-            canvas.drawLine(0f, i * cellHeight, backgroundBitmap.width.toFloat(), i * cellHeight, paintGrid)
+        val cellWidth = cellSize
+        val cellHeight = scaledBitmap.height / 10f
+        for (i in 0..10) {
+            canvas.drawLine(i * cellWidth, 0f, i * cellWidth, scaledBitmap.height.toFloat(), paintGrid)
+            canvas.drawLine(0f, i * cellHeight, scaledBitmap.width.toFloat(), i * cellHeight, paintGrid)
         }
 
-        // Dibujar jugador local (azul)
-        localPlayerPosition?.let {
-            val playerX = it.first * cellWidth + cellWidth / 2
-            val playerY = it.second * cellHeight + cellHeight / 2
-            canvas.drawCircle(playerX, playerY, cellWidth / 4f, paintLocalPlayer)
-        }
-
-        // Dibujar jugador remoto (rojo)
-        remotePlayerPosition?.let {
-            val playerX = it.first * cellWidth + cellWidth / 2
-            val playerY = it.second * cellHeight + cellHeight / 2
-            canvas.drawCircle(playerX, playerY, cellWidth / 4f, paintRemotePlayer)
-        }
+        // Ajusta el tamaño del punto rojo
+        val playerX = playerPosition.first * cellWidth + cellWidth / 2
+        val playerY = playerPosition.second * cellHeight + cellHeight / 2
+        canvas.drawCircle(playerX, playerY, cellWidth / 10f, paintPlayer) // Cambié a cellWidth / 6f para hacerlo más pequeño
 
         canvas.restore()
     }
+
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         var handled = scaleGestureDetector.onTouchEvent(event)
@@ -147,35 +144,45 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
         return handled || super.onTouchEvent(event)
     }
 
-    fun updateLocalPlayerPosition(position: Pair<Int, Int>?) {
-        localPlayerPosition = position
-        position?.let { centerMapOnPlayer(it) }
+    fun updatePlayerPosition(position: Pair<Int, Int>) {
+        playerPosition = position
+        centerOnPlayer()
+        checkZoneOfInterest()
         invalidate()
     }
 
-    fun updateRemotePlayerPosition(position: Pair<Int, Int>?) {
-        remotePlayerPosition = position
-        invalidate()
+    private fun checkZoneOfInterest() {
+        val zone = zonesOfInterest.find { it.x == playerPosition.first && it.y == playerPosition.second }
+        zone?.let {
+            showZoneDialog(it)
+        }
+    }
+
+    private fun showZoneDialog(zone: Zone) {
+        AlertDialog.Builder(context)
+            .setTitle("Zona de Interés")
+            .setMessage("¡Has llegado a ${zone.name}!")
+            .setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
+            .show()
+    }
+
+    private fun centerOnPlayer() {
+        if (backgroundBitmap == null) return
+
+        val cellWidth = cellSize
+        val cellHeight = backgroundBitmap.height / 10f
+        val playerX = playerPosition.first * cellWidth + cellWidth / 2
+        val playerY = playerPosition.second * cellHeight + cellHeight / 2
+
+        offsetX = (width / 2f - playerX * scaleFactor)
+        offsetY = (height / 2f - playerY * scaleFactor)
+
+        constrainOffset()
     }
 
     fun updateScaleFactor(scale: Float) {
         scaleFactor = scale.coerceIn(0.5f, 3.0f)
         constrainOffset()
         invalidate()
-    }
-
-    private fun centerMapOnPlayer(playerPosition: Pair<Int, Int>) {
-        if (backgroundBitmap == null) return
-
-        val cellWidth = backgroundBitmap.width / 20f
-        val cellHeight = backgroundBitmap.height / 20f
-
-        val playerX = playerPosition.first * cellWidth + cellWidth / 2
-        val playerY = playerPosition.second * cellHeight + cellHeight / 2
-
-        offsetX = width / 2 - playerX * scaleFactor
-        offsetY = height / 2 - playerY * scaleFactor
-
-        constrainOffset()
     }
 }

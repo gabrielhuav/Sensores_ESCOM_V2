@@ -35,7 +35,8 @@ class BluetoothActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLi
     private val connectionTimeout = 60000L // 1 minuto
     private val handler = Handler(Looper.getMainLooper())
 
-    private var localPlayerPosition = Pair(0, 0)
+    // Posiciones iniciales de los jugadores
+    private var localPlayerPosition = Pair(5, 5)
     private var remotePlayerPosition: Pair<Int, Int>? = null
 
     // Launcher para habilitar Bluetooth
@@ -110,8 +111,8 @@ class BluetoothActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLi
     }
 
     private fun movePlayer(deltaX: Int, deltaY: Int) {
-        val newX = (localPlayerPosition.first + deltaX).coerceIn(0, 19) // Limitar X entre 0 y 49
-        val newY = (localPlayerPosition.second + deltaY).coerceIn(0, 19) // Limitar Y entre 0 y 49
+        val newX = (localPlayerPosition.first + deltaX).coerceIn(0, 9)
+        val newY = (localPlayerPosition.second + deltaY).coerceIn(0, 9)
 
         localPlayerPosition = Pair(newX, newY)
         mapView.updateLocalPlayerPosition(localPlayerPosition)
@@ -122,7 +123,6 @@ class BluetoothActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLi
             BluetoothGameManager.getInstance().sendPlayerPosition(newX, newY)
         }
     }
-
 
     private fun navigateToMainMenu() {
         val intent = Intent(this, MainActivity::class.java)
@@ -199,6 +199,8 @@ class BluetoothActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLi
     override fun onConnectionComplete() {
         runOnUiThread {
             updateBluetoothStatus("Conexión establecida completamente.")
+            mapView.updateLocalPlayerPosition(localPlayerPosition)
+            mapView.updateRemotePlayerPosition(Pair(5, 5)) // Posición inicial del otro jugador
         }
     }
 
