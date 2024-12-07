@@ -18,29 +18,46 @@ class GameViewModel : ViewModel() {
     }
     val playerPosition: LiveData<Pair<Int, Int>> = _playerPosition
 
+    // Contador de pasos observable
+    private val _stepCount = MutableLiveData<Int>().apply { value = 0 }
+    val stepCount: LiveData<Int> = _stepCount
+
     // Movimiento del jugador
     fun moveNorth() {
         player.moveNorth()
         updatePlayerPosition()
+        incrementStepCount()
     }
 
     fun moveSouth() {
         player.moveSouth()
         updatePlayerPosition()
+        incrementStepCount()
     }
 
     fun moveEast() {
         player.moveEast()
         updatePlayerPosition()
+        incrementStepCount()
     }
 
     fun moveWest() {
         player.moveWest()
         updatePlayerPosition()
+        incrementStepCount()
     }
 
     private fun updatePlayerPosition() {
         _playerPosition.value = Pair(player.x, player.y)
+    }
+
+    private fun incrementStepCount() {
+        _stepCount.value = (_stepCount.value ?: 0) + 1
+    }
+
+    // Método para reiniciar el contador de pasos (opcional)
+    fun resetStepCount() {
+        _stepCount.value = 0
     }
 
     // Método para actualizar dinámicamente el tamaño del mapa

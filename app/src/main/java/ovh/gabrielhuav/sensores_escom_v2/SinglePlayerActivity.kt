@@ -26,6 +26,7 @@ class SinglePlayerActivity : AppCompatActivity() {
         val btnEast: Button = findViewById(R.id.btnEast)
         val btnWest: Button = findViewById(R.id.btnWest)
         val tvPlayerPosition: TextView = findViewById(R.id.tvPlayerPosition)
+        val tvStepCount: TextView = findViewById(R.id.tvStepCount) // TextView para mostrar los pasos
         val btnBackToMenu: Button = findViewById(R.id.btnBackToMenu)
 
         // Crear MapView y agregarlo al contenedor
@@ -38,6 +39,11 @@ class SinglePlayerActivity : AppCompatActivity() {
                 mapView.updateLocalPlayerPosition(it)
                 tvPlayerPosition.text = "Posición: (${it.first}, ${it.second})"
             }
+        }
+
+        // Observar los cambios en el contador de pasos
+        gameViewModel.stepCount.observe(this) { steps ->
+            tvStepCount.text = "Pasos: $steps"
         }
 
         // Configurar botones de movimiento
