@@ -6,8 +6,8 @@ import androidx.lifecycle.ViewModel
 
 class GameViewModel : ViewModel() {
     // Tamaño dinámico del mapa
-    private var mapWidth = 20   // EJE X Cambiar a un tamaño más grande según sea necesario
-    private var mapHeight = 20 // EJE Y Cambiar a un tamaño más grande según sea necesario
+    private var mapWidth = 10 // EJE X Cambiar a un tamaño más grande según sea necesario
+    private var mapHeight = 10 // EJE Y Cambiar a un tamaño más grande según sea necesario
 
     // Jugador inicializado en el centro del mapa
     private val player = Player(mapWidth / 2, mapHeight / 2, mapWidth, mapHeight)
