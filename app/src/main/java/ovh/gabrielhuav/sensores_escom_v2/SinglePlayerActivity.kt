@@ -12,7 +12,8 @@ class SinglePlayerActivity : AppCompatActivity() {
 
     private lateinit var mapView: MapView
     private val gameViewModel: GameViewModel by viewModels()
-
+    // Coordenadas válidas para activar el escáner QR
+    private val qrCells = listOf(Pair(16,4), Pair(11, 9), Pair(17, 17),Pair(2,17),Pair(5,9))
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_single_player)
@@ -27,16 +28,27 @@ class SinglePlayerActivity : AppCompatActivity() {
         val btnWest: Button = findViewById(R.id.btnWest)
         val tvPlayerPosition: TextView = findViewById(R.id.tvPlayerPosition)
         val btnBackToMenu: Button = findViewById(R.id.btnBackToMenu)
+        val btnQrScanner: Button = findViewById(R.id.btnQrScanner)
 
         // Crear MapView y agregarlo al contenedor
         mapView = MapView(this)
         mapContainer.addView(mapView)
+
+        // Configurar el listener para cuando se toque el mapa en las celdas válidas para escanear
+        mapView.setOnMapTouchListener(object : MapView.OnMapTouchListener {
+            override fun onMapTouched() {
+                // Activar el escáner QR
+                val intent = Intent(this@SinglePlayerActivity, QRCodeScannerActivity::class.java)
+                startActivityForResult(intent, QR_CODE_REQUEST)
+            }
+        })
 
         // Observar los cambios en la posición del jugador
         gameViewModel.playerPosition.observe(this) { position ->
             position?.let {
                 mapView.updateLocalPlayerPosition(it)
                 tvPlayerPosition.text = "Posición: (${it.first}, ${it.second})"
+                toggleQrScannerButton(it)
             }
         }
 
@@ -50,7 +62,26 @@ class SinglePlayerActivity : AppCompatActivity() {
         btnBackToMenu.setOnClickListener {
             navigateToMainMenu()
         }
+        //Boton para abrir el scanner
+        btnQrScanner.setOnClickListener {
+            val intent = Intent(this, QRCodeScannerActivity::class.java)
+            startActivityForResult(intent, QR_CODE_REQUEST)
+        }
     }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == QR_CODE_REQUEST && resultCode == RESULT_OK) {
+            val scannedData = data?.getStringExtra("scannedData")
+            scannedData?.let {
+                // Aquí puedes actualizar la posición del jugador con la data escaneada
+                // Suponiendo que el código QR contiene una posición o datos relevantes
+                val newPosition = parseQRData(it)
+                mapView.updateLocalPlayerPosition(newPosition)
+            }
+        }
+    }
+
 
     private fun setupMovementButtons(
         btnNorth: Button,
@@ -78,5 +109,25 @@ class SinglePlayerActivity : AppCompatActivity() {
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
         startActivity(intent)
         finish() // Finalizar la actividad actual para evitar volver con el botón "Atrás"
+    }
+    private fun toggleQrScannerButton(playerPosition: Pair<Int, Int>) {
+        val btnQrScanner: Button = findViewById(R.id.btnQrScanner)
+
+        // Verificar si la posición del jugador está en las coordenadas válidas para activar el escáner QR
+        if (qrCells.contains(playerPosition)) {
+            btnQrScanner.isEnabled = true // Habilitar el botón
+        } else {
+            btnQrScanner.isEnabled = false // Deshabilitar el botón
+        }
+    }
+
+    private fun parseQRData(data: String): Pair<Int, Int> {
+        val coordinates = data.split(",")
+        val x = coordinates.getOrNull(0)?.toIntOrNull() ?: 0
+        val y = coordinates.getOrNull(1)?.toIntOrNull() ?: 0
+        return Pair(x, y)
+    }
+    companion object {
+        private const val QR_CODE_REQUEST = 1
     }
 }

@@ -8,8 +8,16 @@
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" tools:targetApi="31" />
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" tools:targetApi="31" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" tools:targetApi="31" />
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Permisos de Localización necesarios para Bluetooth -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- Si no necesitas localización precisa, puedes eliminar el siguiente permiso -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- Permisos de cámara -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="true"/>
 
     <application
         android:allowBackup="true"
@@ -18,7 +26,6 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsRtl="true"
         android:theme="@style/Theme.Sensores_ESCOM_V2">
 
         <!-- Actividad principal -->
@@ -48,5 +55,11 @@
             android:name=".DeviceListActivity"
             android:exported="true"
             android:theme="@style/Theme.Sensores_ESCOM_V2" />
+
+        <!-- Declaración de QRCodeScannerActivity con orientación fija -->
+        <activity android:name=".QRCodeScannerActivity"
+            android:screenOrientation="landscape" /> <!-- Si no es necesario, se puede eliminar esta línea -->
+
     </application>
+
 </manifest>
