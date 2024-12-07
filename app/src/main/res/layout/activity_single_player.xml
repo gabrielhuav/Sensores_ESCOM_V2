@@ -30,7 +30,17 @@
         android:layout_height="wrap_content"
         android:text="Posición: (0, 0)"
         android:textSize="18sp"
-        android:layout_marginBottom="24dp" />
+        android:layout_marginBottom="8dp" />
+
+    <!-- Mostrar cantidad de pasos -->
+    <TextView
+        android:id="@+id/tvStepCount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Pasos: 0"
+        android:textSize="18sp"
+        android:layout_marginBottom="16dp"
+        android:layout_gravity="center" />
 
     <!-- Controles de movimiento -->
     <LinearLayout
