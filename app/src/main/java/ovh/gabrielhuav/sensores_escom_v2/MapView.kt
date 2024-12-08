@@ -43,6 +43,10 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
     private lateinit var gestureDetector: GestureDetectorCompat
     private lateinit var scaleGestureDetector: ScaleGestureDetector
 
+    // Nueva cantidad de casillas
+    private val numCellsX = 20 // Aumentamos las casillas en X
+    private val numCellsY = 20 // Aumentamos las casillas en Y
+
     init {
         initializeDetectors()
     }
@@ -117,10 +121,14 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
 
         canvas.drawBitmap(backgroundBitmap, 0f, 0f, null)
 
-        val cellWidth = backgroundBitmap.width / 10f
-        val cellHeight = backgroundBitmap.height / 10f
-        for (i in 0..10) {
+        val cellWidth = backgroundBitmap.width / numCellsX.toFloat()
+        val cellHeight = backgroundBitmap.height / numCellsY.toFloat()
+
+        // Dibujar cuadrícula con más casillas
+        for (i in 0 until numCellsX) {
             canvas.drawLine(i * cellWidth, 0f, i * cellWidth, backgroundBitmap.height.toFloat(), paintGrid)
+        }
+        for (i in 0 until numCellsY) {
             canvas.drawLine(0f, i * cellHeight, backgroundBitmap.width.toFloat(), i * cellHeight, paintGrid)
         }
 
