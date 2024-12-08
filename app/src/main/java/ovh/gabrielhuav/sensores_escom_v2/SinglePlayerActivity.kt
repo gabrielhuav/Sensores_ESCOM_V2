@@ -7,7 +7,7 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-
+//a
 class SinglePlayerActivity : AppCompatActivity() {
 
     private lateinit var mapView: MapView
