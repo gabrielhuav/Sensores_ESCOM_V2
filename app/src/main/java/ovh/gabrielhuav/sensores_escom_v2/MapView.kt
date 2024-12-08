@@ -68,7 +68,7 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
         scaleGestureDetector = ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
             override fun onScale(detector: ScaleGestureDetector): Boolean {
                 scaleFactor *= detector.scaleFactor
-                scaleFactor = scaleFactor.coerceIn(0.5f, 3.0f)
+                scaleFactor = scaleFactor.coerceIn(0.1f, 3.0f)
 
                 val focusX = detector.focusX
                 val focusY = detector.focusY
@@ -117,9 +117,9 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
 
         canvas.drawBitmap(backgroundBitmap, 0f, 0f, null)
 
-        val cellWidth = backgroundBitmap.width / 20f // Tamaño dinámico de celdas
-        val cellHeight = backgroundBitmap.height / 20f
-        for (i in 0..20) {
+        val cellWidth = backgroundBitmap.width / 10f
+        val cellHeight = backgroundBitmap.height / 10f
+        for (i in 0..10) {
             canvas.drawLine(i * cellWidth, 0f, i * cellWidth, backgroundBitmap.height.toFloat(), paintGrid)
             canvas.drawLine(0f, i * cellHeight, backgroundBitmap.width.toFloat(), i * cellHeight, paintGrid)
         }
@@ -149,7 +149,6 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
 
     fun updateLocalPlayerPosition(position: Pair<Int, Int>?) {
         localPlayerPosition = position
-        position?.let { centerMapOnPlayer(it) }
         invalidate()
     }
 
@@ -159,23 +158,8 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
     }
 
     fun updateScaleFactor(scale: Float) {
-        scaleFactor = scale.coerceIn(0.5f, 3.0f)
+        scaleFactor = scale.coerceIn(0.1f, 3.0f)
         constrainOffset()
         invalidate()
-    }
-
-    private fun centerMapOnPlayer(playerPosition: Pair<Int, Int>) {
-        if (backgroundBitmap == null) return
-
-        val cellWidth = backgroundBitmap.width / 20f
-        val cellHeight = backgroundBitmap.height / 20f
-
-        val playerX = playerPosition.first * cellWidth + cellWidth / 2
-        val playerY = playerPosition.second * cellHeight + cellHeight / 2
-
-        offsetX = width / 2 - playerX * scaleFactor
-        offsetY = height / 2 - playerY * scaleFactor
-
-        constrainOffset()
     }
 }
