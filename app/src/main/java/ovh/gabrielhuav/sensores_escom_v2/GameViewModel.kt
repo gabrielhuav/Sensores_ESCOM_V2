@@ -5,49 +5,34 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 
 class GameViewModel : ViewModel() {
-    // Tamaño dinámico del mapa
-    private var mapWidth = 10 // EJE X Cambiar a un tamaño más grande según sea necesario
-    private var mapHeight = 10 // EJE Y Cambiar a un tamaño más grande según sea necesario
+    private var _playerPosition = MutableLiveData<Pair<Int, Int>?>()
+    val playerPosition: LiveData<Pair<Int, Int>?> get() = _playerPosition
 
-    // Jugador inicializado en el centro del mapa
-    private val player = Player(mapWidth / 2, mapHeight / 2, mapWidth, mapHeight)
+    private val maxX = 20 // Número máximo de casillas en el eje X
+    private val maxY = 20 // Número máximo de casillas en el eje Y
+    private var position = Pair(0, 0) // Posición inicial del jugador
 
-    // Estado del jugador observable
-    private val _playerPosition = MutableLiveData<Pair<Int, Int>>().apply {
-        value = Pair(player.x, player.y)
-    }
-    val playerPosition: LiveData<Pair<Int, Int>> = _playerPosition
-
-    // Movimiento del jugador
     fun moveNorth() {
-        player.moveNorth()
-        updatePlayerPosition()
+        val newY = (position.second - 1).coerceIn(0, maxY - 1)
+        position = Pair(position.first, newY)
+        _playerPosition.value = position
     }
 
     fun moveSouth() {
-        player.moveSouth()
-        updatePlayerPosition()
+        val newY = (position.second + 1).coerceIn(0, maxY - 1)
+        position = Pair(position.first, newY)
+        _playerPosition.value = position
     }
 
     fun moveEast() {
-        player.moveEast()
-        updatePlayerPosition()
+        val newX = (position.first + 1).coerceIn(0, maxX - 1)
+        position = Pair(newX, position.second)
+        _playerPosition.value = position
     }
 
     fun moveWest() {
-        player.moveWest()
-        updatePlayerPosition()
-    }
-
-    private fun updatePlayerPosition() {
-        _playerPosition.value = Pair(player.x, player.y)
-    }
-
-    // Método para actualizar dinámicamente el tamaño del mapa
-    fun setMapSize(newWidth: Int, newHeight: Int) {
-        mapWidth = newWidth
-        mapHeight = newHeight
-        player.updateMapBounds(mapWidth, mapHeight) // Actualizar límites del jugador
-        updatePlayerPosition()
+        val newX = (position.first - 1).coerceIn(0, maxX - 1)
+        position = Pair(newX, position.second)
+        _playerPosition.value = position
     }
 }

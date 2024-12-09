@@ -43,6 +43,15 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
     private lateinit var gestureDetector: GestureDetectorCompat
     private lateinit var scaleGestureDetector: ScaleGestureDetector
 
+    private val minZoom = 0.2f
+    private val maxZoom = 3.0f
+
+    private val numCellsX = 20
+    private val numCellsY = 20
+
+    private var playerOrientation: Float = 0f // Dirección de la brújula
+    private var lastPlayerPosition: Pair<Int, Int>? = null // Para calcular la dirección del movimiento
+
     init {
         initializeDetectors()
     }
@@ -67,17 +76,21 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
 
         scaleGestureDetector = ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
             override fun onScale(detector: ScaleGestureDetector): Boolean {
-                scaleFactor *= detector.scaleFactor
-                scaleFactor = scaleFactor.coerceIn(0.5f, 3.0f)
+                var newScaleFactor = scaleFactor * detector.scaleFactor
+                newScaleFactor = newScaleFactor.coerceIn(minZoom, maxZoom)
 
-                val focusX = detector.focusX
-                val focusY = detector.focusY
+                if (newScaleFactor != scaleFactor) {
+                    val focusX = detector.focusX
+                    val focusY = detector.focusY
 
-                offsetX += (focusX - offsetX) * (1 - detector.scaleFactor)
-                offsetY += (focusY - offsetY) * (1 - detector.scaleFactor)
+                    scaleFactor = newScaleFactor
+                    offsetX += (focusX - offsetX) * (1 - detector.scaleFactor)
+                    offsetY += (focusY - offsetY) * (1 - detector.scaleFactor)
 
-                constrainOffset()
-                invalidate()
+                    constrainOffset()
+                    invalidate()
+                }
+
                 return true
             }
         })
@@ -117,39 +130,74 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
 
         canvas.drawBitmap(backgroundBitmap, 0f, 0f, null)
 
-        val cellWidth = backgroundBitmap.width / 20f // Tamaño dinámico de celdas
-        val cellHeight = backgroundBitmap.height / 20f
-        for (i in 0..20) {
+        val cellWidth = backgroundBitmap.width / numCellsX.toFloat()
+        val cellHeight = backgroundBitmap.height / numCellsY.toFloat()
+
+        for (i in 0 until numCellsX) {
             canvas.drawLine(i * cellWidth, 0f, i * cellWidth, backgroundBitmap.height.toFloat(), paintGrid)
+        }
+        for (i in 0 until numCellsY) {
             canvas.drawLine(0f, i * cellHeight, backgroundBitmap.width.toFloat(), i * cellHeight, paintGrid)
         }
 
-        // Dibujar jugador local (azul)
         localPlayerPosition?.let {
             val playerX = it.first * cellWidth + cellWidth / 2
             val playerY = it.second * cellHeight + cellHeight / 2
             canvas.drawCircle(playerX, playerY, cellWidth / 4f, paintLocalPlayer)
         }
 
-        // Dibujar jugador remoto (rojo)
         remotePlayerPosition?.let {
             val playerX = it.first * cellWidth + cellWidth / 2
             val playerY = it.second * cellHeight + cellHeight / 2
             canvas.drawCircle(playerX, playerY, cellWidth / 4f, paintRemotePlayer)
         }
 
+        // Dibujar la brújula
+        drawCompass(canvas)
+
         canvas.restore()
     }
 
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-        var handled = scaleGestureDetector.onTouchEvent(event)
-        handled = gestureDetector.onTouchEvent(event) || handled
-        return handled || super.onTouchEvent(event)
+    private fun drawCompass(canvas: Canvas) {
+        val compassRadius = 100f
+        val compassCenterX = width - 150f
+        val compassCenterY = 150f
+
+        val compassPaint = Paint().apply {
+            color = Color.BLACK
+            strokeWidth = 5f
+            style = Paint.Style.STROKE
+        }
+        canvas.drawCircle(compassCenterX, compassCenterY, compassRadius, compassPaint)
+
+        val arrowLength = compassRadius * 0.8f
+        val angleRad = Math.toRadians(playerOrientation.toDouble()).toFloat()
+        val arrowEndX = compassCenterX + arrowLength * Math.cos(angleRad.toDouble()).toFloat()
+        val arrowEndY = compassCenterY + arrowLength * Math.sin(angleRad.toDouble()).toFloat()
+
+        val arrowPaint = Paint().apply {
+            color = Color.RED
+            strokeWidth = 8f
+        }
+        canvas.drawLine(compassCenterX, compassCenterY, arrowEndX, arrowEndY, arrowPaint)
     }
 
     fun updateLocalPlayerPosition(position: Pair<Int, Int>?) {
+        if (position != null && lastPlayerPosition != null) {
+            val deltaX = position.first - lastPlayerPosition!!.first
+            val deltaY = position.second - lastPlayerPosition!!.second
+
+            playerOrientation = when {
+                deltaX > 0 -> 0f // Este
+                deltaX < 0 -> 180f // Oeste
+                deltaY > 0 -> 90f // Sur
+                deltaY < 0 -> 270f // Norte
+                else -> playerOrientation // Sin cambio
+            }
+        }
+
+        lastPlayerPosition = position
         localPlayerPosition = position
-        position?.let { centerMapOnPlayer(it) }
         invalidate()
     }
 
@@ -159,23 +207,8 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
     }
 
     fun updateScaleFactor(scale: Float) {
-        scaleFactor = scale.coerceIn(0.5f, 3.0f)
+        scaleFactor = scale.coerceIn(minZoom, maxZoom)
         constrainOffset()
         invalidate()
-    }
-
-    private fun centerMapOnPlayer(playerPosition: Pair<Int, Int>) {
-        if (backgroundBitmap == null) return
-
-        val cellWidth = backgroundBitmap.width / 20f
-        val cellHeight = backgroundBitmap.height / 20f
-
-        val playerX = playerPosition.first * cellWidth + cellWidth / 2
-        val playerY = playerPosition.second * cellHeight + cellHeight / 2
-
-        offsetX = width / 2 - playerX * scaleFactor
-        offsetY = height / 2 - playerY * scaleFactor
-
-        constrainOffset()
     }
 }
