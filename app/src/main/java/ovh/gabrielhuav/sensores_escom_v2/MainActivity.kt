@@ -3,6 +3,7 @@ package ovh.gabrielhuav.sensores_escom_v2
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.widget.Button
@@ -54,6 +55,21 @@ class MainActivity : AppCompatActivity() {
                 requestPermissions()
             }
         }
+
+        // Botón para salir
+        val exitButton = findViewById<Button>(R.id.btnExit)
+        exitButton.setOnClickListener {
+            finishAffinity() // Cierra todas las actividades y finaliza la aplicación
+        }
+
+        // Botón para redirigir a un link
+        val redirectButton = findViewById<Button>(R.id.btnRedirect)
+        redirectButton.setOnClickListener {
+            val url = "https://github.com/gabrielhuav"
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            startActivity(intent)
+        }
+
     }
 
     private fun hasPermissions(): Boolean {
