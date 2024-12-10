@@ -17,6 +17,8 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
     }
+
+
 }
 
 rootProject.name = "Sensores_ESCOM_V2"

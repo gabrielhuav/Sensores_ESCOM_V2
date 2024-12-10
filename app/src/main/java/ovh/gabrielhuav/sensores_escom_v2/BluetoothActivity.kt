@@ -1,4 +1,5 @@
 package ovh.gabrielhuav.sensores_escom_v2
+import ovh.gabrielhuav.sensores_escom_v2.MapView
 
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
