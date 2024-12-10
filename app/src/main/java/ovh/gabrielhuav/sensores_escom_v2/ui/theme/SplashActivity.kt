@@ -2,8 +2,7 @@ package ovh.gabrielhuav.sensores_escom_v2.ui.theme
 
 import android.content.Intent
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
+import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
@@ -15,17 +14,28 @@ class SplashActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_splash)
+    }
 
-        // Find the logo and apply the animation
+    override fun onResume() {
+        super.onResume()
         val logo = findViewById<ImageView>(R.id.logo)
-        val fadeInScaleAnimation = AnimationUtils.loadAnimation(this, R.anim.fade_in_scale)
-        logo.startAnimation(fadeInScaleAnimation)
+        val fadeInScale = AnimationUtils.loadAnimation(this, R.anim.fade_in_scale)
+        fadeInScale.setAnimationListener(object : Animation.AnimationListener {
+            override fun onAnimationStart(animation: Animation?) {
+                // No action needed here
+            }
 
-        // Wait for a while before starting the next activity
-        Handler(Looper.getMainLooper()).postDelayed({
-            // Start the MainActivity after the animation
-            startActivity(Intent(this, MainActivity::class.java))
-            finish() // Finish SplashActivity so it can't be returned to
-        }, 2000) // 2000 ms = 2 seconds
+            override fun onAnimationEnd(animation: Animation?) {
+                // Start MainActivity when the animation ends
+                val intent = Intent(this@SplashActivity, MainActivity::class.java)
+                startActivity(intent)
+                finish()
+            }
+
+            override fun onAnimationRepeat(animation: Animation?) {
+                // No action needed here
+            }
+        })
+        logo.startAnimation(fadeInScale)
     }
 }
