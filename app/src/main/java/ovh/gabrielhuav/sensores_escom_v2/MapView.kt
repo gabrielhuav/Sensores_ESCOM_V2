@@ -1,5 +1,6 @@
-package ovh.gabrielhuav.sensores_escom_v2
 
+package ovh.gabrielhuav.sensores_escom_v2
+import ovh.gabrielhuav.sensores_escom_v2.MapView
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -14,6 +15,17 @@ import android.view.View
 import androidx.core.view.GestureDetectorCompat
 
 class MapView(context: Context, attrs: AttributeSet? = null) : View(context, attrs) {
+
+    interface OnMapTouchListener {
+        fun onMapTouched()
+    }
+
+    private var mapTouchListener: OnMapTouchListener? = null
+
+    fun setOnMapTouchListener(listener: OnMapTouchListener) {
+        mapTouchListener = listener
+    }
+
     private val paintGrid = Paint().apply {
         color = Color.GRAY
         strokeWidth = 2f
@@ -142,8 +154,26 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        var handled = scaleGestureDetector.onTouchEvent(event)
-        handled = gestureDetector.onTouchEvent(event) || handled
+        var handled = scaleGestureDetector.onTouchEvent(event) || gestureDetector.onTouchEvent(event)
+
+        if (event.action == MotionEvent.ACTION_UP) {
+            val touchX = (event.x - offsetX) / scaleFactor
+            val touchY = (event.y - offsetY) / scaleFactor
+
+            val cellWidth = backgroundBitmap?.width?.div(20f) ?: 0f
+            val cellHeight = backgroundBitmap?.height?.div(20f) ?: 0f
+
+            val cellX = (touchX / cellWidth).toInt()
+            val cellY = (touchY / cellHeight).toInt()
+
+            // Lista de celdas donde se activa el QR
+            val qrCells = listOf(Pair(16,4), Pair(11, 9), Pair(17, 17),Pair(2,17),Pair(5,9))
+
+            // Verificar si la celda tocada está en las celdas donde queremos activar el QR
+            if (Pair(cellX, cellY) in qrCells) {
+                mapTouchListener?.onMapTouched()  //Listener del main
+            }
+        }
         return handled || super.onTouchEvent(event)
     }
 
