@@ -1,4 +1,4 @@
-package ovh.gabrielhuav.sensores_escom_v2
+package ovh.gabrielhuav.sensores_escom_v2.data.map
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData

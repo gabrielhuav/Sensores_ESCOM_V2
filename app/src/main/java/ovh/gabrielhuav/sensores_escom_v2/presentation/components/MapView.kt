@@ -1,4 +1,4 @@
-package ovh.gabrielhuav.sensores_escom_v2
+package ovh.gabrielhuav.sensores_escom_v2.presentation.components
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -12,6 +12,7 @@ import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
 import androidx.core.view.GestureDetectorCompat
+import ovh.gabrielhuav.sensores_escom_v2.R
 
 class MapView(context: Context, attrs: AttributeSet? = null) : View(context, attrs) {
     private val paintGrid = Paint().apply {

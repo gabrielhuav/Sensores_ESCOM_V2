@@ -1,4 +1,4 @@
-package ovh.gabrielhuav.sensores_escom_v2
+package ovh.gabrielhuav.sensores_escom_v2.presentation
 
 import android.Manifest
 import android.content.Intent
@@ -9,6 +9,9 @@ import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.BluetoothActivity
+import ovh.gabrielhuav.sensores_escom_v2.R
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.SinglePlayerActivity
 
 class MainActivity : AppCompatActivity() {
 

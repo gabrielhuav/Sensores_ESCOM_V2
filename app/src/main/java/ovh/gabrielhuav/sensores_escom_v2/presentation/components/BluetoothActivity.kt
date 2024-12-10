@@ -1,4 +1,4 @@
-package ovh.gabrielhuav.sensores_escom_v2
+package ovh.gabrielhuav.sensores_escom_v2.presentation.components
 
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
@@ -14,6 +14,10 @@ import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import ovh.gabrielhuav.sensores_escom_v2.R
+import ovh.gabrielhuav.sensores_escom_v2.data.map.BluetoothGameManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.DeviceListActivity
+import ovh.gabrielhuav.sensores_escom_v2.presentation.MainActivity
 
 class BluetoothActivity : AppCompatActivity(), BluetoothGameManager.ConnectionListener {
 

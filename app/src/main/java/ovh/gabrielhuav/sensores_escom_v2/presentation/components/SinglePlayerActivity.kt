@@ -1,4 +1,4 @@
-package ovh.gabrielhuav.sensores_escom_v2
+package ovh.gabrielhuav.sensores_escom_v2.presentation.components
 
 import android.content.Intent
 import android.os.Bundle
@@ -7,6 +7,9 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import ovh.gabrielhuav.sensores_escom_v2.data.map.GameViewModel
+import ovh.gabrielhuav.sensores_escom_v2.R
+import ovh.gabrielhuav.sensores_escom_v2.presentation.MainActivity
 
 class SinglePlayerActivity : AppCompatActivity() {
 

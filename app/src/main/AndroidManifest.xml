@@ -23,7 +23,7 @@
 
         <!-- Actividad principal -->
         <activity
-            android:name=".MainActivity"
+            android:name=".presentation.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -33,19 +33,19 @@
 
         <!-- Declaración de SinglePlayerActivity -->
         <activity
-            android:name=".SinglePlayerActivity"
+            android:name=".presentation.components.SinglePlayerActivity"
             android:exported="true"
             android:theme="@style/Theme.Sensores_ESCOM_V2" />
 
         <!-- Declaración de BluetoothActivity -->
         <activity
-            android:name=".BluetoothActivity"
+            android:name=".presentation.components.BluetoothActivity"
             android:exported="true"
             android:theme="@style/Theme.Sensores_ESCOM_V2" />
 
         <!-- Declaración de DeviceListActivity -->
         <activity
-            android:name=".DeviceListActivity"
+            android:name=".presentation.DeviceListActivity"
             android:exported="true"
             android:theme="@style/Theme.Sensores_ESCOM_V2" />
     </application>
