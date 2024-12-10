@@ -19,14 +19,14 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
         strokeWidth = 2f
         style = Paint.Style.STROKE
     }
-    private val paintLocalPlayer = Paint().apply {
-        color = Color.BLUE
-        style = Paint.Style.FILL
-    }
-    private val paintRemotePlayer = Paint().apply {
-        color = Color.RED
-        style = Paint.Style.FILL
-    }
+
+    //Icono de jugador
+    private val playerLocalIcon: Bitmap = BitmapFactory.decodeResource(resources, R.drawable.player_icon)
+    private val playerRemoteIcon: Bitmap = BitmapFactory.decodeResource(resources, R.drawable.player_icon)
+
+    private val scaledLocalIcon: Bitmap = Bitmap.createScaledBitmap(playerLocalIcon, 200, 200, true)
+    private val scaledRemoteIcon: Bitmap = Bitmap.createScaledBitmap(playerRemoteIcon, 200, 200, true)
+
 
     private var offsetX = 0f
     private var offsetY = 0f
@@ -124,18 +124,28 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
             canvas.drawLine(0f, i * cellHeight, backgroundBitmap.width.toFloat(), i * cellHeight, paintGrid)
         }
 
-        // Dibujar jugador local (azul)
+        //Icono de jugador local
         localPlayerPosition?.let {
             val playerX = it.first * cellWidth + cellWidth / 2
             val playerY = it.second * cellHeight + cellHeight / 2
-            canvas.drawCircle(playerX, playerY, cellWidth / 4f, paintLocalPlayer)
+            canvas.drawBitmap(
+                scaledLocalIcon,
+                playerX - scaledLocalIcon.width / 2, // Centrar el icono horizontalmente
+                playerY - scaledLocalIcon.height / 2, // Centrar el icono verticalmente
+                null
+            )
         }
 
-        // Dibujar jugador remoto (rojo)
+        //Icono de jugador remoto
         remotePlayerPosition?.let {
             val playerX = it.first * cellWidth + cellWidth / 2
             val playerY = it.second * cellHeight + cellHeight / 2
-            canvas.drawCircle(playerX, playerY, cellWidth / 4f, paintRemotePlayer)
+            canvas.drawBitmap(
+                scaledRemoteIcon,
+                playerX - scaledRemoteIcon.width / 2, // Centrar el icono horizontalmente
+                playerY - scaledRemoteIcon.height / 2, // Centrar el icono verticalmente
+                null
+            )
         }
 
         canvas.restore()
