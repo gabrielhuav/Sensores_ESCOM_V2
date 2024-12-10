@@ -37,7 +37,7 @@
             android:id="@+id/mapContainer"
             android:layout_width="match_parent"
             android:layout_height="300dp"
-            android:background="@android:color/darker_gray" />
+            android:background="#f9ebea" />
 
         <!-- Mostrar posición del jugador -->
         <TextView
@@ -49,56 +49,58 @@
             android:layout_marginBottom="24dp" />
 
         <!-- Controles de movimiento -->
+
+        <!-- Controles de zoom -->
+
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center">
+            android:gravity="center"
+            android:orientation="vertical">
 
             <!-- Botón Norte -->
             <Button
                 android:id="@+id/btnNorth"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Norte"
-                android:backgroundTint="#00FF00"
-                android:textColor="@android:color/black"
-                android:layout_marginBottom="8dp" />
+                android:layout_marginBottom="8dp"
+                android:backgroundTint="#cd6155"
+
+                android:text="Norte" />
 
             <!-- Botones Oeste, Interacción y Este -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center">
+                android:gravity="center"
+                android:orientation="horizontal">
 
                 <Button
                     android:id="@+id/btnWest"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Oeste"
-                    android:backgroundTint="#FFFF00"
-                    android:textColor="@android:color/black"
-                    android:layout_marginEnd="8dp" />
+                    android:layout_marginEnd="8dp"
+                    android:backgroundTint="#f1948a"
+                    android:text="Oeste" />
 
                 <Button
                     android:id="@+id/btnInteract"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="A"
-                    android:backgroundTint="#FFA500"
-                    android:textColor="@android:color/black"
+                    android:layout_marginStart="8dp"
                     android:layout_marginEnd="8dp"
-                    android:layout_marginStart="8dp" />
+                    android:backgroundTint="#f2d7d5"
+                    android:text="A"
+                    android:textColor="@android:color/black" />
 
                 <Button
                     android:id="@+id/btnEast"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:backgroundTint="#f1948a"
                     android:text="Este"
-                    android:backgroundTint="#0000FF"
-                    android:textColor="@android:color/white"
-                    android:layout_marginStart="8dp" />
+                    android:textColor="@android:color/white" />
             </LinearLayout>
 
             <!-- Botón Sur -->
@@ -106,13 +108,12 @@
                 android:id="@+id/btnSouth"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="#cd6155"
                 android:text="Sur"
-                android:backgroundTint="#FF00FF"
-                android:textColor="@android:color/white"
-                android:layout_marginTop="8dp" />
+                android:textColor="@android:color/white" />
         </LinearLayout>
 
-        <!-- Controles de zoom -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -125,7 +126,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="+"
-                android:backgroundTint="#008000"
+                android:backgroundTint="#d7bde2"
                 android:textColor="@android:color/white"
                 android:layout_marginEnd="8dp" />
 
@@ -134,7 +135,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="-"
-                android:backgroundTint="#800000"
+                android:backgroundTint="#bb8fce"
                 android:textColor="@android:color/white"
                 android:layout_marginStart="8dp" />
 

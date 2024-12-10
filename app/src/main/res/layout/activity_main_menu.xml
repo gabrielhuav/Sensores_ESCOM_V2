@@ -11,6 +11,7 @@
         android:id="@+id/btnSinglePlayer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:backgroundTint="#cd6155"
         android:text="Un Jugador" />
 
     <!-- Botón para el modo Bluetooth -->
@@ -18,5 +19,7 @@
         android:id="@+id/btnBluetooth"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:backgroundTint="#f2d7d5"
+        android:textColor="@android:color/black"
         android:text="Multijugador Bluetooth" />
 </LinearLayout>

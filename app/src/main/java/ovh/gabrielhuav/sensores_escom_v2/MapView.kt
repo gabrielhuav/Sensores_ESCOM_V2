@@ -19,12 +19,14 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
         strokeWidth = 2f
         style = Paint.Style.STROKE
     }
-     //Icono de jugador
+
+    //Icono de jugador
     private val playerLocalIcon: Bitmap = BitmapFactory.decodeResource(resources, R.drawable.player_icon)
     private val playerRemoteIcon: Bitmap = BitmapFactory.decodeResource(resources, R.drawable.player_icon)
 
-    private val scaledLocalIcon: Bitmap = Bitmap.createScaledBitmap(playerLocalIcon, sdtWidth: 200, dstHeight: 200, filter:true)
-    private val scaledRemoteIcon: Bitmap = Bitmap.createScaledBitmap(playerRemoteIcon, sdtWidth: 200, dstHeight: 200, filter:true)
+    private val scaledLocalIcon: Bitmap = Bitmap.createScaledBitmap(playerLocalIcon, 200, 200, true)
+    private val scaledRemoteIcon: Bitmap = Bitmap.createScaledBitmap(playerRemoteIcon, 200, 200, true)
+
 
     private var offsetX = 0f
     private var offsetY = 0f
