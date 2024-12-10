@@ -7,6 +7,7 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import android.graphics.Color
 
 class SinglePlayerActivity : AppCompatActivity() {
 
@@ -31,6 +32,10 @@ class SinglePlayerActivity : AppCompatActivity() {
         // Crear MapView y agregarlo al contenedor
         mapView = MapView(this)
         mapContainer.addView(mapView)
+
+        // Obtener el color del jugador del Intent
+        val playerColor = intent.getIntExtra("PLAYER_COLOR", Color.RED)
+        mapView.setLocalPlayerColor(playerColor) // Asignar el color al jugador local
 
         // Observar los cambios en la posición del jugador
         gameViewModel.playerPosition.observe(this) { position ->

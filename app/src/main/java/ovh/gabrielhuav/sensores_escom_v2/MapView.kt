@@ -147,6 +147,12 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
         return handled || super.onTouchEvent(event)
     }
 
+    // Cambiar el color del jugador local
+    fun setLocalPlayerColor(color: Int) {
+        paintLocalPlayer.color = color
+        invalidate() // Redibuja la vista para reflejar el cambio
+    }
+
     fun updateLocalPlayerPosition(position: Pair<Int, Int>?) {
         localPlayerPosition = position
         position?.let { centerMapOnPlayer(it) }

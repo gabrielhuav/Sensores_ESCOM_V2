@@ -3,10 +3,12 @@ package ovh.gabrielhuav.sensores_escom_v2
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.widget.Button
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 
@@ -27,6 +29,8 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    private var playerColor: Int = Color.RED // Color inicial del jugador
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main_menu)
@@ -40,6 +44,7 @@ class MainActivity : AppCompatActivity() {
         val singlePlayerButton = findViewById<Button>(R.id.btnSinglePlayer)
         singlePlayerButton.setOnClickListener {
             val intent = Intent(this, SinglePlayerActivity::class.java)
+            intent.putExtra("PLAYER_COLOR", playerColor) // Pasar el color al modo un jugador
             startActivity(intent)
         }
 
@@ -54,6 +59,27 @@ class MainActivity : AppCompatActivity() {
                 requestPermissions()
             }
         }
+
+        // Botón para cambiar color
+        val changeColorButton = findViewById<Button>(R.id.btnChangeColor)
+        changeColorButton.setOnClickListener {
+            showColorPickerDialog()
+        }
+    }
+
+    // Mostrar el diálogo de selección de color
+    private fun showColorPickerDialog() {
+        val colors = arrayOf("Rojo", "Azul", "Verde", "Amarillo", "Morado")
+        val colorValues = arrayOf(Color.RED, Color.BLUE, Color.GREEN, Color.YELLOW, Color.MAGENTA)
+
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Elige un color")
+        builder.setItems(colors) { _, which ->
+            // Cambiar el color del jugador al seleccionar una opción
+            playerColor = colorValues[which]
+            Toast.makeText(this, "Color cambiado a ${colors[which]}", Toast.LENGTH_SHORT).show()
+        }
+        builder.create().show()
     }
 
     private fun hasPermissions(): Boolean {
