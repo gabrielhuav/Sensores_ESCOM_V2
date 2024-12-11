@@ -33,4 +33,10 @@
     <color name="background_overlay_dark">#4D000000</color> <!-- Negro transparente -->
     <color name="orange_transparent">#88FF9800</color> <!-- Naranja con transparencia -->
 
+    <style name="CustomButtonStyle">
+        <item name="android:background">@drawable/button_background</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:layout_marginBottom">16dp</item>
+        <item name="android:padding">12dp</item>
+    </style>
 </resources>
