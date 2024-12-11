@@ -14,9 +14,16 @@
         android:text="Un Jugador" />
 
     <!-- Botón para el modo Bluetooth -->
+
     <Button
         android:id="@+id/btnBluetooth"
         android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Multijugador Bluetooth" />
+
+    <Button
+        android:id="@+id/btnRefactor"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Multijugador Bluetooth" />
 </LinearLayout>
