@@ -8,33 +8,15 @@
     android:background="@android:color/background_light">
 
     <!-- Botón para el modo de un jugador -->
-    <Button
-        android:id="@+id/btnSinglePlayer"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Un Jugador"
-        android:background="@drawable/button_background"
-        android:textColor="@android:color/white"
-        android:layout_marginBottom="16dp"
-        android:padding="12dp"/>
 
     <!-- Botón para el modo Bluetooth -->
-    <Button
-        android:id="@+id/btnBluetooth"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Multijugador Bluetooth"
-        android:background="@drawable/button_background"
-        android:textColor="@android:color/white"
-        android:layout_marginBottom="16dp"
-        android:padding="12dp"/>
 
     <!-- Botón para el modo de un jugador -->
     <Button
         android:id="@+id/btnRefactor"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Multijugador Online"
+        android:text="Comenzar partida"
         android:background="@drawable/button_background"
         android:textColor="@android:color/white"
         android:padding="12dp"/>

@@ -9,10 +9,9 @@ import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.BluetoothActivity
+
 import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.GameplayActivity
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.SinglePlayerActivity
 
 class MainActivity : AppCompatActivity() {
 
@@ -38,25 +37,6 @@ class MainActivity : AppCompatActivity() {
         // Verificar permisos
         if (!hasPermissions()) {
             requestPermissions()
-        }
-
-        // Botón para el modo de un jugador
-        val singlePlayerButton = findViewById<Button>(R.id.btnSinglePlayer)
-        singlePlayerButton.setOnClickListener {
-            val intent = Intent(this, SinglePlayerActivity::class.java)
-            startActivity(intent)
-        }
-
-        // Botón para el modo Bluetooth
-        val bluetoothButton = findViewById<Button>(R.id.btnBluetooth)
-        bluetoothButton.setOnClickListener {
-            if (hasPermissions()) {
-                val intent = Intent(this, BluetoothActivity::class.java)
-                startActivity(intent)
-            } else {
-                Toast.makeText(this, "Se requieren permisos para usar Bluetooth.", Toast.LENGTH_SHORT).show()
-                requestPermissions()
-            }
         }
 
         // Botón para el modo de un jugador
