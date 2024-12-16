@@ -90,6 +90,7 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         setupButtonListeners()
         checkBluetoothSupport()
 
+
         playerName = intent.getStringExtra("PLAYER_NAME") ?: "Jugador"
         Toast.makeText(this, "Bienvenido, $playerName", Toast.LENGTH_SHORT).show()
 
@@ -102,6 +103,9 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
 
         // Dibujar posición inicial del jugador local
         mapView.updateLocalPlayerPosition(localPlayerPosition)
+
+        connectToOnlineServer()
+
     }
 
     private fun setupButtonListeners() {

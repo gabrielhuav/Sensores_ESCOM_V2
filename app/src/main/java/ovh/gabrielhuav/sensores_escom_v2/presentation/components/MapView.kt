@@ -101,59 +101,60 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
     }
 
     override fun onDraw(canvas: Canvas) {
-        super.onDraw(canvas)
+    super.onDraw(canvas)
+    canvas.drawColor(Color.WHITE) // Establecer el fondo blanco
 
-        if (backgroundBitmap == null) {
-            canvas.drawColor(Color.RED)
-            val errorPaint = Paint().apply {
-                color = Color.WHITE
-                textSize = 32f
-            }
-            canvas.drawText(
-                "Error: Mapa no encontrado",
-                50f,
-                50f,
-                errorPaint
-            )
-            return
+    if (backgroundBitmap == null) {
+        canvas.drawColor(Color.RED)
+        val errorPaint = Paint().apply {
+            color = Color.WHITE
+            textSize = 32f
         }
-
-        canvas.save()
-        canvas.scale(scaleFactor, scaleFactor)
-        canvas.translate(offsetX / scaleFactor, offsetY / scaleFactor)
-
-        canvas.drawBitmap(backgroundBitmap, 0f, 0f, null)
-
-        val cellWidth = backgroundBitmap.width / 20f // Tamaño dinámico de celdas
-        val cellHeight = backgroundBitmap.height / 20f
-        for (i in 0..20) {
-            canvas.drawLine(i * cellWidth, 0f, i * cellWidth, backgroundBitmap.height.toFloat(), paintGrid)
-            canvas.drawLine(0f, i * cellHeight, backgroundBitmap.width.toFloat(), i * cellHeight, paintGrid)
-        }
-
-        // Dibujar jugador local (azul)
-        localPlayerPosition?.let {
-            val playerX = it.first * cellWidth + cellWidth / 2
-            val playerY = it.second * cellHeight + cellHeight / 2
-            canvas.drawCircle(playerX, playerY, cellWidth / 4f, paintLocalPlayer)
-        }
-
-        // Dibujar jugador remoto (rojo)
-        remotePlayerPosition?.let {
-            val playerX = it.first * cellWidth + cellWidth / 2
-            val playerY = it.second * cellHeight + cellHeight / 2
-            canvas.drawCircle(playerX, playerY, cellWidth / 4f, paintRemotePlayer)
-        }
-
-        // Dibujar jugadores remotos (rojo)
-        remotePlayerPositions.values.forEach { position ->
-            val playerX = position.first * cellWidth + cellWidth / 2
-            val playerY = position.second * cellHeight + cellHeight / 2
-            canvas.drawCircle(playerX, playerY, cellWidth / 4f, paintRemotePlayer)
-        }
-
-        canvas.restore()
+        canvas.drawText(
+            "Error: Mapa no encontrado",
+            50f,
+            50f,
+            errorPaint
+        )
+        return
     }
+
+    canvas.save()
+    canvas.scale(scaleFactor, scaleFactor)
+    canvas.translate(offsetX / scaleFactor, offsetY / scaleFactor)
+
+    canvas.drawBitmap(backgroundBitmap, 0f, 0f, null)
+
+    val cellWidth = backgroundBitmap.width / 20f // Tamaño dinámico de celdas
+    val cellHeight = backgroundBitmap.height / 20f
+    for (i in 0..20) {
+        canvas.drawLine(i * cellWidth, 0f, i * cellWidth, backgroundBitmap.height.toFloat(), paintGrid)
+        canvas.drawLine(0f, i * cellHeight, backgroundBitmap.width.toFloat(), i * cellHeight, paintGrid)
+    }
+
+    // Dibujar jugador local (azul)
+    localPlayerPosition?.let {
+        val playerX = it.first * cellWidth + cellWidth / 2
+        val playerY = it.second * cellHeight + cellHeight / 2
+        canvas.drawCircle(playerX, playerY, cellWidth / 4f, paintLocalPlayer)
+    }
+
+    // Dibujar jugador remoto (rojo)
+    remotePlayerPosition?.let {
+        val playerX = it.first * cellWidth + cellWidth / 2
+        val playerY = it.second * cellHeight + cellHeight / 2
+        canvas.drawCircle(playerX, playerY, cellWidth / 4f, paintRemotePlayer)
+    }
+
+    // Dibujar jugadores remotos (rojo)
+    remotePlayerPositions.values.forEach { position ->
+        val playerX = position.first * cellWidth + cellWidth / 2
+        val playerY = position.second * cellHeight + cellHeight / 2
+        canvas.drawCircle(playerX, playerY, cellWidth / 4f, paintRemotePlayer)
+    }
+
+    canvas.restore()
+}
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         var handled = scaleGestureDetector.onTouchEvent(event)
