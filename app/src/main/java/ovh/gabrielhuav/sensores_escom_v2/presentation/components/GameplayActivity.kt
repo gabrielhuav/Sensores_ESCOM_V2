@@ -30,7 +30,7 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
     private lateinit var btnWest: Button
     private lateinit var tvBluetoothStatus: TextView
     private lateinit var btnOnlineServer: Button
-
+    private lateinit var playerName: String
     private lateinit var mapContainer: FrameLayout
     private lateinit var mapView: MapView
 
@@ -85,8 +85,13 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         mapView = MapView(this)
         mapContainer.addView(mapView)
 
+
+
         setupButtonListeners()
         checkBluetoothSupport()
+
+        playerName = intent.getStringExtra("PLAYER_NAME") ?: "Jugador"
+        Toast.makeText(this, "Bienvenido, $playerName", Toast.LENGTH_SHORT).show()
 
         // Configurar BluetoothGameManager
         BluetoothGameManager.appContext = applicationContext
@@ -127,7 +132,7 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         mapView.updateLocalPlayerPosition(localPlayerPosition)
 
         // Enviar posición al servidor
-        onlineServerManager.sendUpdateMessage("localPlayerId", newX, newY) // Reemplaza "localPlayerId" con el ID de tu jugador local
+        onlineServerManager.sendUpdateMessage(playerName, newX, newY) // Reemplaza "localPlayerId" con el ID de tu jugador local
 
         // Enviar posición al jugador remoto
         if (isConnected) {
@@ -196,7 +201,7 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         Toast.makeText(this, "Conectando al servidor online...", Toast.LENGTH_SHORT).show()
 
         // Enviar mensaje de unión al servidor
-        onlineServerManager.sendJoinMessage("localPlayerId") // Reemplaza "localPlayerId" con el ID de tu jugador local
+        onlineServerManager.sendJoinMessage(playerName) // Reemplaza "localPlayerId" con el ID de tu jugador local
     }
 
 

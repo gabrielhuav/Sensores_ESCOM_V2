@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.widget.Button
+import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -41,10 +42,25 @@ class MainActivity : AppCompatActivity() {
 
         // Botón para el modo de un jugador
         val refactorButton = findViewById<Button>(R.id.btnRefactor)
+        val etPlayerName = findViewById<EditText>(R.id.etPlayerName)
+
         refactorButton.setOnClickListener {
             val intent = Intent(this, GameplayActivity::class.java)
             startActivity(intent)
         }
+
+        refactorButton.setOnClickListener {
+            val playerName = etPlayerName.text.toString()
+            if (playerName.isNotEmpty()) {
+                val intent = Intent(this, GameplayActivity::class.java).apply {
+                    putExtra("PLAYER_NAME", playerName)
+                }
+                startActivity(intent)
+            } else {
+                Toast.makeText(this, "Por favor, ingrese su nombre.", Toast.LENGTH_SHORT).show()
+            }
+        }
+
     }
 
     private fun hasPermissions(): Boolean {
