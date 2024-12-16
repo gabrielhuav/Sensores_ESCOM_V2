@@ -1,19 +1,22 @@
 package ovh.gabrielhuav.sensores_escom_v2
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
+import android.graphics.*
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.util.AttributeSet
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
 import androidx.core.view.GestureDetectorCompat
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
 
-class MapView(context: Context, attrs: AttributeSet? = null) : View(context, attrs) {
+class MapView(context: Context, attrs: AttributeSet? = null) : View(context, attrs), SensorEventListener {
     private val paintGrid = Paint().apply {
         color = Color.GRAY
         strokeWidth = 2f
@@ -25,6 +28,21 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
     }
     private val paintRemotePlayer = Paint().apply {
         color = Color.RED
+        style = Paint.Style.FILL
+    }
+    private val paintCompassCircle = Paint().apply {
+        color = Color.BLACK
+        style = Paint.Style.STROKE
+        strokeWidth = 8f
+    }
+    private val paintCompassArrow = Paint().apply {
+        color = Color.RED
+        style = Paint.Style.FILL
+        strokeWidth = 8f
+    }
+    private val paintCompassText = Paint().apply {
+        color = Color.RED
+        textSize = 40f
         style = Paint.Style.FILL
     }
 
@@ -43,8 +61,15 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
     private lateinit var gestureDetector: GestureDetectorCompat
     private lateinit var scaleGestureDetector: ScaleGestureDetector
 
+    private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+    private var orientationSensor: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
+    private var currentOrientation = 0f // Ángulo actual en grados
+
+    private var playerDirection = 0f // Dirección relativa del jugador en el mapa
+
     init {
         initializeDetectors()
+        orientationSensor?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
     }
 
     private fun initializeDetectors() {
@@ -81,6 +106,27 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
                 return true
             }
         })
+    }
+
+    private fun updatePlayerDirection(deltaX: Float, deltaY: Float) {
+        // Evitar calcular la dirección si no hay movimiento
+        if (deltaX == 0f && deltaY == 0f) return
+
+        // Mapear los movimientos hacia las direcciones cardinales
+        when {
+            deltaY < 0 -> { // Movimiento hacia arriba (Este)
+                playerDirection = 0f
+            }
+            deltaX > 0 -> { // Movimiento hacia la derecha (Sur)
+                playerDirection = 90f
+            }
+            deltaY > 0 -> { // Movimiento hacia abajo (Oeste)
+                playerDirection = 180f
+            }
+            deltaX < 0 -> { // Movimiento hacia la izquierda (Norte)
+                playerDirection = 270f
+            }
+        }
     }
 
     private fun constrainOffset() {
@@ -139,6 +185,27 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
         }
 
         canvas.restore()
+
+        drawCompass(canvas)
+    }
+
+    private fun drawCompass(canvas: Canvas) {
+        val centerX = width - 150f
+        val centerY = 150f
+        val radius = 100f
+
+        // Dibujar círculo de la brújula
+        canvas.drawCircle(centerX, centerY, radius, paintCompassCircle)
+
+        // Dibujar flecha de orientación
+        val arrowLength = radius - 20
+        val endX = centerX + arrowLength * cos(Math.toRadians(playerDirection.toDouble())).toFloat()
+        val endY = centerY + arrowLength * sin(Math.toRadians(playerDirection.toDouble())).toFloat()
+
+        canvas.drawLine(centerX, centerY, endX, endY, paintCompassArrow)
+
+        // Dibujar "N" en la brújula
+        canvas.drawText("N", centerX - 10, centerY - radius - 10, paintCompassText)
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -148,7 +215,16 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
     }
 
     fun updateLocalPlayerPosition(position: Pair<Int, Int>?) {
+        val previousPosition = localPlayerPosition
         localPlayerPosition = position
+
+        // Si hay una posición previa, calcular la dirección del jugador
+        previousPosition?.let {
+            val deltaX = (position?.first ?: 0) - it.first
+            val deltaY = (position?.second ?: 0) - it.second
+            updatePlayerDirection(deltaX.toFloat(), deltaY.toFloat())
+        }
+
         position?.let { centerMapOnPlayer(it) }
         invalidate()
     }
@@ -178,4 +254,23 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
 
         constrainOffset()
     }
+
+    override fun onSensorChanged(event: SensorEvent?) {
+        if (event?.sensor?.type == Sensor.TYPE_ROTATION_VECTOR) {
+            val rotationMatrix = FloatArray(9)
+            SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
+            val orientationAngles = FloatArray(3)
+            SensorManager.getOrientation(rotationMatrix, orientationAngles)
+            currentOrientation = Math.toDegrees(orientationAngles[0].toDouble()).toFloat()
+            invalidate()
+        }
+    }
+
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        sensorManager.unregisterListener(this)
+    }
 }
+
