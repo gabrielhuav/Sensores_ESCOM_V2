@@ -12,9 +12,11 @@ import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
 import androidx.core.view.GestureDetectorCompat
+import org.json.JSONObject
 import ovh.gabrielhuav.sensores_escom_v2.R
+import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
 
-class MapView(context: Context, attrs: AttributeSet? = null) : View(context, attrs) {
+class MapView(context: Context, attrs: AttributeSet? = null) : View(context, attrs), OnlineServerManager.WebSocketListener {
     private val paintGrid = Paint().apply {
         color = Color.GRAY
         strokeWidth = 2f
@@ -34,6 +36,7 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
     var scaleFactor: Float = 1.0f
     private var localPlayerPosition: Pair<Int, Int>? = null
     private var remotePlayerPosition: Pair<Int, Int>? = null
+    private val remotePlayerPositions = mutableMapOf<String, Pair<Int, Int>>()
 
     private val backgroundBitmap: Bitmap? = try {
         BitmapFactory.decodeResource(resources, R.drawable.escom_mapa)
@@ -44,8 +47,11 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
     private lateinit var gestureDetector: GestureDetectorCompat
     private lateinit var scaleGestureDetector: ScaleGestureDetector
 
+    private val onlineServerManager = OnlineServerManager(this)
+
     init {
         initializeDetectors()
+        onlineServerManager.connectToServer("ws://example.com/socket") // Replace with your server URL
     }
 
     private fun initializeDetectors() {
@@ -139,6 +145,13 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
             canvas.drawCircle(playerX, playerY, cellWidth / 4f, paintRemotePlayer)
         }
 
+        // Dibujar jugadores remotos (rojo)
+        remotePlayerPositions.values.forEach { position ->
+            val playerX = position.first * cellWidth + cellWidth / 2
+            val playerY = position.second * cellHeight + cellHeight / 2
+            canvas.drawCircle(playerX, playerY, cellWidth / 4f, paintRemotePlayer)
+        }
+
         canvas.restore()
     }
 
@@ -156,6 +169,17 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
 
     fun updateRemotePlayerPosition(position: Pair<Int, Int>?) {
         remotePlayerPosition = position
+        invalidate()
+    }
+
+    fun updateRemotePlayerPositions(positions: Map<String, Pair<Int, Int>>) {
+        remotePlayerPositions.clear()
+        remotePlayerPositions.putAll(positions)
+        invalidate()
+    }
+
+    fun removeRemotePlayer(playerId: String) {
+        remotePlayerPositions.remove(playerId)
         invalidate()
     }
 
@@ -178,5 +202,20 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
         offsetY = height / 2 - playerY * scaleFactor
 
         constrainOffset()
+    }
+
+    override fun onMessageReceived(message: String) {
+        val jsonObject = JSONObject(message)
+        if (jsonObject.getString("type") == "positions") {
+            val players = jsonObject.getJSONObject("players")
+            val positions = mutableMapOf<String, Pair<Int, Int>>()
+            players.keys().forEach { playerId ->
+                val position = players.getJSONObject(playerId)
+                val x = position.getInt("x")
+                val y = position.getInt("y")
+                positions[playerId] = Pair(x, y)
+            }
+            updateRemotePlayerPositions(positions)
+        }
     }
 }

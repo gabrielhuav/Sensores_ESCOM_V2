@@ -52,7 +52,7 @@
             android:exported="true"
             android:theme="@style/Theme.Sensores_ESCOM_V2" /> <!-- Declaración de DeviceListActivity -->
         <activity
-            android:name=".presentation.DeviceListActivity"
+            android:name=".presentation.components.DeviceListActivity"
             android:exported="true"
             android:theme="@style/Theme.Sensores_ESCOM_V2" />
     </application>

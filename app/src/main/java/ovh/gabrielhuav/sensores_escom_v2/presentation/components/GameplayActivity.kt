@@ -14,11 +14,12 @@ import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import org.json.JSONObject
 import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
-import ovh.gabrielhuav.sensores_escom_v2.presentation.DeviceListActivity
+import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
 
-class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionListener {
+class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionListener, OnlineServerManager.WebSocketListener {
 
     private val bluetoothAdapter: BluetoothAdapter? by lazy { BluetoothAdapter.getDefaultAdapter() }
     private lateinit var btnStartServer: Button
@@ -28,6 +29,7 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
     private lateinit var btnEast: Button
     private lateinit var btnWest: Button
     private lateinit var tvBluetoothStatus: TextView
+    private lateinit var btnOnlineServer: Button
 
     private lateinit var mapContainer: FrameLayout
     private lateinit var mapView: MapView
@@ -37,6 +39,8 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
 
     private var localPlayerPosition = Pair(0, 0)
     private var remotePlayerPosition: Pair<Int, Int>? = null
+
+    private lateinit var onlineServerManager: OnlineServerManager
 
     // Launcher para habilitar Bluetooth
     private val enableBluetoothLauncher =
@@ -74,6 +78,7 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         btnEast = findViewById(R.id.button_east)
         btnWest = findViewById(R.id.button_west)
         tvBluetoothStatus = findViewById(R.id.tvBluetoothStatus)
+        btnOnlineServer = findViewById(R.id.button_serverOnline)
 
         mapContainer = findViewById(R.id.map_container)
 
@@ -87,6 +92,9 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         BluetoothGameManager.appContext = applicationContext
         BluetoothGameManager.getInstance().setConnectionListener(this)
 
+        // Configurar OnlineServerManager
+        onlineServerManager = OnlineServerManager(this)
+
         // Dibujar posición inicial del jugador local
         mapView.updateLocalPlayerPosition(localPlayerPosition)
     }
@@ -97,6 +105,7 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
             val intent = Intent(this, DeviceListActivity::class.java)
             selectDeviceLauncher.launch(intent)
         }
+        btnOnlineServer.setOnClickListener { connectToOnlineServer() }
         setupMovementButtons()
     }
 
@@ -114,6 +123,11 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         localPlayerPosition = Pair(newX, newY)
         mapView.updateLocalPlayerPosition(localPlayerPosition)
 
+        localPlayerPosition = Pair(newX, newY)
+        mapView.updateLocalPlayerPosition(localPlayerPosition)
+
+        // Enviar posición al servidor
+        onlineServerManager.sendUpdateMessage("localPlayerId", newX, newY) // Reemplaza "localPlayerId" con el ID de tu jugador local
 
         // Enviar posición al jugador remoto
         if (isConnected) {
@@ -175,6 +189,38 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         tvBluetoothStatus.text = status
         Log.d(TAG, status)
     }
+
+    private fun connectToOnlineServer() {
+        val serverUrl = "ws://3.16.218.70:8080"
+        onlineServerManager.connectToServer(serverUrl)
+        Toast.makeText(this, "Conectando al servidor online...", Toast.LENGTH_SHORT).show()
+
+        // Enviar mensaje de unión al servidor
+        onlineServerManager.sendJoinMessage("localPlayerId") // Reemplaza "localPlayerId" con el ID de tu jugador local
+    }
+
+
+override fun onMessageReceived(message: String) {
+    val jsonObject = JSONObject(message)
+    when (jsonObject.getString("type")) {
+        "positions" -> {
+            val players = jsonObject.getJSONObject("players")
+            val positions = mutableMapOf<String, Pair<Int, Int>>()
+            players.keys().forEach { playerId ->
+                val position = players.getJSONObject(playerId)
+                val x = position.getInt("x")
+                val y = position.getInt("y")
+                positions[playerId] = Pair(x, y)
+            }
+            mapView.updateRemotePlayerPositions(positions)
+        }
+        "disconnect" -> {
+            // Manejar la desconexión del jugador
+            val playerId = jsonObject.getString("id")
+            mapView.removeRemotePlayer(playerId)
+        }
+    }
+}
 
     override fun onDeviceConnected(device: BluetoothDevice) {
         isConnected = true
