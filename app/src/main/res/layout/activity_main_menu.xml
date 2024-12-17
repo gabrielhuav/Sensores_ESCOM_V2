@@ -3,20 +3,17 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:gravity="center"
     android:padding="16dp">
 
-    <!-- Botón para el modo de un jugador -->
-    <Button
-        android:id="@+id/btnSinglePlayer"
-        android:layout_width="wrap_content"
+    <EditText
+        android:id="@+id/etPlayerName"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Un Jugador" />
+        android:hint="Ingrese su nombre" />
 
-    <!-- Botón para el modo Bluetooth -->
     <Button
-        android:id="@+id/btnBluetooth"
-        android:layout_width="wrap_content"
+        android:id="@+id/btnRefactor"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Multijugador Bluetooth" />
+        android:text="Iniciar Juego" />
 </LinearLayout>
