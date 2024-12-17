@@ -40,7 +40,7 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
     private var isConnected = false
     private val handler = Handler(Looper.getMainLooper())
 
-    private var localPlayerPosition = Pair(0, 0)
+    private var localPlayerPosition = Pair(1, 1)
     private var remotePlayerPosition: Pair<Int, Int>? = null
 
     private lateinit var onlineServerManager: OnlineServerManager
@@ -145,8 +145,12 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         MotionEvent.ACTION_DOWN -> {
             handler.post(object : Runnable {
                 override fun run() {
-                    movePlayer(deltaX, deltaY)
-                    handler.postDelayed(this, 100) // Adjust this value to change the speed
+                    val newX = (localPlayerPosition.first + deltaX).coerceIn(0, 39)
+                    val newY = (localPlayerPosition.second + deltaY).coerceIn(0, 39)
+                    if (mapView.mapMatrix[newY][newX] != 1 && mapView.mapMatrix[newY][newX] != 3) {
+                        movePlayer(deltaX, deltaY)
+                    }
+                    handler.postDelayed(this, 100)
                 }
             })
         }
@@ -157,8 +161,8 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
 }
 
     private fun movePlayer(deltaX: Int, deltaY: Int) {
-        val newX = (localPlayerPosition.first + deltaX).coerceIn(0, 19) // Limitar X entre 0 y 19
-        val newY = (localPlayerPosition.second + deltaY).coerceIn(0, 19) // Limitar Y entre 0 y 19
+        val newX = (localPlayerPosition.first + deltaX).coerceIn(0, 39) // Limitar X entre 0 y 19
+        val newY = (localPlayerPosition.second + deltaY).coerceIn(0, 39) // Limitar Y entre 0 y 19
 
         localPlayerPosition = Pair(newX, newY)
         mapView.updateLocalPlayerPosition(localPlayerPosition)

@@ -17,6 +17,20 @@ import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
 
 class MapView(context: Context, attrs: AttributeSet? = null) : View(context, attrs), OnlineServerManager.WebSocketListener {
+
+    public val mapMatrix = Array(40) { Array(40) { 2 } }.apply {
+    for (i in 0 until 40) {
+        for (j in 0 until 40) {
+            this[i][j] = when {
+                i == 0 || i == 39 || j == 0 || j == 39 -> 1 // Bordes
+                i % 5 == 0 && j % 5 == 0 -> 0 // Lugares interactivos
+                i % 3 == 0 && j % 3 == 0 -> 3 // Zonas inaccesibles
+                else -> 2 // Camino libre
+            }
+        }
+    }
+}
+
     private val paintGrid = Paint().apply {
         color = Color.GRAY
         strokeWidth = 2f
@@ -100,9 +114,15 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
         offsetY = offsetY.coerceIn(maxOffsetY, 0f)
     }
 
-    override fun onDraw(canvas: Canvas) {
+    // Paints for different cell types
+    private val paintInteractive = Paint().apply { color = Color.YELLOW }
+    private val paintWall = Paint().apply { color = Color.BLACK }
+    private val paintPath = Paint().apply { color = Color.WHITE }
+    private val paintInaccessible = Paint().apply { color = Color.DKGRAY }
+
+   override fun onDraw(canvas: Canvas) {
     super.onDraw(canvas)
-    canvas.drawColor(Color.WHITE) // Establecer el fondo blanco
+    canvas.drawColor(Color.WHITE)
 
     if (backgroundBitmap == null) {
         canvas.drawColor(Color.RED)
@@ -110,12 +130,7 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
             color = Color.WHITE
             textSize = 32f
         }
-        canvas.drawText(
-            "Error: Mapa no encontrado",
-            50f,
-            50f,
-            errorPaint
-        )
+        canvas.drawText("Error: Mapa no encontrado", 50f, 50f, errorPaint)
         return
     }
 
@@ -123,30 +138,42 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
     canvas.scale(scaleFactor, scaleFactor)
     canvas.translate(offsetX / scaleFactor, offsetY / scaleFactor)
 
-    canvas.drawBitmap(backgroundBitmap, 0f, 0f, null)
+    val cellWidth = backgroundBitmap.width / 40f
+    val cellHeight = backgroundBitmap.height / 40f
 
-    val cellWidth = backgroundBitmap.width / 20f // Tamaño dinámico de celdas
-    val cellHeight = backgroundBitmap.height / 20f
-    for (i in 0..20) {
+    for (i in mapMatrix.indices) {
+        for (j in mapMatrix[i].indices) {
+            val paint = when (mapMatrix[i][j]) {
+                0 -> paintInteractive
+                1 -> paintWall
+                2 -> paintPath
+                3 -> paintInaccessible
+                else -> paintPath
+            }
+            canvas.drawRect(
+                j * cellWidth,
+                i * cellHeight,
+                (j + 1) * cellWidth,
+                (i + 1) * cellHeight,
+                paint
+            )
+        }
+    }
+
+    // Draw grid lines
+    for (i in 0..40) {
         canvas.drawLine(i * cellWidth, 0f, i * cellWidth, backgroundBitmap.height.toFloat(), paintGrid)
         canvas.drawLine(0f, i * cellHeight, backgroundBitmap.width.toFloat(), i * cellHeight, paintGrid)
     }
 
-    // Dibujar jugador local (azul)
+    // Draw local player
     localPlayerPosition?.let {
         val playerX = it.first * cellWidth + cellWidth / 2
         val playerY = it.second * cellHeight + cellHeight / 2
         canvas.drawCircle(playerX, playerY, cellWidth / 4f, paintLocalPlayer)
     }
 
-    // Dibujar jugador remoto (rojo)
-    remotePlayerPosition?.let {
-        val playerX = it.first * cellWidth + cellWidth / 2
-        val playerY = it.second * cellHeight + cellHeight / 2
-        canvas.drawCircle(playerX, playerY, cellWidth / 4f, paintRemotePlayer)
-    }
-
-    // Dibujar jugadores remotos (rojo)
+    // Draw remote players
     remotePlayerPositions.values.forEach { position ->
         val playerX = position.first * cellWidth + cellWidth / 2
         val playerY = position.second * cellHeight + cellHeight / 2
@@ -155,6 +182,7 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
 
     canvas.restore()
 }
+
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         var handled = scaleGestureDetector.onTouchEvent(event)
