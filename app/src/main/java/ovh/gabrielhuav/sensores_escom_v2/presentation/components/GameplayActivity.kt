@@ -1,6 +1,7 @@
 package ovh.gabrielhuav.sensores_escom_v2.presentation.components
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
@@ -10,6 +11,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.view.MotionEvent
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -19,6 +21,7 @@ import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
 
+@SuppressLint("ClickableViewAccessibility")
 class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionListener, OnlineServerManager.WebSocketListener {
 
     private val bluetoothAdapter: BluetoothAdapter? by lazy { BluetoothAdapter.getDefaultAdapter() }
@@ -119,11 +122,39 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
     }
 
     private fun setupMovementButtons() {
-        btnNorth.setOnClickListener { movePlayer(0, -1) }
-        btnSouth.setOnClickListener { movePlayer(0, 1) }
-        btnEast.setOnClickListener { movePlayer(1, 0) }
-        btnWest.setOnClickListener { movePlayer(-1, 0) }
+        btnNorth.setOnTouchListener { _, event ->
+            handleMovement(event, 0, -1)
+            true
+        }
+        btnSouth.setOnTouchListener { _, event ->
+            handleMovement(event, 0, 1)
+            true
+        }
+        btnEast.setOnTouchListener { _, event ->
+            handleMovement(event, 1, 0)
+            true
+        }
+        btnWest.setOnTouchListener { _, event ->
+            handleMovement(event, -1, 0)
+            true
+        }
     }
+
+   private fun handleMovement(event: MotionEvent, deltaX: Int, deltaY: Int) {
+    when (event.action) {
+        MotionEvent.ACTION_DOWN -> {
+            handler.post(object : Runnable {
+                override fun run() {
+                    movePlayer(deltaX, deltaY)
+                    handler.postDelayed(this, 100) // Adjust this value to change the speed
+                }
+            })
+        }
+        MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+            handler.removeCallbacksAndMessages(null)
+        }
+    }
+}
 
     private fun movePlayer(deltaX: Int, deltaY: Int) {
         val newX = (localPlayerPosition.first + deltaX).coerceIn(0, 19) // Limitar X entre 0 y 19
@@ -172,6 +203,7 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         }
     }
 
+    @SuppressLint("InlinedApi")
     private fun hasRequiredPermissions(): Boolean {
         return ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
     }
