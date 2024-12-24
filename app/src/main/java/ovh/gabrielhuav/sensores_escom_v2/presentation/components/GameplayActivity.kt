@@ -40,7 +40,7 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
     private var isConnected = false
     private val handler = Handler(Looper.getMainLooper())
 
-    private var localPlayerPosition = Pair(15, 10)
+    private var localPlayerPosition = Pair(1, 1)
     private var remotePlayerPosition: Pair<Int, Int>? = null
 
     private lateinit var onlineServerManager: OnlineServerManager
@@ -98,6 +98,7 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_gameplay)
 
+        // Inicializar componentes
         btnStartServer = findViewById(R.id.button_small_1)
         btnConnectDevice = findViewById(R.id.button_small_2)
         btnNorth = findViewById(R.id.button_north)
@@ -107,36 +108,74 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         tvBluetoothStatus = findViewById(R.id.tvBluetoothStatus)
         btnOnlineServer = findViewById(R.id.button_serverOnline)
 
+        // Botón de interacción
+        val buttonA = findViewById<Button>(R.id.button_a)
+
         mapContainer = findViewById(R.id.map_container)
 
         mapView = MapView(this)
         mapContainer.addView(mapView)
 
         setupButtonListeners()
+        setupInteractionButton(buttonA) // Configurar botón de interacción
         checkBluetoothSupport()
 
-        // Recuperar las posiciones pasadas desde BuildingActivity
-        localPlayerPosition = intent.getSerializableExtra("PLAYER_POSITION") as? Pair<Int, Int> ?: Pair(1, 1)
-
+        // Verificar si el Intent tiene un nombre de jugador
         playerName = intent.getStringExtra("PLAYER_NAME") ?: run {
             Toast.makeText(this, "Nombre de jugador no encontrado", Toast.LENGTH_SHORT).show()
             finish()
             return
         }
 
+        // Verificar si el Intent tiene una posición de retorno
+        val returnedPosition = intent.getSerializableExtra("PLAYER_POSITION") as? Pair<Int, Int>
+        localPlayerPosition = returnedPosition ?: Pair(1, 1) // Usar la posición inicial (1, 1) si no hay retorno
+
         println("GameplayActivity1 - playerName: $playerName")
+        println("GameplayActivity1 - localPlayerPosition: $localPlayerPosition")
 
-        Toast.makeText(this, "Bienvenido de nuevo, $playerName", Toast.LENGTH_SHORT).show()
+        // Dibujar posición inicial del jugador local
+        mapView.updateLocalPlayerPosition(localPlayerPosition)
 
+        // Muestra un mensaje de bienvenida
+        if (returnedPosition == null) {
+            Toast.makeText(this, "Bienvenido de nuevo, $playerName", Toast.LENGTH_SHORT).show()
+        }
+
+        // Configurar BluetoothGameManager
         BluetoothGameManager.appContext = applicationContext
         BluetoothGameManager.getInstance().setConnectionListener(this)
 
+        // Configurar OnlineServerManager
         onlineServerManager = OnlineServerManager(this)
-
-        mapView.updateLocalPlayerPosition(localPlayerPosition)
 
         connectToOnlineServer()
     }
+
+
+    private fun setupInteractionButton(buttonA: Button) {
+        buttonA.setOnClickListener {
+            val (x, y) = localPlayerPosition
+            if (x == 15 && y == 10) {
+                println("Button A pressed - Player is at (15, 10), entering building")
+
+                // Notificar al servidor y cambiar de actividad
+                onlineServerManager.sendUpdateMessage(playerName, x, y, "building")
+
+                val intent = Intent(this, BuildingActivity::class.java).apply {
+                    putExtra("PLAYER_NAME", playerName) // Pasar el nombre del jugador
+                    putExtra("PLAYER_POSITION", Pair(0, 0)) // Establecer posición inicial en el edificio
+                }
+
+                startActivity(intent)
+                finish()
+            } else {
+                println("Button A pressed - Player not at (15, 10), interaction not allowed")
+                Toast.makeText(this, "No puedes interactuar aquí", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
 
     private fun setupButtonListeners() {
         btnStartServer.setOnClickListener { startServer() }
@@ -195,15 +234,16 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
             localPlayerPosition = Pair(newX, newY)
             mapView.updateLocalPlayerPosition(localPlayerPosition)
 
+            // Notificar al servidor
             onlineServerManager.sendUpdateMessage(playerName, newX, newY, "main")
 
-            handleInteractiveTile(newX, newY)
-
+            // Notificar a dispositivos Bluetooth
             if (isConnected) {
                 BluetoothGameManager.getInstance().sendPlayerPosition(newX, newY)
             }
         }
     }
+
 
     private fun checkBluetoothSupport() {
         if (bluetoothAdapter == null) {
