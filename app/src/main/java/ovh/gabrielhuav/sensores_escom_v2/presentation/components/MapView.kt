@@ -111,21 +111,28 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
 
-        try {
-            val originalBitmap = BitmapFactory.decodeResource(resources, R.drawable.escom_mapa)
-            if (originalBitmap != null) {
-                // Limitar el tamaño del Bitmap al tamaño de la vista
-                val scaledWidth = minOf(originalBitmap.width, w)
-                val scaledHeight = minOf(originalBitmap.height, h)
-
-                backgroundBitmap = Bitmap.createScaledBitmap(originalBitmap, scaledWidth, scaledHeight, true)
-            } else {
-                Log.e("MapView", "Error: Mapa no encontrado en los recursos.")
-            }
-        } catch (e: Exception) {
-            Log.e("MapView", "Error al cargar el mapa: ${e.message}")
+        if (backgroundBitmap == null) {
+            Log.w("MapView", "El mapa no está configurado. Asegúrese de llamar a setMapResource primero.")
+            return
         }
-        invalidate()
+
+        try {
+            // Escalar el mapa al tamaño de la vista
+            val scaledWidth = minOf(backgroundBitmap!!.width, w)
+            val scaledHeight = minOf(backgroundBitmap!!.height, h)
+
+            backgroundBitmap = Bitmap.createScaledBitmap(backgroundBitmap!!, scaledWidth, scaledHeight, true)
+        } catch (e: Exception) {
+            Log.e("MapView", "Error al ajustar el mapa: ${e.message}")
+        }
+
+        invalidate() // Redibujar la vista
+    }
+
+    fun initializeMap(matrix: Array<Array<Int>>, resourceId: Int, initialPosition: Pair<Int, Int>) {
+        mapMatrix = matrix
+        setMapResource(resourceId)
+        updateLocalPlayerPosition(initialPosition)
     }
 
 
@@ -136,6 +143,7 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
 
     init {
         initializeDetectors()
+        setMapResource(R.drawable.escom_mapa)
         onlineServerManager.connectToServer("ws://192.168.1.31:3000/socket")
     }
 
@@ -288,6 +296,22 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
             }
         }
         invalidate()
+    }
+
+    fun setMapResource(resourceId: Int) {
+        try {
+            val originalBitmap = BitmapFactory.decodeResource(resources, resourceId)
+            if (originalBitmap != null) {
+                backgroundBitmap = originalBitmap
+                scaleBitmapToMatrix()
+            } else {
+                Log.e("MapView", "Error: Mapa no encontrado en el recurso $resourceId.")
+            }
+        } catch (e: Exception) {
+            Log.e("MapView", "Error al cargar el mapa: ${e.message}")
+        }
+
+        invalidate() // Redibujar el mapa
     }
 
     fun removeRemotePlayer(playerId: String) {

@@ -82,12 +82,12 @@ wss.on("connection", (ws) => {
     try {
       const data = JSON.parse(message);
       if (data.type === "join") {
-        players[data.id] = { x: 0, y: 0 };
+        players[data.id] = { x: 0, y: 0, map: "main" }; // Nuevo campo 'map'
         console.log(`Player joined: ${data.id}`);
       } else if (data.type === "update") {
-        if (players[data.id]) {
-          players[data.id] = { x: data.x, y: data.y };
-        }
+          if (players[data.id]) {
+              players[data.id] = { x: data.x, y: data.y, map: data.map || "main" }; // Actualiza posición y mapa
+          }
       } else if (data.type === "leave") {
         if (players[data.id]) {
           console.log(`Player left: ${data.id}`);

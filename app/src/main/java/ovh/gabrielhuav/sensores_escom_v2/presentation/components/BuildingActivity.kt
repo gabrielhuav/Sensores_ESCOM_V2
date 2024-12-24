@@ -2,26 +2,51 @@ package ovh.gabrielhuav.sensores_escom_v2.presentation.components
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.widget.Button
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 import ovh.gabrielhuav.sensores_escom_v2.R
+import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
 
-class BuildingActivity : AppCompatActivity() {
+class BuildingActivity : AppCompatActivity(), OnlineServerManager.WebSocketListener {
+
+    private lateinit var onlineServerManager: OnlineServerManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_building)
 
-        // Agregar MapView dinámicamente al contenedor
+        // Inicializa el administrador del servidor
+        onlineServerManager = OnlineServerManager(this)
+        onlineServerManager.connectToServer("ws://192.168.1.31:3000") // Asegúrate de conectar primero
+
+        val initialPosition = intent.getSerializableExtra("PLAYER_POSITION") as? Pair<Int, Int> ?: Pair(0, 0)
+        val playerName = intent.getStringExtra("PLAYER_NAME") ?: "Jugador"
+
+        // Configura el MapView
         val mapContainer = findViewById<FrameLayout>(R.id.map_container_building)
         val mapView = MapView(this).apply {
-            setBuildingMatrix() // Configurar el mapa del edificio
+            setBuildingMatrix()
+            setMapResource(R.drawable.escom_edificio3)
+            updateLocalPlayerPosition(initialPosition)
         }
         mapContainer.addView(mapView)
 
+        // Esperar conexión antes de enviar mensajes
+        Handler(Looper.getMainLooper()).postDelayed({
+            onlineServerManager.sendUpdateMessage(playerName, initialPosition.first, initialPosition.second, "building")
+        }, 1000)
+
         setupMovementButtons(mapView)
-        setupBackButton()
+        setupBackButton(mapView, playerName)
+    }
+
+
+    override fun onMessageReceived(message: String) {
+        // Maneja los mensajes recibidos del servidor aquí
+        println("Mensaje recibido en BuildingActivity: $message")
     }
 
     private fun setupMovementButtons(mapView: MapView) {
@@ -40,18 +65,22 @@ class BuildingActivity : AppCompatActivity() {
     }
 
     private fun movePlayer(mapView: MapView, deltaX: Int, deltaY: Int) {
-        // Lógica para mover al jugador dentro del edificio.
         mapView.updateLocalPlayerPosition(
             mapView.localPlayerPosition?.let { (x, y) -> Pair(x + deltaX, y + deltaY) }
         )
     }
 
-    private fun setupBackButton() {
+    private fun setupBackButton(mapView: MapView, playerName: String) {
         findViewById<Button>(R.id.button_back_to_gameplay).setOnClickListener {
             val intent = Intent(this, GameplayActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+            intent.putExtra("PLAYER_POSITION", mapView.localPlayerPosition)
+            intent.putExtra("PLAYER_NAME", playerName)
+
+            // Actualiza el mapa en el servidor
+            onlineServerManager.sendUpdateMessage(playerName, mapView.localPlayerPosition?.first ?: 0, mapView.localPlayerPosition?.second ?: 0, "main")
+
             startActivity(intent)
-            finish() // Cerrar el `Activity` actual para liberar recursos
+            finish()
         }
     }
 }

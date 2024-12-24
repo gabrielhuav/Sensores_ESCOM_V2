@@ -47,12 +47,17 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
 
     private fun handleInteractiveTile(x: Int, y: Int) {
         if (x == 15 && y == 10) {
+            // Actualiza el mapa en el servidor
+            onlineServerManager.sendUpdateMessage(playerName, x, y, "building")
+
             val intent = Intent(this, BuildingActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+            intent.putExtra("PLAYER_POSITION", localPlayerPosition)
+            intent.putExtra("PLAYER_NAME", playerName)
             startActivity(intent)
             finish()
         }
     }
+
 
 
     // Launcher para habilitar Bluetooth
@@ -179,6 +184,7 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         }
     }
 
+    // Cambiar en la función movePlayer
     private fun movePlayer(deltaX: Int, deltaY: Int) {
         val newX = (localPlayerPosition.first + deltaX).coerceIn(0, 39)
         val newY = (localPlayerPosition.second + deltaY).coerceIn(0, 39)
@@ -187,8 +193,8 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
             localPlayerPosition = Pair(newX, newY)
             mapView.updateLocalPlayerPosition(localPlayerPosition)
 
-            // Notificar al servidor
-            onlineServerManager.sendUpdateMessage(playerName, newX, newY)
+            // Notificar al servidor, especificando el mapa "main"
+            onlineServerManager.sendUpdateMessage(playerName, newX, newY, "main")
 
             // Notificar a dispositivos Bluetooth
             if (isConnected) {
@@ -196,9 +202,9 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
             }
 
             checkInteractiveTile() // Verificar si el jugador está en una casilla interactiva
-
         }
     }
+
 
     private fun checkBluetoothSupport() {
         if (bluetoothAdapter == null) {
