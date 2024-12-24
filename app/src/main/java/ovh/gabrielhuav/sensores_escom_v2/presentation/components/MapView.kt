@@ -19,7 +19,7 @@ import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManag
 
 class MapView(context: Context, attrs: AttributeSet? = null) : View(context, attrs), OnlineServerManager.WebSocketListener {
 
-    public val mapMatrix = Array(40) { Array(40) { 2 } }.apply {
+    public var mapMatrix = Array(40) { Array(40) { 2 } }.apply {
         for (i in 0 until 40) {
             for (j in 0 until 40) {
                 this[i][j] = when {
@@ -31,6 +31,37 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
             }
         }
     }
+
+    // Método para configurar la matriz del edificio
+    fun setBuildingMatrix() {
+        mapMatrix = Array(20) { Array(20) { 2 } }.apply {
+            for (i in 0 until 20) {
+                for (j in 0 until 20) {
+                    this[i][j] = when {
+                        i == 0 || i == 19 || j == 0 || j == 19 -> 1 // Bordes del edificio
+                        i % 4 == 0 && j % 4 == 0 -> 0 // Lugares interactivos del edificio
+                        i % 2 == 0 && j % 2 == 0 -> 3 // Zonas inaccesibles del edificio
+                        else -> 2 // Caminos libres del edificio
+                    }
+                }
+            }
+        }
+
+        try {
+            val originalBitmap = BitmapFactory.decodeResource(resources, R.drawable.escom_edificio3)
+            if (originalBitmap != null) {
+                backgroundBitmap = originalBitmap
+                scaleBitmapToMatrix() // Ajustar el mapa al tamaño de la matriz
+            } else {
+                Log.e("MapView", "Error: escom_edificio3.png no encontrado.")
+            }
+        } catch (e: Exception) {
+            Log.e("MapView", "Error al cargar el mapa del edificio: ${e.message}")
+        }
+
+        invalidate() // Redibujar la vista
+    }
+
 
     private val paintGrid = Paint().apply {
         color = Color.GRAY
@@ -49,7 +80,7 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
     private var offsetX = 0f
     private var offsetY = 0f
     var scaleFactor: Float = 1.0f
-    private var localPlayerPosition: Pair<Int, Int>? = null
+    var localPlayerPosition: Pair<Int, Int>? = null
     private val remotePlayerPositions = mutableMapOf<String, Pair<Int, Int>>()
     var localPlayerId: String = "player_local" // Identificador único del jugador local
 

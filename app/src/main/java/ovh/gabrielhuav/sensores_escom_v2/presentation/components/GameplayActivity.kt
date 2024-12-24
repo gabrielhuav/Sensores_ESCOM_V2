@@ -45,6 +45,16 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
 
     private lateinit var onlineServerManager: OnlineServerManager
 
+    private fun handleInteractiveTile(x: Int, y: Int) {
+        if (x == 15 && y == 10) {
+            val intent = Intent(this, BuildingActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+            startActivity(intent)
+            finish()
+        }
+    }
+
+
     // Launcher para habilitar Bluetooth
     private val enableBluetoothLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -140,25 +150,34 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         }
     }
 
-   private fun handleMovement(event: MotionEvent, deltaX: Int, deltaY: Int) {
-    when (event.action) {
-        MotionEvent.ACTION_DOWN -> {
-            handler.post(object : Runnable {
-                override fun run() {
-                    val newX = (localPlayerPosition.first + deltaX).coerceIn(0, 39)
-                    val newY = (localPlayerPosition.second + deltaY).coerceIn(0, 39)
-                    if (mapView.mapMatrix[newY][newX] != 1 && mapView.mapMatrix[newY][newX] != 3) {
-                        movePlayer(deltaX, deltaY)
+    private fun handleMovement(event: MotionEvent, deltaX: Int, deltaY: Int) {
+        when (event.action) {
+            MotionEvent.ACTION_DOWN -> {
+                handler.post(object : Runnable {
+                    override fun run() {
+                        val newX = (localPlayerPosition.first + deltaX).coerceIn(0, 39)
+                        val newY = (localPlayerPosition.second + deltaY).coerceIn(0, 39)
+                        if (mapView.mapMatrix[newY][newX] != 1 && mapView.mapMatrix[newY][newX] != 3) {
+                            movePlayer(deltaX, deltaY)
+                        }
+                        handler.postDelayed(this, 100)
                     }
-                    handler.postDelayed(this, 100)
-                }
-            })
-        }
-        MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-            handler.removeCallbacksAndMessages(null)
+                })
+            }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                handler.removeCallbacksAndMessages(null)
+            }
         }
     }
-}
+
+    private fun checkInteractiveTile() {
+        localPlayerPosition?.let { position ->
+            if (position.first == 15 && position.second == 10) {
+                val intent = Intent(this, BuildingActivity::class.java)
+                startActivity(intent)
+            }
+        }
+    }
 
     private fun movePlayer(deltaX: Int, deltaY: Int) {
         val newX = (localPlayerPosition.first + deltaX).coerceIn(0, 39)
@@ -175,9 +194,11 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
             if (isConnected) {
                 BluetoothGameManager.getInstance().sendPlayerPosition(newX, newY)
             }
+
+            checkInteractiveTile() // Verificar si el jugador está en una casilla interactiva
+
         }
     }
-
 
     private fun checkBluetoothSupport() {
         if (bluetoothAdapter == null) {
