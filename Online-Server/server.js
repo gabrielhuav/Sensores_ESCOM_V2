@@ -50,7 +50,6 @@
  * API Endpoints:
  * - `GET /`: Returns a simple status message indicating the server is running.
  */
-
 const express = require("express");
 const { WebSocketServer } = require("ws");
 const path = require("path");
@@ -64,8 +63,10 @@ const server = app.listen(PORT, () => {
 
 const wss = new WebSocketServer({ server });
 
+// Estructura de datos para almacenar jugadores y sus coordenadas por mapa
 const players = {};
 
+// Función para enviar mensajes a todos los clientes conectados
 function broadcast(data) {
   const message = JSON.stringify(data);
   wss.clients.forEach((client) => {
@@ -81,13 +82,20 @@ wss.on("connection", (ws) => {
   ws.on("message", (message) => {
     try {
       const data = JSON.parse(message);
+
       if (data.type === "join") {
-        players[data.id] = { x: 0, y: 0, map: "main" }; // Nuevo campo 'map'
+        // Asegurar que el jugador tenga un ID único y no se sobrescriba
+        if (!players[data.id]) {
+          players[data.id] = { positions: {}, currentMap: "main" }; // Estructura para múltiples mapas
+        }
+
         console.log(`Player joined: ${data.id}`);
       } else if (data.type === "update") {
-          if (players[data.id]) {
-              players[data.id] = { x: data.x, y: data.y, map: data.map || "main" }; // Actualiza posición y mapa
-          }
+        if (players[data.id]) {
+          // Actualizar las coordenadas del jugador en el mapa actual
+          players[data.id].positions[data.map] = { x: data.x, y: data.y };
+          players[data.id].currentMap = data.map;
+        }
       } else if (data.type === "leave") {
         if (players[data.id]) {
           console.log(`Player left: ${data.id}`);
@@ -95,29 +103,47 @@ wss.on("connection", (ws) => {
         }
       }
 
-      broadcast({ type: "positions", players });
+      // Preparar un paquete de posiciones para transmitir a los clientes
+      const broadcastData = {
+        type: "positions",
+        players: Object.fromEntries(
+          Object.entries(players).map(([id, playerData]) => [
+            id,
+            {
+              currentMap: playerData.currentMap,
+              x: playerData.positions[playerData.currentMap]?.x || 0,
+              y: playerData.positions[playerData.currentMap]?.y || 0,
+            },
+          ])
+        ),
+      };
+
+      broadcast(broadcastData);
     } catch (error) {
       console.error("Error processing message:", error);
     }
   });
 
   ws.on("close", () => {
-    for (const id in players) {
-      if (players.hasOwnProperty(id) && players[id].ws === ws) {
-        console.log(`Player disconnected: ${id}`);
-        delete players[id];
-        break;
-      }
-    }
-
+    console.log("A player disconnected");
+    // No podemos identificar el ID del jugador desconectado sin más información
     broadcast({ type: "positions", players });
   });
 });
 
+// Endpoint HTTP para mostrar el estado del servidor
 app.get("/", (req, res) => {
   res.json({
     message: "WebSocket server is running. Connect to synchronize positions.",
-    players: players,
+    players: Object.fromEntries(
+      Object.entries(players).map(([id, playerData]) => [
+        id,
+        {
+          currentMap: playerData.currentMap,
+          positions: playerData.positions,
+        },
+      ])
+    ),
   });
 });
 

@@ -6,6 +6,7 @@ import android.os.Handler
 import android.os.Looper
 import android.widget.Button
 import android.widget.FrameLayout
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
@@ -13,74 +14,96 @@ import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManag
 class BuildingActivity : AppCompatActivity(), OnlineServerManager.WebSocketListener {
 
     private lateinit var onlineServerManager: OnlineServerManager
+    private lateinit var playerName: String
+    private lateinit var mapView: MapView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_building)
 
-        // Inicializa el administrador del servidor
+        // Recuperar el nombre del jugador
+        playerName = intent.getStringExtra("PLAYER_NAME") ?: run {
+            Toast.makeText(this, "Error: Nombre del jugador no encontrado", Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
+
+        // El jugador empieza siempre en (0, 0) al ingresar al edificio
+        val initialPosition = Pair(0, 0)
+
+        println("BuildingActivity - playerName: $playerName")
+        println("BuildingActivity - initialPosition: $initialPosition")
+
+        // Inicializar el servidor
         onlineServerManager = OnlineServerManager(this)
-        onlineServerManager.connectToServer("ws://192.168.1.31:3000") // Asegúrate de conectar primero
+        onlineServerManager.connectToServer("ws://192.168.1.31:3000")
 
-        val initialPosition = intent.getSerializableExtra("PLAYER_POSITION") as? Pair<Int, Int> ?: Pair(0, 0)
-        val playerName = intent.getStringExtra("PLAYER_NAME") ?: "Jugador"
+        // Configurar el MapView
+        setupMapView(initialPosition)
 
-        // Configura el MapView
+        // Configurar los botones
+        setupMovementButtons()
+        setupBackButton()
+    }
+
+    private fun setupMapView(initialPosition: Pair<Int, Int>) {
         val mapContainer = findViewById<FrameLayout>(R.id.map_container_building)
-        val mapView = MapView(this).apply {
-            setBuildingMatrix()
-            setMapResource(R.drawable.escom_edificio3)
-            updateLocalPlayerPosition(initialPosition)
+        mapView = MapView(this).apply {
+            setBuildingMatrix() // Configura la matriz específica del edificio
+            setMapResource(R.drawable.escom_edificio3) // Configura el recurso del mapa
+            updateLocalPlayerPosition(initialPosition) // Actualiza la posición inicial del jugador
         }
         mapContainer.addView(mapView)
 
-        // Esperar conexión antes de enviar mensajes
+        // Enviar posición inicial al servidor
         Handler(Looper.getMainLooper()).postDelayed({
             onlineServerManager.sendUpdateMessage(playerName, initialPosition.first, initialPosition.second, "building")
         }, 1000)
-
-        setupMovementButtons(mapView)
-        setupBackButton(mapView, playerName)
     }
 
-
-    override fun onMessageReceived(message: String) {
-        // Maneja los mensajes recibidos del servidor aquí
-        println("Mensaje recibido en BuildingActivity: $message")
-    }
-
-    private fun setupMovementButtons(mapView: MapView) {
+    private fun setupMovementButtons() {
         findViewById<Button>(R.id.button_move_north).setOnClickListener {
-            movePlayer(mapView, 0, -1) // Mover hacia el norte
+            movePlayer(0, -1) // Mover hacia el norte
         }
         findViewById<Button>(R.id.button_move_south).setOnClickListener {
-            movePlayer(mapView, 0, 1) // Mover hacia el sur
+            movePlayer(0, 1) // Mover hacia el sur
         }
         findViewById<Button>(R.id.button_move_east).setOnClickListener {
-            movePlayer(mapView, 1, 0) // Mover hacia el este
+            movePlayer(1, 0) // Mover hacia el este
         }
         findViewById<Button>(R.id.button_move_west).setOnClickListener {
-            movePlayer(mapView, -1, 0) // Mover hacia el oeste
+            movePlayer(-1, 0) // Mover hacia el oeste
         }
     }
 
-    private fun movePlayer(mapView: MapView, deltaX: Int, deltaY: Int) {
-        mapView.updateLocalPlayerPosition(
-            mapView.localPlayerPosition?.let { (x, y) -> Pair(x + deltaX, y + deltaY) }
-        )
+    private fun movePlayer(deltaX: Int, deltaY: Int) {
+        val newPosition = mapView.localPlayerPosition?.let { (x, y) ->
+            Pair(x + deltaX, y + deltaY)
+        }
+        if (newPosition != null) {
+            mapView.updateLocalPlayerPosition(newPosition)
+            onlineServerManager.sendUpdateMessage(playerName, newPosition.first, newPosition.second, "building")
+        }
     }
 
-    private fun setupBackButton(mapView: MapView, playerName: String) {
+    private fun setupBackButton() {
         findViewById<Button>(R.id.button_back_to_gameplay).setOnClickListener {
             val intent = Intent(this, GameplayActivity::class.java)
-            intent.putExtra("PLAYER_POSITION", mapView.localPlayerPosition)
+
+            // Al regresar al mapa principal, el jugador debe volver a (15, 10)
+            val mainMapPosition = Pair(15, 10)
+            intent.putExtra("PLAYER_POSITION", mainMapPosition)
             intent.putExtra("PLAYER_NAME", playerName)
 
-            // Actualiza el mapa en el servidor
-            onlineServerManager.sendUpdateMessage(playerName, mapView.localPlayerPosition?.first ?: 0, mapView.localPlayerPosition?.second ?: 0, "main")
+            // Notificar al servidor antes de regresar
+            onlineServerManager.sendUpdateMessage(playerName, mainMapPosition.first, mainMapPosition.second, "main")
 
             startActivity(intent)
             finish()
         }
+    }
+
+    override fun onMessageReceived(message: String) {
+        println("Mensaje recibido en BuildingActivity: $message")
     }
 }

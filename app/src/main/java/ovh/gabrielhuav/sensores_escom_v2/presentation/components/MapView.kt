@@ -290,12 +290,8 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
 
     fun updateRemotePlayerPositions(positions: Map<String, Pair<Int, Int>>) {
         remotePlayerPositions.clear()
-        positions.forEach { (id, position) ->
-            if (id != localPlayerId) { // Excluir al jugador local
-                remotePlayerPositions[id] = position
-            }
-        }
-        invalidate()
+        remotePlayerPositions.putAll(positions.filterKeys { it != localPlayerId })
+        invalidate() // Redibuja el mapa
     }
 
     fun setMapResource(resourceId: Int) {

@@ -13,7 +13,8 @@ class OnlineServerManager(private val listener: WebSocketListener) {
 
     fun connectToServer(url: String) {
         val request = Request.Builder().url(url).build()
-        client.newWebSocket(request, DefaultWebSocketListener())
+        webSocket = client.newWebSocket(request, DefaultWebSocketListener())
+        client.dispatcher.executorService.shutdown() // Cierra los hilos después de conectarse
     }
 
     fun disconnectFromServer() {

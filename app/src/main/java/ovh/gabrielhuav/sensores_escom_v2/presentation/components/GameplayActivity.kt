@@ -46,15 +46,34 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
     private lateinit var onlineServerManager: OnlineServerManager
 
     private fun handleInteractiveTile(x: Int, y: Int) {
+        println("handleInteractiveTile - Checking tile at: x=$x, y=$y") // Debugging
+
         if (x == 15 && y == 10) {
-            // Actualiza el mapa en el servidor
+            println("handleInteractiveTile - Entering building")
+
+            // Asegurarnos de que el nombre no sea nulo o vacío
+            if (playerName.isEmpty()) {
+                Toast.makeText(this, "Error: Nombre del jugador no válido", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            // Notificar al servidor
             onlineServerManager.sendUpdateMessage(playerName, x, y, "building")
 
-            val intent = Intent(this, BuildingActivity::class.java)
-            intent.putExtra("PLAYER_POSITION", localPlayerPosition)
-            intent.putExtra("PLAYER_NAME", playerName)
+            // Crear Intent y pasar los datos
+            val intent = Intent(this, BuildingActivity::class.java).apply {
+                putExtra("PLAYER_NAME", playerName) // Pasar el nombre del jugador
+                putExtra("PLAYER_POSITION", Pair(x, y)) // Posición del jugador
+            }
+
+            // Verificar qué se está enviando
+            println("GameplayActivity - Intent extras before start: PLAYER_NAME = $playerName, PLAYER_POSITION = ($x, $y)")
+
+            // Cambiar de actividad
             startActivity(intent)
             finish()
+        } else {
+            println("handleInteractiveTile - Tile not interactive: x=$x, y=$y")
         }
     }
 
@@ -108,9 +127,18 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         setupButtonListeners()
         checkBluetoothSupport()
 
+        // Verificar si el Intent tiene un nombre de jugador
+        playerName = intent.getStringExtra("PLAYER_NAME") ?: run {
+            // Si no existe, muestra un mensaje y cierra la actividad
+            Toast.makeText(this, "Nombre de jugador no encontrado", Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
 
-        playerName = intent.getStringExtra("PLAYER_NAME") ?: "Jugador"
-        Toast.makeText(this, "Bienvenido, $playerName", Toast.LENGTH_SHORT).show()
+        println("GameplayActivity1 - playerName: $playerName") // Verificar si se inicializó correctamente
+
+        // Muestra un mensaje de bienvenida
+        Toast.makeText(this, "Bienvenido de nuevo, $playerName", Toast.LENGTH_SHORT).show()
 
         // Configurar BluetoothGameManager
         BluetoothGameManager.appContext = applicationContext
@@ -184,7 +212,6 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         }
     }
 
-    // Cambiar en la función movePlayer
     private fun movePlayer(deltaX: Int, deltaY: Int) {
         val newX = (localPlayerPosition.first + deltaX).coerceIn(0, 39)
         val newY = (localPlayerPosition.second + deltaY).coerceIn(0, 39)
@@ -193,15 +220,16 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
             localPlayerPosition = Pair(newX, newY)
             mapView.updateLocalPlayerPosition(localPlayerPosition)
 
-            // Notificar al servidor, especificando el mapa "main"
+            // Notificar al servidor
             onlineServerManager.sendUpdateMessage(playerName, newX, newY, "main")
+
+            // Verificar si la nueva posición es interactiva
+            handleInteractiveTile(newX, newY)
 
             // Notificar a dispositivos Bluetooth
             if (isConnected) {
                 BluetoothGameManager.getInstance().sendPlayerPosition(newX, newY)
             }
-
-            checkInteractiveTile() // Verificar si el jugador está en una casilla interactiva
         }
     }
 
