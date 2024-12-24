@@ -161,23 +161,23 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
 }
 
     private fun movePlayer(deltaX: Int, deltaY: Int) {
-        val newX = (localPlayerPosition.first + deltaX).coerceIn(0, 39) // Limitar X entre 0 y 19
-        val newY = (localPlayerPosition.second + deltaY).coerceIn(0, 39) // Limitar Y entre 0 y 19
+        val newX = (localPlayerPosition.first + deltaX).coerceIn(0, 39)
+        val newY = (localPlayerPosition.second + deltaY).coerceIn(0, 39)
 
-        localPlayerPosition = Pair(newX, newY)
-        mapView.updateLocalPlayerPosition(localPlayerPosition)
+        if (mapView.mapMatrix[newY][newX] != 1 && mapView.mapMatrix[newY][newX] != 3) {
+            localPlayerPosition = Pair(newX, newY)
+            mapView.updateLocalPlayerPosition(localPlayerPosition)
 
-        localPlayerPosition = Pair(newX, newY)
-        mapView.updateLocalPlayerPosition(localPlayerPosition)
+            // Notificar al servidor
+            onlineServerManager.sendUpdateMessage(playerName, newX, newY)
 
-        // Enviar posición al servidor
-        onlineServerManager.sendUpdateMessage(playerName, newX, newY) // Reemplaza "localPlayerId" con el ID de tu jugador local
-
-        // Enviar posición al jugador remoto
-        if (isConnected) {
-            BluetoothGameManager.getInstance().sendPlayerPosition(newX, newY)
+            // Notificar a dispositivos Bluetooth
+            if (isConnected) {
+                BluetoothGameManager.getInstance().sendPlayerPosition(newX, newY)
+            }
         }
     }
+
 
     private fun checkBluetoothSupport() {
         if (bluetoothAdapter == null) {
@@ -236,7 +236,7 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
     }
 
     private fun connectToOnlineServer() {
-        val serverUrl = "ws://3.16.218.70:8080"
+        val serverUrl = "ws://192.168.1.31:3000"
         onlineServerManager.connectToServer(serverUrl)
         Toast.makeText(this, "Conectando al servidor online...", Toast.LENGTH_SHORT).show()
 
@@ -245,27 +245,30 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
     }
 
 
-override fun onMessageReceived(message: String) {
-    val jsonObject = JSONObject(message)
-    when (jsonObject.getString("type")) {
-        "positions" -> {
-            val players = jsonObject.getJSONObject("players")
-            val positions = mutableMapOf<String, Pair<Int, Int>>()
-            players.keys().forEach { playerId ->
-                val position = players.getJSONObject(playerId)
-                val x = position.getInt("x")
-                val y = position.getInt("y")
-                positions[playerId] = Pair(x, y)
+    override fun onMessageReceived(message: String) {
+        val jsonObject = JSONObject(message)
+        when (jsonObject.getString("type")) {
+            "positions" -> {
+                val players = jsonObject.getJSONObject("players")
+                val positions = mutableMapOf<String, Pair<Int, Int>>()
+                players.keys().forEach { playerId ->
+                    val position = players.getJSONObject(playerId)
+                    val x = position.getInt("x")
+                    val y = position.getInt("y")
+
+                    if (playerId != playerName) { // Excluir al jugador local por su nombre
+                        positions[playerId] = Pair(x, y)
+                    }
+                }
+                mapView.updateRemotePlayerPositions(positions)
             }
-            mapView.updateRemotePlayerPositions(positions)
-        }
-        "disconnect" -> {
-            // Manejar la desconexión del jugador
-            val playerId = jsonObject.getString("id")
-            mapView.removeRemotePlayer(playerId)
+            "disconnect" -> {
+                val playerId = jsonObject.getString("id")
+                mapView.removeRemotePlayer(playerId)
+            }
         }
     }
-}
+
 
     override fun onDeviceConnected(device: BluetoothDevice) {
         isConnected = true
@@ -273,9 +276,26 @@ override fun onMessageReceived(message: String) {
     }
 
     override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
-        remotePlayerPosition = Pair(x, y)
-        mapView.updateRemotePlayerPosition(remotePlayerPosition)
+        val remotePosition = Pair(x, y)
+
+        // Verificar si se tiene el permiso BLUETOOTH_CONNECT
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
+                // No actualizar si es el jugador local
+                if (device.name != playerName) {
+                    mapView.updateRemotePlayerPosition(device.name, remotePosition)
+                }
+            } else {
+                Log.w(TAG, "No se tiene el permiso BLUETOOTH_CONNECT para acceder al nombre del dispositivo.")
+            }
+        } else {
+            // No actualizar si es el jugador local (para versiones anteriores)
+            if (device.name != playerName) {
+                mapView.updateRemotePlayerPosition(device.name, remotePosition)
+            }
+        }
     }
+
 
     override fun onConnectionComplete() {
         runOnUiThread {
