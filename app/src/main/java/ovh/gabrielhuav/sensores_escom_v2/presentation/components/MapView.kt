@@ -97,14 +97,19 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
         val scaledHeight: Int
 
         if (matrixAspectRatio > bitmapAspectRatio) {
-            scaledWidth = (backgroundBitmap!!.height * matrixAspectRatio).toInt().coerceAtMost(maxBitmapSize)
-            scaledHeight = backgroundBitmap!!.height.coerceAtMost(maxBitmapSize)
+            scaledWidth = maxBitmapSize
+            scaledHeight = (maxBitmapSize / matrixAspectRatio).toInt()
         } else {
-            scaledWidth = backgroundBitmap!!.width.coerceAtMost(maxBitmapSize)
-            scaledHeight = (backgroundBitmap!!.width / matrixAspectRatio).toInt().coerceAtMost(maxBitmapSize)
+            scaledWidth = (maxBitmapSize * bitmapAspectRatio).toInt()
+            scaledHeight = maxBitmapSize
         }
 
-        backgroundBitmap = Bitmap.createScaledBitmap(backgroundBitmap!!, scaledWidth, scaledHeight, true)
+        backgroundBitmap = Bitmap.createScaledBitmap(
+            backgroundBitmap!!,
+            scaledWidth.coerceAtMost(maxBitmapSize),
+            scaledHeight.coerceAtMost(maxBitmapSize),
+            true
+        )
     }
 
 
@@ -241,10 +246,8 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
             return
         }
 
-        val canvasWidth = canvas.width
-        val canvasHeight = canvas.height
-
-        if (backgroundBitmap!!.width > canvasWidth || backgroundBitmap!!.height > canvasHeight) {
+        val maxCanvasSize = 2048
+        if (backgroundBitmap!!.width > maxCanvasSize || backgroundBitmap!!.height > maxCanvasSize) {
             Log.e("MapView", "Bitmap demasiado grande para el canvas.")
             return
         }

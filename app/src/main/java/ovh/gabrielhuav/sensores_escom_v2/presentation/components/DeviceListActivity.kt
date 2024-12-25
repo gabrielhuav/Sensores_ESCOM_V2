@@ -16,6 +16,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import ovh.gabrielhuav.sensores_escom_v2.R
+import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 
 class DeviceListActivity : AppCompatActivity() {
 
@@ -28,6 +29,7 @@ class DeviceListActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_device_list)
 
+        // BluetoothGameManager ya está inicializado en MainActivity o Application
         deviceListView = findViewById(R.id.deviceListView)
         val scanButton = findViewById<Button>(R.id.btnScanDevices)
         val backToMenuButton = findViewById<Button>(R.id.btnBackToMenu)
@@ -63,10 +65,7 @@ class DeviceListActivity : AppCompatActivity() {
             val deviceInfo = deviceList[position]
             val device = deviceMap[deviceInfo]
             if (device != null) {
-                val intent = Intent()
-                intent.putExtra(EXTRA_DEVICE, device)
-                setResult(RESULT_OK, intent)
-                finish()
+                connectToDevice(device)
             }
         }
 
@@ -76,6 +75,52 @@ class DeviceListActivity : AppCompatActivity() {
             addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
         }
         registerReceiver(receiver, filter)
+    }
+
+
+    private fun connectToDevice(device: BluetoothDevice) {
+        BluetoothGameManager.getInstance().connectToDevice(device)
+        BluetoothGameManager.getInstance().setConnectionListener(object :
+            BluetoothGameManager.ConnectionListener {
+            override fun onDeviceConnected(device: BluetoothDevice) {
+                runOnUiThread {
+                    Toast.makeText(
+                        this@DeviceListActivity,
+                        "Conexión exitosa con ${device.name ?: "Dispositivo desconocido"}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    launchGameplayActivity()
+                }
+            }
+
+            override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
+                // No es necesario manejar aquí, el GameplayActivity lo hará
+            }
+
+            override fun onConnectionComplete() {
+                // Conexión completa, ya manejada en `onDeviceConnected`
+            }
+
+            override fun onConnectionFailed(message: String) {
+                runOnUiThread {
+                    Toast.makeText(
+                        this@DeviceListActivity,
+                        "Error al conectar: $message",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        })
+    }
+
+    private fun launchGameplayActivity() {
+        val playerName = intent.getStringExtra("PLAYER_NAME") ?: "Jugador"
+        val intent = Intent(this, GameplayActivity::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("PLAYER_POSITION", Pair(1, 1)) // Posición inicial
+        }
+        startActivity(intent)
+        finish()
     }
 
     private fun navigateToMainMenu() {
@@ -182,5 +227,4 @@ class DeviceListActivity : AppCompatActivity() {
             Manifest.permission.ACCESS_FINE_LOCATION
         )
     }
-
 }

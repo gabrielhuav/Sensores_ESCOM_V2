@@ -45,55 +45,6 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
 
     private lateinit var onlineServerManager: OnlineServerManager
 
-    private fun handleInteractiveTile(x: Int, y: Int) {
-        println("handleInteractiveTile - Checking tile at: x=$x, y=$y")
-
-        if (x == 15 && y == 10) {
-            println("handleInteractiveTile - Entering building")
-
-            if (playerName.isEmpty()) {
-                Toast.makeText(this, "Error: Nombre del jugador no válido", Toast.LENGTH_SHORT).show()
-                return
-            }
-
-            onlineServerManager.sendUpdateMessage(playerName, x, y, "building")
-
-            val intent = Intent(this, BuildingActivity::class.java).apply {
-                putExtra("PLAYER_NAME", playerName)
-                putExtra("PLAYER_POSITION", Pair(0, 0))
-            }
-
-            println("GameplayActivity - Intent extras before start: PLAYER_NAME = $playerName, PLAYER_POSITION = ($x, $y)")
-
-            startActivity(intent)
-            finish()
-        } else {
-            println("handleInteractiveTile - Tile not interactive: x=$x, y=$y")
-        }
-    }
-
-    private val enableBluetoothLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == RESULT_OK) {
-                Toast.makeText(this, "Bluetooth habilitado.", Toast.LENGTH_SHORT).show()
-                checkPermissions()
-            } else {
-                Toast.makeText(this, "Bluetooth no fue habilitado.", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-    private val selectDeviceLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == RESULT_OK) {
-                val device: BluetoothDevice? = result.data?.getParcelableExtra(DeviceListActivity.EXTRA_DEVICE)
-                device?.let {
-                    connectToDevice(it)
-                }
-            } else {
-                updateBluetoothStatus("Selección de dispositivo cancelada.")
-            }
-        }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_gameplay)
@@ -152,7 +103,6 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         connectToOnlineServer()
     }
 
-
     private fun setupInteractionButton(buttonA: Button) {
         buttonA.setOnClickListener {
             val (x, y) = localPlayerPosition
@@ -176,15 +126,24 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         }
     }
 
-
     private fun setupButtonListeners() {
-        btnStartServer.setOnClickListener { startServer() }
+        btnStartServer.setOnClickListener { startBluetoothServer() } // Iniciar servidor Bluetooth
         btnConnectDevice.setOnClickListener {
-            val intent = Intent(this, DeviceListActivity::class.java)
-            selectDeviceLauncher.launch(intent)
+            Toast.makeText(this, "Ya conectado al servidor online.", Toast.LENGTH_SHORT).show()
         }
         btnOnlineServer.setOnClickListener { connectToOnlineServer() }
         setupMovementButtons()
+    }
+
+    private fun startBluetoothServer() {
+        if (!isConnected) {
+            Toast.makeText(this, "Debe estar conectado al servidor online para iniciar el servidor Bluetooth.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        BluetoothGameManager.getInstance().startServer()
+        updateBluetoothStatus("Servidor Bluetooth iniciado, esperando conexiones.")
+        Toast.makeText(this, "Servidor Bluetooth iniciado, esperando conexiones.", Toast.LENGTH_SHORT).show()
     }
 
     private fun setupMovementButtons() {
@@ -244,6 +203,58 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         }
     }
 
+    private fun connectToOnlineServer() {
+        val serverUrl = "ws://192.168.1.31:3000"
+        onlineServerManager.connectToServer(serverUrl)
+        Toast.makeText(this, "Conectando al servidor online...", Toast.LENGTH_SHORT).show()
+
+        // Enviar mensaje de unión con el nombre del jugador
+        onlineServerManager.sendJoinMessage(playerName)
+
+        // Marcar como conectado al servidor online al completar la conexión
+        onlineServerManager.setOnConnectionCompleteListener {
+            isConnected = true
+            runOnUiThread {
+                Toast.makeText(this, "Conexión al servidor online establecida.", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        onlineServerManager.setOnConnectionFailedListener {
+            isConnected = false
+            runOnUiThread {
+                Toast.makeText(this, "Error al conectar al servidor online.", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+
+    override fun onMessageReceived(message: String) {
+        try {
+            val jsonObject = JSONObject(message)
+            when (jsonObject.getString("type")) {
+                "positions" -> {
+                    val players = jsonObject.getJSONObject("players")
+                    val positions = mutableMapOf<String, Pair<Int, Int>>()
+                    players.keys().forEach { playerId ->
+                        val position = players.getJSONObject(playerId)
+                        val x = position.getInt("x")
+                        val y = position.getInt("y")
+
+                        if (playerId != playerName) {
+                            positions[playerId] = Pair(x, y)
+                        }
+                    }
+                    mapView.updateRemotePlayerPositions(positions)
+                }
+                "disconnect" -> {
+                    val playerId = jsonObject.getString("id")
+                    mapView.removeRemotePlayer(playerId)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error procesando el mensaje recibido: ${e.message}")
+        }
+    }
 
     private fun checkBluetoothSupport() {
         if (bluetoothAdapter == null) {
@@ -255,6 +266,17 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
             checkPermissions()
         }
     }
+
+    // Launcher para habilitar Bluetooth
+    private val enableBluetoothLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                Toast.makeText(this, "Bluetooth habilitado.", Toast.LENGTH_SHORT).show()
+                checkPermissions()
+            } else {
+                Toast.makeText(this, "Bluetooth no fue habilitado.", Toast.LENGTH_SHORT).show()
+            }
+        }
 
     private fun requestEnableBluetooth() {
         val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
@@ -276,36 +298,6 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
     @SuppressLint("InlinedApi")
     private fun hasRequiredPermissions(): Boolean {
         return ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
-    }
-
-    private fun startServer() {
-        if (!hasRequiredPermissions()) {
-            checkPermissions()
-            return
-        }
-        BluetoothGameManager.getInstance().startServer()
-        updateBluetoothStatus("Servidor iniciado. Esperando conexión...")
-    }
-
-    private fun connectToDevice(device: BluetoothDevice) {
-        if (!hasRequiredPermissions()) {
-            checkPermissions()
-            return
-        }
-        BluetoothGameManager.getInstance().connectToDevice(device)
-        updateBluetoothStatus("Intentando conectar a ${device.name ?: "Desconocido"}...")
-    }
-
-    private fun updateBluetoothStatus(status: String) {
-        tvBluetoothStatus.text = status
-    }
-
-    private fun connectToOnlineServer() {
-        val serverUrl = "ws://192.168.1.31:3000"
-        onlineServerManager.connectToServer(serverUrl)
-        Toast.makeText(this, "Conectando al servidor online...", Toast.LENGTH_SHORT).show()
-
-        onlineServerManager.sendJoinMessage(playerName)
     }
 
     override fun onDeviceConnected(device: BluetoothDevice) {
@@ -341,32 +333,8 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         updateBluetoothStatus("Conexión fallida: $message")
     }
 
-    override fun onMessageReceived(message: String) {
-        try {
-            val jsonObject = JSONObject(message)
-            when (jsonObject.getString("type")) {
-                "positions" -> {
-                    val players = jsonObject.getJSONObject("players")
-                    val positions = mutableMapOf<String, Pair<Int, Int>>()
-                    players.keys().forEach { playerId ->
-                        val position = players.getJSONObject(playerId)
-                        val x = position.getInt("x")
-                        val y = position.getInt("y")
-
-                        if (playerId != playerName) {
-                            positions[playerId] = Pair(x, y)
-                        }
-                    }
-                    mapView.updateRemotePlayerPositions(positions)
-                }
-                "disconnect" -> {
-                    val playerId = jsonObject.getString("id")
-                    mapView.removeRemotePlayer(playerId)
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error procesando el mensaje recibido: ${e.message}")
-        }
+    private fun updateBluetoothStatus(status: String) {
+        tvBluetoothStatus.text = status
     }
 
     companion object {

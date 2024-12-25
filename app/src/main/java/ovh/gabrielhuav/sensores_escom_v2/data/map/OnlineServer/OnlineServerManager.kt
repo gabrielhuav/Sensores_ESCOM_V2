@@ -11,6 +11,10 @@ class OnlineServerManager(private val listener: WebSocketListener) {
     private val messageQueue = LinkedBlockingQueue<String>()
     private var isConnected = false
 
+    // Listeners para eventos de conexión
+    private var onConnectionCompleteListener: (() -> Unit)? = null
+    private var onConnectionFailedListener: (() -> Unit)? = null
+
     fun connectToServer(url: String) {
         val request = Request.Builder().url(url).build()
         webSocket = client.newWebSocket(request, DefaultWebSocketListener())
@@ -51,12 +55,21 @@ class OnlineServerManager(private val listener: WebSocketListener) {
         fun onMessageReceived(message: String)
     }
 
+    fun setOnConnectionCompleteListener(listener: () -> Unit) {
+        this.onConnectionCompleteListener = listener
+    }
+
+    fun setOnConnectionFailedListener(listener: () -> Unit) {
+        this.onConnectionFailedListener = listener
+    }
+
     private inner class DefaultWebSocketListener : okhttp3.WebSocketListener() {
         override fun onOpen(webSocket: WebSocket, response: Response) {
             println("Connected to server")
             this@OnlineServerManager.webSocket = webSocket
             isConnected = true
             flushMessageQueue() // Envía los mensajes en cola
+            onConnectionCompleteListener?.invoke() // Notificar que la conexión se completó
         }
 
         override fun onMessage(webSocket: WebSocket, text: String) {
@@ -81,6 +94,7 @@ class OnlineServerManager(private val listener: WebSocketListener) {
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
             println("Error: ${t.message}")
             isConnected = false
+            onConnectionFailedListener?.invoke() // Notificar que la conexión falló
         }
     }
 }

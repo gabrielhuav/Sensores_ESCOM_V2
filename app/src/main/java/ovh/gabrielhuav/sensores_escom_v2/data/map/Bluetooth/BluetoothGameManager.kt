@@ -21,9 +21,9 @@ import java.util.concurrent.CopyOnWriteArrayList
 class BluetoothGameManager private constructor() {
 
     private var serverSocket: BluetoothServerSocket? = null
-    private var clientSocket: BluetoothSocket? = null
-    private var inputStream: InputStream? = null
-    private var outputStream: OutputStream? = null
+    private val clientSockets = mutableListOf<BluetoothSocket>()
+    private val inputStreams = mutableListOf<InputStream>()
+    private val outputStreams = mutableListOf<OutputStream>()
 
     private val connectedDevices = CopyOnWriteArrayList<BluetoothDevice>()
     private var connectionListener: ConnectionListener? = null
@@ -57,21 +57,22 @@ class BluetoothGameManager private constructor() {
             try {
                 serverSocket = bluetoothAdapter.listenUsingRfcommWithServiceRecord(NAME, MY_UUID)
                 Log.d(TAG, "Esperando conexión de cliente...")
-                clientSocket = serverSocket!!.accept()
+                while (true) { // Aceptar múltiples conexiones
+                    val socket = serverSocket!!.accept()
+                    val remoteDevice = socket.remoteDevice
+                    setupStreams(socket)
 
-                val remoteDevice = clientSocket!!.remoteDevice
-                setupStreams(clientSocket!!)
+                    connectedDevices.add(remoteDevice)
+                    handler.post {
+                        connectionListener?.onDeviceConnected(remoteDevice)
+                        connectionListener?.onConnectionComplete()
+                    }
 
-                connectedDevices.add(remoteDevice)
-                handler.post {
-                    connectionListener?.onDeviceConnected(remoteDevice)
-                    connectionListener?.onConnectionComplete()
-                }
+                    Log.d(TAG, "Cliente conectado: ${getDeviceName(remoteDevice)}")
 
-                Log.d(TAG, "Cliente conectado: ${getDeviceName(remoteDevice)}")
-
-                receiveData { data ->
-                    processReceivedData(data, remoteDevice)
+                    receiveData(socket) { data ->
+                        processReceivedData(data, remoteDevice)
+                    }
                 }
             } catch (e: IOException) {
                 Log.e(TAG, "Error al iniciar el servidor: ${e.message}")
@@ -91,10 +92,10 @@ class BluetoothGameManager private constructor() {
 
         Thread {
             try {
-                clientSocket = device.createRfcommSocketToServiceRecord(MY_UUID)
+                val socket = device.createRfcommSocketToServiceRecord(MY_UUID)
                 Log.d(TAG, "Intentando conectar a ${getDeviceName(device)}...")
-                clientSocket!!.connect()
-                setupStreams(clientSocket!!)
+                socket.connect()
+                setupStreams(socket)
 
                 connectedDevices.add(device)
                 handler.post {
@@ -104,7 +105,7 @@ class BluetoothGameManager private constructor() {
 
                 Log.d(TAG, "Conectado al servidor: ${getDeviceName(device)}")
 
-                receiveData { data ->
+                receiveData(socket) { data ->
                     processReceivedData(data, device)
                 }
             } catch (e: IOException) {
@@ -115,8 +116,9 @@ class BluetoothGameManager private constructor() {
     }
 
     private fun setupStreams(socket: BluetoothSocket) {
-        inputStream = socket.inputStream
-        outputStream = socket.outputStream
+        clientSockets.add(socket)
+        inputStreams.add(socket.inputStream)
+        outputStreams.add(socket.outputStream)
     }
 
     fun sendPlayerPosition(x: Int, y: Int) {
@@ -125,18 +127,21 @@ class BluetoothGameManager private constructor() {
                 put("x", x)
                 put("y", y)
             }
-            outputStream?.write(positionData.toString().toByteArray())
+            val positionString = positionData.toString()
+            outputStreams.forEach { it.write(positionString.toByteArray()) }
         } catch (e: IOException) {
             Log.e(TAG, "Error al enviar datos de posición: ${e.message}")
         }
     }
 
-    private fun receiveData(callback: (String) -> Unit) {
+    private fun receiveData(socket: BluetoothSocket, callback: (String) -> Unit) {
         Thread {
             try {
+                val inputStream = socket.inputStream
                 val buffer = ByteArray(1024)
                 while (true) {
-                    val bytes = inputStream?.read(buffer) ?: break
+                    val bytes = inputStream.read(buffer)
+                    if (bytes == -1) break
                     val receivedData = String(buffer, 0, bytes)
                     callback(receivedData)
                 }
@@ -160,7 +165,7 @@ class BluetoothGameManager private constructor() {
     }
 
     private fun hasPermission(permission: String): Boolean {
-        return ActivityCompat.checkSelfPermission(appContext, permission) == PackageManager.PERMISSION_GRANTED
+        return ActivityCompat.checkSelfPermission(appContext!!, permission) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun getDeviceName(device: BluetoothDevice?): String {
@@ -184,7 +189,7 @@ class BluetoothGameManager private constructor() {
         private const val NAME = "BluetoothGame"
         private val MY_UUID: UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
         private val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-        lateinit var appContext: Context
+        var appContext: Context? = null
 
         @Volatile
         private var INSTANCE: BluetoothGameManager? = null
@@ -193,6 +198,10 @@ class BluetoothGameManager private constructor() {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: BluetoothGameManager().also { INSTANCE = it }
             }
+        }
+
+        fun initialize(context: Context) {
+            appContext = context.applicationContext
         }
     }
 }
