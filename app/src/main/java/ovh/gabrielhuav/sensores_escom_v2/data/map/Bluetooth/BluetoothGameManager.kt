@@ -15,14 +15,15 @@ import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
+import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStream
+import java.io.InputStreamReader
 import java.io.OutputStream
 import java.util.UUID
 import java.util.concurrent.CopyOnWriteArrayList
 
-class BluetoothGameManager private constructor() {
-
+class BluetoothGameManager private constructor(private val context: Context) {
     private var serverSocket: BluetoothServerSocket? = null
     private val clientSockets = mutableListOf<BluetoothSocket>()
     private val inputStreams = mutableListOf<InputStream>()
@@ -34,7 +35,17 @@ class BluetoothGameManager private constructor() {
 
     private var playerName: String = ""
     private lateinit var onlineServerManager: OnlineServerManager
-    private var localPlayerPosition: Pair<Int, Int> = Pair(0, 0) // Posición inicial
+    private var localPlayerPosition: Pair<Int, Int> = Pair(0, 0)
+
+    private var isConnectionActive = true
+    private var reconnectionAttempts = 0
+    private val MAX_RECONNECTION_ATTEMPTS = 3
+
+    // Elimina el init block anterior y usa esta función
+    fun initialize(playerName: String, listener: OnlineServerManager.WebSocketListener? = null) {
+        this.playerName = playerName
+        onlineServerManager = OnlineServerManager.getInstance(context, listener)
+    }
 
     interface ConnectionListener {
         fun onDeviceConnected(device: BluetoothDevice)
@@ -64,46 +75,63 @@ class BluetoothGameManager private constructor() {
             try {
                 serverSocket = bluetoothAdapter.listenUsingRfcommWithServiceRecord(NAME, MY_UUID)
                 Log.d(TAG, "Esperando conexión de cliente...")
-                while (true) { // Aceptar múltiples conexiones
-                    val socket = serverSocket!!.accept()
-                    val remoteDevice = socket.remoteDevice
-                    setupStreams(socket)
+                while (true) {
+                    try {
+                        val socket = serverSocket!!.accept()
+                        val remoteDevice = socket.remoteDevice
+                        Log.d(TAG, "Cliente conectado, configurando streams...")
+                        setupStreams(socket)
 
-                    connectedDevices.add(remoteDevice)
-                    handler.post {
-                        connectionListener?.onDeviceConnected(remoteDevice)
-                        connectionListener?.onConnectionComplete()
-                    }
+                        if (outputStreams.isEmpty()) {
+                            Log.e(TAG, "Streams no configurados correctamente después de setupStreams")
+                        } else {
+                            Log.d(TAG, "Streams configurados correctamente, cantidad: ${outputStreams.size}")
+                        }
 
-                    Log.d(TAG, "Cliente conectado: ${getDeviceName(remoteDevice)}")
+                        connectedDevices.add(remoteDevice)
+                        handler.post {
+                            connectionListener?.onDeviceConnected(remoteDevice)
+                            connectionListener?.onConnectionComplete()
+                        }
 
-                    receiveData(socket) { data ->
-                        // Pasa la posición local al procesar los datos recibidos
-                        processReceivedData(data, remoteDevice, localPlayerPosition)
+                        receiveData(socket) { data ->
+                            processReceivedData(data, remoteDevice, localPlayerPosition)
+                        }
+                    } catch (e: IOException) {
+                        Log.e(TAG, "Error aceptando conexión: ${e.message}")
+                        break
                     }
                 }
             } catch (e: IOException) {
-                Log.e(TAG, "Error al iniciar el servidor: ${e.message}")
-                handler.post { connectionListener?.onConnectionFailed("Error al iniciar el servidor.") }
-            } finally {
-                closeServerSocket()
+                Log.e(TAG, "Error en servidor socket: ${e.message}")
             }
         }.start()
+
     }
 
     fun connectToDevice(device: BluetoothDevice) {
         if (!hasPermission(Manifest.permission.BLUETOOTH_CONNECT)) {
-            Log.e(TAG, "Faltan permisos de Bluetooth para conectarse al dispositivo.")
-            handler.post { connectionListener?.onConnectionFailed("Faltan permisos para conectarse al dispositivo.") }
+            Log.e(TAG, "Faltan permisos de Bluetooth")
             return
         }
 
         Thread {
             try {
+                Log.d(TAG, "Iniciando conexión a ${getDeviceName(device)}...")
                 val socket = device.createRfcommSocketToServiceRecord(MY_UUID)
-                Log.d(TAG, "Intentando conectar a ${getDeviceName(device)}...")
+
+                Log.d(TAG, "Socket creado, intentando conectar...")
                 socket.connect()
+
+                Log.d(TAG, "Socket conectado, configurando streams...")
                 setupStreams(socket)
+
+                if (outputStreams.isEmpty()) {
+                    Log.e(TAG, "Streams no configurados correctamente después de conectar")
+                    throw IOException("Fallo en configuración de streams")
+                }
+
+                Log.d(TAG, "Streams configurados correctamente, cantidad: ${outputStreams.size}")
 
                 connectedDevices.add(device)
                 handler.post {
@@ -111,53 +139,225 @@ class BluetoothGameManager private constructor() {
                     connectionListener?.onConnectionComplete()
                 }
 
-                Log.d(TAG, "Conectado al servidor: ${getDeviceName(device)}")
-
                 receiveData(socket) { data ->
                     processReceivedData(data, device, localPlayerPosition)
                 }
             } catch (e: IOException) {
-                Log.e(TAG, "Error al conectar al dispositivo: ${e.message}")
-                handler.post { connectionListener?.onConnectionFailed("Error al conectar a ${getDeviceName(device)}") }
+                Log.e(TAG, "Error conectando: ${e.message}")
+                handler.post {
+                    connectionListener?.onConnectionFailed("Error conectando a ${getDeviceName(device)}: ${e.message}")
+                }
             }
         }.start()
     }
 
-    private fun setupStreams(socket: BluetoothSocket) {
-        clientSockets.add(socket)
-        inputStreams.add(socket.inputStream)
-        outputStreams.add(socket.outputStream)
-    }
 
-    fun sendPlayerPosition(x: Int, y: Int) {
+    private fun setupStreams(socket: BluetoothSocket) {
         try {
-            val positionData = JSONObject().apply {
-                put("x", x)
-                put("y", y)
-            }
-            val positionString = positionData.toString()
-            outputStreams.forEach { it.write(positionString.toByteArray()) }
-        } catch (e: IOException) {
-            Log.e(TAG, "Error al enviar datos de posición: ${e.message}")
+            Log.d(TAG, "Configurando streams para socket")
+            Log.d(TAG, "Estado actual - Sockets: ${clientSockets.size}, InputStreams: ${inputStreams.size}, OutputStreams: ${outputStreams.size}")
+
+            clientSockets.add(socket)
+            inputStreams.add(socket.inputStream)
+            outputStreams.add(socket.outputStream)
+
+            Log.d(TAG, "Streams configurados - Nuevo estado - Sockets: ${clientSockets.size}, InputStreams: ${inputStreams.size}, OutputStreams: ${outputStreams.size}")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error configurando streams: ${e.message}")
         }
     }
 
-    private fun receiveData(socket: BluetoothSocket, callback: (String) -> Unit) {
+
+
+    fun sendPlayerPosition(x: Int, y: Int) {
+        if (!isConnectionActive) {
+            Log.e(TAG, "Conexión no activa, no se pueden enviar datos")
+            return
+        }
+
+        try {
+            val jsonData = JSONObject().apply {
+                put("type", "position")
+                put("x", x)
+                put("y", y)
+            }
+
+            val data = jsonData.toString()
+            Log.d(TAG, "Preparando envío de posición - Estado actual:")
+            Log.d(TAG, "Sockets conectados: ${clientSockets.size}")
+            Log.d(TAG, "OutputStreams disponibles: ${outputStreams.size}")
+            Log.d(TAG, "Dispositivos conectados: ${connectedDevices.size}")
+
+            if (outputStreams.isEmpty()) {
+                Log.e(TAG, "No hay streams de salida disponibles - Intentando reconexión")
+                connectedDevices.forEach { device ->
+                    reconnectToDevice(device)
+                }
+                return
+            }
+
+
+            var streamsClosed = false
+            outputStreams.toList().forEachIndexed { index, outputStream ->
+                try {
+                    outputStream.write((data + "\n").toByteArray())
+                    outputStream.flush()
+                    Log.d(TAG, "Datos enviados exitosamente")
+                } catch (e: IOException) {
+                    Log.e(TAG, "Error enviando datos: ${e.message}")
+                    streamsClosed = true
+                    // Intentar reconectar con el dispositivo correspondiente
+                    if (index < connectedDevices.size) {
+                        reconnectToDevice(connectedDevices[index])
+                    }
+                }
+            }
+
+            if (streamsClosed) {
+                cleanupClosedConnections()
+            }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error general enviando posición: ${e.message}")
+        }
+    }
+
+    private fun cleanupClosedConnections() {
+        val iterator = clientSockets.iterator()
+        var index = 0
+        while (iterator.hasNext()) {
+            val socket = iterator.next()
+            try {
+                socket.outputStream.write(1) // Test si el socket está vivo
+            } catch (e: IOException) {
+                iterator.remove()
+                if (index < inputStreams.size) inputStreams.removeAt(index)
+                if (index < outputStreams.size) outputStreams.removeAt(index)
+                if (index < connectedDevices.size) connectedDevices.removeAt(index)
+            }
+            index++
+        }
+    }
+
+
+    private fun reconnectToDevice(device: BluetoothDevice) {
+        if (reconnectionAttempts >= MAX_RECONNECTION_ATTEMPTS) {
+            Log.e(TAG, "Máximo número de intentos de reconexión alcanzado")
+            handler.post { connectionListener?.onConnectionFailed("No se pudo restablecer la conexión") }
+            return
+        }
+
+        Log.d(TAG, "Intentando reconexión ${reconnectionAttempts + 1}/$MAX_RECONNECTION_ATTEMPTS")
+
         Thread {
             try {
-                val inputStream = socket.inputStream
-                val buffer = ByteArray(1024)
-                while (true) {
-                    val bytes = inputStream.read(buffer)
-                    if (bytes == -1) break
-                    val receivedData = String(buffer, 0, bytes)
-                    callback(receivedData)
+                val socket = device.createRfcommSocketToServiceRecord(MY_UUID)
+                socket.connect()
+
+                // Limpiar streams antiguos
+                clearOldConnections()
+
+                // Configurar nuevos streams
+                setupStreams(socket)
+
+                reconnectionAttempts = 0
+                Log.d(TAG, "Reconexión exitosa")
+
+                // Reiniciar la recepción de datos
+                receiveData(socket) { data ->
+                    processReceivedData(data, device, localPlayerPosition)
                 }
+
             } catch (e: IOException) {
-                Log.e(TAG, "Error al recibir datos: ${e.message}")
+                Log.e(TAG, "Error en reconexión: ${e.message}")
+                reconnectionAttempts++
+                handler.postDelayed({ reconnectToDevice(device) }, 5000) // Esperar 5 segundos antes de reintentar
             }
         }.start()
     }
+
+    private fun clearOldConnections() {
+        clientSockets.forEach { it.close() }
+        clientSockets.clear()
+        inputStreams.clear()
+        outputStreams.clear()
+    }
+
+
+    private fun receiveData(socket: BluetoothSocket, callback: (String) -> Unit) {
+        Thread {
+            val reader = BufferedReader(InputStreamReader(socket.inputStream))
+
+            while (isConnectionActive) {
+                try {
+                    val receivedData = reader.readLine()
+                    if (receivedData == null) {
+                        Log.e(TAG, "Conexión cerrada por el otro extremo")
+                        break
+                    }
+
+                    Log.d(TAG, "Datos recibidos: $receivedData")
+                    handler.post { callback(receivedData) }
+
+                } catch (e: IOException) {
+                    Log.e(TAG, "Error leyendo datos: ${e.message}")
+                    val device = socket.remoteDevice
+                    if (isConnectionActive) {
+                        reconnectToDevice(device)
+                    }
+                    break
+                }
+            }
+        }.start()
+    }
+
+    fun stopConnection() {
+        isConnectionActive = false
+        clearOldConnections()
+    }
+
+    fun resumeConnection() {
+        isConnectionActive = true
+        reconnectionAttempts = 0
+        // Reconectar con dispositivos guardados
+        connectedDevices.forEach { device ->
+            reconnectToDevice(device)
+        }
+    }
+
+
+    private fun startHeartbeat() {
+        Thread {
+            while (true) {
+                try {
+                    Thread.sleep(5000) // Cada 5 segundos
+                    val heartbeat = JSONObject().apply {
+                        put("type", "heartbeat")
+                        put("timestamp", System.currentTimeMillis())
+                    }
+                    sendData(heartbeat.toString())
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error en heartbeat: ${e.message}")
+                }
+            }
+        }.start()
+    }
+
+    private fun sendData(data: String) {
+        try {
+            outputStreams.forEach { outputStream ->
+                try {
+                    outputStream.write((data + "\n").toByteArray())
+                    outputStream.flush()
+                } catch (e: IOException) {
+                    Log.e(TAG, "Error enviando datos: ${e.message}")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error en sendData: ${e.message}")
+        }
+    }
+
 
     private val remotePlayerPositions = mutableMapOf<String, Pair<Int, Int>>() // Posiciones remotas
 
@@ -166,15 +366,22 @@ class BluetoothGameManager private constructor() {
             val jsonData = JSONObject(data)
             val x = jsonData.getInt("x")
             val y = jsonData.getInt("y")
-            val remotePlayerId = device.name ?: "Unknown"
+
+            Log.d(TAG, "Datos recibidos del dispositivo ${device.name}: x=$x, y=$y")
 
             handler.post {
                 // Guardar posición remota
-                remotePlayerPositions[remotePlayerId] = Pair(x, y)
+                remotePlayerPositions[device.name ?: "Unknown"] = Pair(x, y)
 
-                // Actualizar la posición en la UI y enviar al servidor Node.js
+                // Notificar al listener
                 connectionListener?.onPositionReceived(device, x, y)
-                sendBothPositions(localPosition, Pair(x, y)) // Enviar posiciones de ambos jugadores
+
+                // Enviar ambas posiciones
+                try {
+                    sendBothPositions(localPosition, Pair(x, y))
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error enviando posiciones: ${e.message}")
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error procesando datos JSON: ${e.message}")
@@ -182,8 +389,9 @@ class BluetoothGameManager private constructor() {
     }
 
     private fun hasPermission(permission: String): Boolean {
-        return ActivityCompat.checkSelfPermission(appContext!!, permission) == PackageManager.PERMISSION_GRANTED
+        return ActivityCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
     }
+
 
     private fun getDeviceName(device: BluetoothDevice?): String {
         return if (hasPermission(Manifest.permission.BLUETOOTH_CONNECT)) {
@@ -262,19 +470,15 @@ class BluetoothGameManager private constructor() {
         private const val NAME = "BluetoothGame"
         private val MY_UUID: UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
         private val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-        var appContext: Context? = null
 
         @Volatile
         private var INSTANCE: BluetoothGameManager? = null
 
-        fun getInstance(): BluetoothGameManager {
+        fun getInstance(context: Context): BluetoothGameManager {
             return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: BluetoothGameManager().also { INSTANCE = it }
+                INSTANCE ?: BluetoothGameManager(context).also { INSTANCE = it }
             }
         }
-
-        fun initialize(context: Context) {
-            appContext = context.applicationContext
-        }
     }
+
 }

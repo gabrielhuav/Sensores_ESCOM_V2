@@ -1,11 +1,22 @@
 package ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer
 
+import android.content.Context
 import okhttp3.*
 import okio.ByteString
 import org.json.JSONObject
 import java.util.concurrent.LinkedBlockingQueue
 
-class OnlineServerManager(private val listener: WebSocketListener) {
+class OnlineServerManager(private val context: Context, private var listener: WebSocketListener? = null) {
+    companion object {
+        @Volatile
+        private var INSTANCE: OnlineServerManager? = null
+
+        fun getInstance(context: Context, listener: WebSocketListener? = null): OnlineServerManager {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: OnlineServerManager(context, listener).also { INSTANCE = it }
+            }
+        }
+    }
 
     private val client = OkHttpClient()
     private var webSocket: WebSocket? = null
@@ -94,8 +105,8 @@ class OnlineServerManager(private val listener: WebSocketListener) {
         }
 
         override fun onMessage(webSocket: WebSocket, text: String) {
-            println("Received message: $text")
-            listener.onMessageReceived(text)
+            println("ServerReceived message: $text")
+            listener?.onMessageReceived(text)  // Usar ?. en lugar de .
         }
 
         override fun onMessage(webSocket: WebSocket, bytes: ByteString) {

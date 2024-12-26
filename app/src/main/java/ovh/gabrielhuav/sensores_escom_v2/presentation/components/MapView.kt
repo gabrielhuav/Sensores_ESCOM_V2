@@ -144,7 +144,7 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
     private lateinit var gestureDetector: GestureDetectorCompat
     private lateinit var scaleGestureDetector: ScaleGestureDetector
 
-    private val onlineServerManager = OnlineServerManager(this)
+    private val onlineServerManager = OnlineServerManager(context)
 
     init {
         initializeDetectors()
@@ -333,15 +333,18 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
     override fun onMessageReceived(message: String) {
         val jsonObject = JSONObject(message)
         if (jsonObject.getString("type") == "positions") {
-            val players = jsonObject.getJSONObject("players")
-            val positions = mutableMapOf<String, Pair<Int, Int>>()
-            players.keys().forEach { playerId ->
-                val position = players.getJSONObject(playerId)
-                val x = position.getInt("x")
-                val y = position.getInt("y")
-                positions[playerId] = Pair(x, y)
+            val playerId = jsonObject.getString("id") // Asegúrate de que el ID del remitente esté en el JSON
+            Log.d("MapView", "Mensaje recibido de $playerId: $message")
+
+            // Enviar confirmación al remitente
+            val ackMessage = JSONObject().apply {
+                put("type", "ack")
+                put("id", playerId)
+                put("status", "received")
             }
-            updateRemotePlayerPositions(positions)
+            onlineServerManager.queueMessage(ackMessage.toString())
         }
     }
+
+
 }

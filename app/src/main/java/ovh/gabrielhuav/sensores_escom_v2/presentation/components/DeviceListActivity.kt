@@ -18,7 +18,7 @@ import androidx.core.app.ActivityCompat
 import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 
-class DeviceListActivity : AppCompatActivity() {
+class DeviceListActivity : AppCompatActivity(), BluetoothGameManager.ConnectionListener {
 
     private lateinit var bluetoothAdapter: BluetoothAdapter
     private lateinit var deviceListView: ListView
@@ -29,6 +29,7 @@ class DeviceListActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_device_list)
 
+        // Initialize views
         deviceListView = findViewById(R.id.deviceListView)
         val scanButton = findViewById<Button>(R.id.btnScanDevices)
         val backToMenuButton = findViewById<Button>(R.id.btnBackToMenu)
@@ -41,12 +42,26 @@ class DeviceListActivity : AppCompatActivity() {
             return
         }
 
-        checkAndRequestPermissions()
+        // Get player name from intent
+        val playerName = intent.getStringExtra("PLAYER_NAME") ?: run {
+            Toast.makeText(this, "Nombre de jugador no encontrado", Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
 
-        // Mostrar dispositivos emparejados
+        // Initialize BluetoothGameManager with context
+        BluetoothGameManager.getInstance(applicationContext).apply {
+            setConnectionListener(this@DeviceListActivity)
+            initialize(playerName)
+        }
+
+        checkAndRequestPermissions()
         showPairedDevices()
 
-        // Configuración de eventos
+        // Check if device is Bluetooth server or client
+        val isServer = intent.getBooleanExtra("IS_SERVER", false)
+
+        // Event setup
         scanButton.setOnClickListener {
             if (hasRequiredPermissions()) {
                 startDiscovery()
@@ -67,23 +82,22 @@ class DeviceListActivity : AppCompatActivity() {
             }
         }
 
-        // Registrar receptor de broadcast
+        // Register broadcast receiver
         val filter = IntentFilter().apply {
             addAction(BluetoothDevice.ACTION_FOUND)
             addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
         }
         registerReceiver(receiver, filter)
     }
-
     private fun connectToDevice(device: BluetoothDevice) {
         val isServer = intent.getBooleanExtra("IS_SERVER", false)
 
         if (isServer) {
-            BluetoothGameManager.getInstance().startServer()
+            BluetoothGameManager.getInstance(applicationContext).startServer() // Pasando el contexto
             launchGameplayActivity(isServer = true)
         } else {
-            BluetoothGameManager.getInstance().connectToDevice(device)
-            BluetoothGameManager.getInstance().setConnectionListener(object :
+            BluetoothGameManager.getInstance(applicationContext).connectToDevice(device) // Pasando el contexto
+            BluetoothGameManager.getInstance(applicationContext).setConnectionListener(object :
                 BluetoothGameManager.ConnectionListener {
                 override fun onDeviceConnected(device: BluetoothDevice) {
                     runOnUiThread {
@@ -114,6 +128,29 @@ class DeviceListActivity : AppCompatActivity() {
                     }
                 }
             })
+        }
+    }
+
+    // Add required interface implementations
+    override fun onDeviceConnected(device: BluetoothDevice) {
+        runOnUiThread {
+            Toast.makeText(this, "Conectado a ${device.name ?: "Dispositivo desconocido"}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
+        // Not needed in DeviceListActivity
+    }
+
+    override fun onConnectionComplete() {
+        runOnUiThread {
+            Toast.makeText(this, "Conexión establecida", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onConnectionFailed(message: String) {
+        runOnUiThread {
+            Toast.makeText(this, "Error de conexión: $message", Toast.LENGTH_SHORT).show()
         }
     }
 

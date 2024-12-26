@@ -49,6 +49,16 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
     // Declaración del BluetoothWebSocketBridge
     private lateinit var bluetoothBridge: BluetoothWebSocketBridge
 
+    override fun onPause() {
+        super.onPause()
+        BluetoothGameManager.getInstance(applicationContext).stopConnection()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        BluetoothGameManager.getInstance(applicationContext).resumeConnection()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_gameplay)
@@ -71,11 +81,15 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         val isServer = intent.getBooleanExtra("IS_SERVER", false)
 
         // Configure BluetoothGameManager
-        BluetoothGameManager.appContext = applicationContext
-        BluetoothGameManager.getInstance().setConnectionListener(this)
+        val bluetoothManager = BluetoothGameManager.getInstance(applicationContext).apply {
+            setConnectionListener(this@GameplayActivity)
+            initialize(playerName, this@GameplayActivity) // Pasando this como WebSocketListener
+        }
 
         // Configure OnlineServerManager
-        onlineServerManager = OnlineServerManager(this)
+        onlineServerManager = OnlineServerManager(this@GameplayActivity, this)
+
+        //BluetoothGameManager.getInstance().initialize(onlineServerManager, playerName)
 
         // Configure BluetoothWebSocketBridge
         bluetoothBridge = BluetoothWebSocketBridge.getInstance()
@@ -94,6 +108,7 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         setupInteractionButton(findViewById(R.id.button_a))
         checkBluetoothSupport()
     }
+
     private fun initializeViews() {
         btnStartServer = findViewById(R.id.button_small_1)
         btnConnectDevice = findViewById(R.id.button_small_2)
@@ -130,7 +145,10 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         // Get selected device from intent
         val selectedDevice = intent.getParcelableExtra<BluetoothDevice>("SELECTED_DEVICE")
         selectedDevice?.let { device ->
-            BluetoothGameManager.getInstance().connectToDevice(device)
+            BluetoothGameManager.getInstance(applicationContext).apply {
+                setConnectionListener(this@GameplayActivity)
+                connectToDevice(device)
+            }
         }
     }
 
@@ -205,7 +223,10 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
             return
         }
 
-        BluetoothGameManager.getInstance().startServer()
+        BluetoothGameManager.getInstance(applicationContext).apply {
+            setConnectionListener(this@GameplayActivity)
+            startServer()
+        }
         updateBluetoothStatus("Servidor Bluetooth iniciado, esperando conexiones.")
         Toast.makeText(this, "Servidor Bluetooth iniciado, esperando conexiones.", Toast.LENGTH_SHORT).show()
     }
@@ -249,6 +270,7 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         }
     }
 
+    // In GameplayActivity.kt - Update movePlayer method
     private fun movePlayer(deltaX: Int, deltaY: Int) {
         val newX = (localPlayerPosition.first + deltaX).coerceIn(0, 39)
         val newY = (localPlayerPosition.second + deltaY).coerceIn(0, 39)
@@ -257,8 +279,13 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
             localPlayerPosition = Pair(newX, newY)
             mapView.updateLocalPlayerPosition(localPlayerPosition)
 
-            // Actualizar a través del puente
+            // Send position via Bluetooth
+            BluetoothGameManager.getInstance(applicationContext).sendPlayerPosition(newX, newY)
+
+            // Update through bridge
             bluetoothBridge.updatePosition(playerName, localPlayerPosition)
+
+            Log.d("GameplayActivity", "Position sent: ($newX, $newY)")
         }
     }
 
@@ -344,13 +371,21 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
     }
 
     override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
-        val remotePosition = Pair(x, y)
-        Log.d("GameplayActivity", "Local position: $localPlayerPosition, Remote position: $remotePosition")
-        BluetoothGameManager.getInstance().sendBothPositions(localPlayerPosition, remotePosition)
-        onlineServerManager.sendBothPositions(playerName, localPlayerPosition.first, localPlayerPosition.second, x, y, "main")
+        runOnUiThread {
+            val remotePosition = Pair(x, y)
+            Log.d("GameplayActivity", "Recibida posición del dispositivo ${device.name}: ($x, $y)")
+            Toast.makeText(this, "Dispositivo ${device.name} se movió a ($x, $y)", Toast.LENGTH_SHORT).show()
+
+            try {
+                BluetoothGameManager.getInstance(applicationContext).sendBothPositions(localPlayerPosition, remotePosition)
+                onlineServerManager.sendBothPositions(playerName,
+                    localPlayerPosition.first, localPlayerPosition.second,
+                    x, y, "main")
+            } catch (e: Exception) {
+                Log.e("GameplayActivity", "Error al procesar posición: ${e.message}")
+            }
+        }
     }
-
-
 
     override fun onConnectionComplete() {
         runOnUiThread {

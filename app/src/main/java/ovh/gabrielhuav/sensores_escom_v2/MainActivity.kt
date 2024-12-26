@@ -35,8 +35,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main_menu)
 
-        // Inicializa el contexto de BluetoothGameManager
-        BluetoothGameManager.initialize(this)
+        // Obtener instancia de BluetoothGameManager
+        val bluetoothManager = BluetoothGameManager.getInstance(applicationContext)
 
         // Verificar permisos
         if (!hasPermissions()) {
