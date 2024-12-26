@@ -29,7 +29,6 @@ class DeviceListActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_device_list)
 
-        // BluetoothGameManager ya está inicializado en MainActivity o Application
         deviceListView = findViewById(R.id.deviceListView)
         val scanButton = findViewById<Button>(R.id.btnScanDevices)
         val backToMenuButton = findViewById<Button>(R.id.btnBackToMenu)
@@ -42,7 +41,6 @@ class DeviceListActivity : AppCompatActivity() {
             return
         }
 
-        // Verificar y solicitar permisos
         checkAndRequestPermissions()
 
         // Mostrar dispositivos emparejados
@@ -77,47 +75,56 @@ class DeviceListActivity : AppCompatActivity() {
         registerReceiver(receiver, filter)
     }
 
-
     private fun connectToDevice(device: BluetoothDevice) {
-        BluetoothGameManager.getInstance().connectToDevice(device)
-        BluetoothGameManager.getInstance().setConnectionListener(object :
-            BluetoothGameManager.ConnectionListener {
-            override fun onDeviceConnected(device: BluetoothDevice) {
-                runOnUiThread {
-                    Toast.makeText(
-                        this@DeviceListActivity,
-                        "Conexión exitosa con ${device.name ?: "Dispositivo desconocido"}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    launchGameplayActivity()
+        val isServer = intent.getBooleanExtra("IS_SERVER", false)
+
+        if (isServer) {
+            BluetoothGameManager.getInstance().startServer()
+            launchGameplayActivity(isServer = true)
+        } else {
+            BluetoothGameManager.getInstance().connectToDevice(device)
+            BluetoothGameManager.getInstance().setConnectionListener(object :
+                BluetoothGameManager.ConnectionListener {
+                override fun onDeviceConnected(device: BluetoothDevice) {
+                    runOnUiThread {
+                        Toast.makeText(
+                            this@DeviceListActivity,
+                            "Conexión exitosa con ${device.name ?: "Dispositivo desconocido"}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        launchGameplayActivity(isServer = false, selectedDevice = device)
+                    }
                 }
-            }
 
-            override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
-                // No es necesario manejar aquí, el GameplayActivity lo hará
-            }
-
-            override fun onConnectionComplete() {
-                // Conexión completa, ya manejada en `onDeviceConnected`
-            }
-
-            override fun onConnectionFailed(message: String) {
-                runOnUiThread {
-                    Toast.makeText(
-                        this@DeviceListActivity,
-                        "Error al conectar: $message",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
+                    // Manejado en GameplayActivity
                 }
-            }
-        })
+
+                override fun onConnectionComplete() {
+                    // Conexión completa, manejada en `onDeviceConnected`
+                }
+
+                override fun onConnectionFailed(message: String) {
+                    runOnUiThread {
+                        Toast.makeText(
+                            this@DeviceListActivity,
+                            "Error al conectar: $message",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            })
+        }
     }
 
-    private fun launchGameplayActivity() {
+    private fun launchGameplayActivity(isServer: Boolean, selectedDevice: BluetoothDevice? = null) {
         val playerName = intent.getStringExtra("PLAYER_NAME") ?: "Jugador"
         val intent = Intent(this, GameplayActivity::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
-            putExtra("PLAYER_POSITION", Pair(1, 1)) // Posición inicial
+            putExtra("IS_SERVER", isServer)
+            if (!isServer) {
+                putExtra("SELECTED_DEVICE", selectedDevice)
+            }
         }
         startActivity(intent)
         finish()
@@ -219,7 +226,6 @@ class DeviceListActivity : AppCompatActivity() {
     }
 
     companion object {
-        const val EXTRA_DEVICE = "device"
         private const val PERMISSION_REQUEST_CODE = 1001
         private val REQUIRED_PERMISSIONS = arrayOf(
             Manifest.permission.BLUETOOTH_SCAN,

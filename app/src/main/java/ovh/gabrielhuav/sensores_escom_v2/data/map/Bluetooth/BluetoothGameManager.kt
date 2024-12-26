@@ -11,6 +11,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.core.app.ActivityCompat
+import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
@@ -158,6 +159,8 @@ class BluetoothGameManager private constructor() {
         }.start()
     }
 
+    private val remotePlayerPositions = mutableMapOf<String, Pair<Int, Int>>() // Posiciones remotas
+
     private fun processReceivedData(data: String, device: BluetoothDevice, localPosition: Pair<Int, Int>) {
         try {
             val jsonData = JSONObject(data)
@@ -166,9 +169,12 @@ class BluetoothGameManager private constructor() {
             val remotePlayerId = device.name ?: "Unknown"
 
             handler.post {
+                // Guardar posición remota
+                remotePlayerPositions[remotePlayerId] = Pair(x, y)
+
                 // Actualizar la posición en la UI y enviar al servidor Node.js
                 connectionListener?.onPositionReceived(device, x, y)
-                sendBothPositions(localPosition, Pair(x, y))
+                sendBothPositions(localPosition, Pair(x, y)) // Enviar posiciones de ambos jugadores
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error procesando datos JSON: ${e.message}")
@@ -214,6 +220,37 @@ class BluetoothGameManager private constructor() {
             }
 
             Log.d(TAG, "Sending message: $data")
+            onlineServerManager.queueMessage(data.toString())
+        } catch (e: JSONException) {
+            Log.e(TAG, "Error building JSON: ${e.message}")
+        }
+    }
+
+    fun sendAllPositions(localPosition: Pair<Int, Int>) {
+        try {
+            val data = JSONObject().apply {
+                put("type", "update")
+                put("id", playerName.trim())
+                put("map", "main")
+                put("local", JSONObject().apply {
+                    put("x", localPosition.first)
+                    put("y", localPosition.second)
+                })
+
+                // Agregar todas las posiciones remotas
+                val remotesArray = JSONArray()
+                remotePlayerPositions.forEach { (id, position) ->
+                    val remoteData = JSONObject().apply {
+                        put("id", id)
+                        put("x", position.first)
+                        put("y", position.second)
+                    }
+                    remotesArray.put(remoteData)
+                }
+                put("remotes", remotesArray)
+            }
+
+            Log.d(TAG, "Sending message with all positions: $data")
             onlineServerManager.queueMessage(data.toString())
         } catch (e: JSONException) {
             Log.e(TAG, "Error building JSON: ${e.message}")

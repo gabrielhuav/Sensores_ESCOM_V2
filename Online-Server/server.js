@@ -115,24 +115,26 @@ wss.on("connection", (ws) => {
                 console.log(`Updated position for ${trimmedId}:`, position);
             }
     
-            // Si hay datos remotos, actualízalos también
-            if (data.remote) {
-                const remoteId = `${trimmedId}_remote`;
-                const remotePosition = processPosition({ local: data.remote });
-    
-                if (!players[remoteId]) {
-                    players[remoteId] = { positions: {}, currentMap: data.map };
-                }
-    
-                players[remoteId].positions[data.map] = remotePosition;
-                players[remoteId].currentMap = data.map;
-                console.log(`Updated remote position for ${remoteId}:`, remotePosition);
+            // Procesar posiciones remotas
+            if (data.remotes && Array.isArray(data.remotes)) {
+                data.remotes.forEach((remote) => {
+                    if (remote.id && typeof remote.x === "number" && typeof remote.y === "number") {
+                        const remoteId = remote.id.trim();
+                        if (!players[remoteId]) {
+                            players[remoteId] = { positions: {}, currentMap: data.map };
+                        }
+                        players[remoteId].positions[data.map] = { x: remote.x, y: remote.y };
+                        players[remoteId].currentMap = data.map;
+                        console.log(`Updated remote position for ${remoteId}:`, { x: remote.x, y: remote.y });
+                    }
+                });
             }
         } else {
             console.warn(`Player ${trimmedId} not found, creating new entry`);
             players[trimmedId] = { positions: { [data.map]: processPosition(data) }, currentMap: data.map };
         }
-    }    
+    }
+    
       else if (data.type === "leave") {
         const trimmedId = data.id.trim();
         if (players[trimmedId]) {
