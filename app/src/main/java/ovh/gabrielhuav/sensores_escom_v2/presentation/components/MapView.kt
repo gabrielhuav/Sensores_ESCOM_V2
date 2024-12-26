@@ -149,7 +149,7 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
     init {
         initializeDetectors()
         setMapResource(R.drawable.escom_mapa)
-        onlineServerManager.connectToServer("ws://192.168.1.31:3000/socket")
+        onlineServerManager.connectToServer("ws://192.168.1.17:3000/socket")
     }
 
     private fun initializeDetectors() {

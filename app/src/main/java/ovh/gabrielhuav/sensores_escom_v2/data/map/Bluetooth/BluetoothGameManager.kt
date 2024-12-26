@@ -11,7 +11,9 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.core.app.ActivityCompat
+import org.json.JSONException
 import org.json.JSONObject
+import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
@@ -28,6 +30,10 @@ class BluetoothGameManager private constructor() {
     private val connectedDevices = CopyOnWriteArrayList<BluetoothDevice>()
     private var connectionListener: ConnectionListener? = null
     private val handler = Handler(Looper.getMainLooper())
+
+    private var playerName: String = ""
+    private lateinit var onlineServerManager: OnlineServerManager
+    private var localPlayerPosition: Pair<Int, Int> = Pair(0, 0) // Posición inicial
 
     interface ConnectionListener {
         fun onDeviceConnected(device: BluetoothDevice)
@@ -71,7 +77,8 @@ class BluetoothGameManager private constructor() {
                     Log.d(TAG, "Cliente conectado: ${getDeviceName(remoteDevice)}")
 
                     receiveData(socket) { data ->
-                        processReceivedData(data, remoteDevice)
+                        // Pasa la posición local al procesar los datos recibidos
+                        processReceivedData(data, remoteDevice, localPlayerPosition)
                     }
                 }
             } catch (e: IOException) {
@@ -106,7 +113,7 @@ class BluetoothGameManager private constructor() {
                 Log.d(TAG, "Conectado al servidor: ${getDeviceName(device)}")
 
                 receiveData(socket) { data ->
-                    processReceivedData(data, device)
+                    processReceivedData(data, device, localPlayerPosition)
                 }
             } catch (e: IOException) {
                 Log.e(TAG, "Error al conectar al dispositivo: ${e.message}")
@@ -151,13 +158,17 @@ class BluetoothGameManager private constructor() {
         }.start()
     }
 
-    private fun processReceivedData(data: String, device: BluetoothDevice) {
+    private fun processReceivedData(data: String, device: BluetoothDevice, localPosition: Pair<Int, Int>) {
         try {
             val jsonData = JSONObject(data)
             val x = jsonData.getInt("x")
             val y = jsonData.getInt("y")
+            val remotePlayerId = device.name ?: "Unknown"
+
             handler.post {
+                // Actualizar la posición en la UI y enviar al servidor Node.js
                 connectionListener?.onPositionReceived(device, x, y)
+                sendBothPositions(localPosition, Pair(x, y))
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error procesando datos JSON: ${e.message}")
@@ -181,6 +192,31 @@ class BluetoothGameManager private constructor() {
             serverSocket?.close()
         } catch (e: IOException) {
             Log.e(TAG, "Error al cerrar el socket del servidor: ${e.message}")
+        }
+    }
+
+    fun sendBothPositions(localPosition: Pair<Int, Int>, remotePosition: Pair<Int, Int>?) {
+        try {
+            val data = JSONObject().apply {
+                put("type", "update")
+                put("id", playerName.trim())
+                put("map", "main")
+                put("local", JSONObject().apply {
+                    put("x", localPosition.first)
+                    put("y", localPosition.second)
+                })
+                remotePosition?.let {
+                    put("remote", JSONObject().apply {
+                        put("x", it.first)
+                        put("y", it.second)
+                    })
+                }
+            }
+
+            Log.d(TAG, "Sending message: $data")
+            onlineServerManager.queueMessage(data.toString())
+        } catch (e: JSONException) {
+            Log.e(TAG, "Error building JSON: ${e.message}")
         }
     }
 

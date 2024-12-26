@@ -2,6 +2,7 @@ package ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer
 
 import okhttp3.*
 import okio.ByteString
+import org.json.JSONObject
 import java.util.concurrent.LinkedBlockingQueue
 
 class OnlineServerManager(private val listener: WebSocketListener) {
@@ -36,12 +37,32 @@ class OnlineServerManager(private val listener: WebSocketListener) {
         queueMessage(message)
     }
 
-    private fun queueMessage(message: String) {
+    fun queueMessage(message: String) {
         if (isConnected) {
             webSocket?.send(message)
         } else {
             messageQueue.offer(message) // Almacena los mensajes hasta que la conexión esté lista
         }
+    }
+
+    fun sendBothPositions(playerId: String, localX: Int, localY: Int, remoteX: Int?, remoteY: Int?, map: String) {
+        val message = JSONObject().apply {
+            put("type", "update")
+            put("id", playerId)
+            put("map", map)
+            put("local", JSONObject().apply {
+                put("x", localX)
+                put("y", localY)
+            })
+            if (remoteX != null && remoteY != null) {
+                put("remote", JSONObject().apply {
+                    put("x", remoteX)
+                    put("y", remoteY)
+                })
+            }
+        }.toString()
+
+        queueMessage(message)
     }
 
     private fun flushMessageQueue() {

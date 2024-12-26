@@ -36,7 +36,7 @@ class BuildingActivity : AppCompatActivity(), OnlineServerManager.WebSocketListe
 
         // Inicializar el servidor
         onlineServerManager = OnlineServerManager(this)
-        onlineServerManager.connectToServer("ws://192.168.1.31:3000")
+        onlineServerManager.connectToServer("ws://192.168.1.17:3000")
 
         // Configurar el MapView
         setupMapView(Pair(0, 0)) // Siempre inicializa en (0, 0) al entrar al edificio
