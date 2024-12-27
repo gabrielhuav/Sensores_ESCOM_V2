@@ -234,8 +234,16 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
     }
 
     override fun onDraw(canvas: Canvas) {
+        val cellWidth = backgroundBitmap!!.width / mapMatrix[0].size.toFloat()
+        val cellHeight = backgroundBitmap!!.height / mapMatrix.size.toFloat()
         super.onDraw(canvas)
 
+        // Dibujar el mapa de fondo (tu código existente)
+        backgroundBitmap?.let {
+            canvas.drawBitmap(it, 0f, 0f, null)
+        }
+
+        // Dibujar la matriz (tu código existente)
         if (backgroundBitmap == null) {
             canvas.drawColor(Color.RED)
             val errorPaint = Paint().apply {
@@ -259,10 +267,28 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
         drawMapMatrix(canvas)
         canvas.drawBitmap(backgroundBitmap!!, 0f, 0f, null)
 
-        // Dibujar jugadores
-        drawPlayers(canvas)
 
-        canvas.restore()
+        // Dibujar al jugador local
+        localPlayerPosition?.let {
+            val playerX = it.first * cellWidth + cellWidth / 2
+            val playerY = it.second * cellHeight + cellHeight / 2
+            canvas.drawCircle(playerX, playerY, cellWidth / 4f, paintLocalPlayer)
+        }
+
+        // Dibujar a los jugadores remotos
+        for ((id, position) in remotePlayerPositions) {
+            if (id == localPlayerId) continue
+            val remotePlayerX = position.first * cellWidth + cellWidth / 2
+            val remotePlayerY = position.second * cellHeight + cellHeight / 2
+            canvas.drawCircle(remotePlayerX, remotePlayerY, cellWidth / 4f, paintRemotePlayer)
+        }
+
+        // Dibujar al jugador Bluetooth
+        bluetoothPlayerPosition?.let {
+            val bluetoothX = it.first * cellWidth + cellWidth / 2
+            val bluetoothY = it.second * cellHeight + cellHeight / 2
+            canvas.drawCircle(bluetoothX, bluetoothY, cellWidth / 4f, paintBluetoothPlayer)
+        }
     }
 
     private fun drawPlayers(canvas: Canvas) {
@@ -311,6 +337,26 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
         }
 
         invalidate() // Redibujar el mapa
+    }
+
+    // Para el jugador Bluetooth
+    private var isBluetoothServer = false
+    private var bluetoothPlayerPosition: Pair<Int, Int>? = null
+    private val paintBluetoothPlayer = Paint().apply {
+        color = Color.GREEN  // Color para jugador Bluetooth
+        style = Paint.Style.FILL
+    }
+
+    fun setBluetoothServerMode(isServer: Boolean) {
+        isBluetoothServer = isServer
+        // Cambiar color según si es servidor o cliente
+        paintBluetoothPlayer.color = if (isServer) Color.YELLOW else Color.GREEN
+        invalidate()
+    }
+
+    fun updateBluetoothPlayerPosition(position: Pair<Int, Int>?) {
+        bluetoothPlayerPosition = position
+        invalidate()
     }
 
     fun removeRemotePlayer(playerId: String) {

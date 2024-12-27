@@ -39,7 +39,9 @@ class BluetoothGameManager private constructor(private val context: Context) {
 
     private var isConnectionActive = true
     private var reconnectionAttempts = 0
-    private val MAX_RECONNECTION_ATTEMPTS = 3
+    private val MAX_RECONNECTION_ATTEMPTS = 5
+
+    private var isServer = false
 
     // Elimina el init block anterior y usa esta función
     fun initialize(playerName: String, listener: OnlineServerManager.WebSocketListener? = null) {
@@ -115,6 +117,8 @@ class BluetoothGameManager private constructor(private val context: Context) {
             return
         }
 
+        isServer = false // Añadir esta línea
+
         Thread {
             try {
                 Log.d(TAG, "Iniciando conexión a ${getDeviceName(device)}...")
@@ -151,7 +155,6 @@ class BluetoothGameManager private constructor(private val context: Context) {
         }.start()
     }
 
-
     private fun setupStreams(socket: BluetoothSocket) {
         try {
             Log.d(TAG, "Configurando streams para socket")
@@ -166,8 +169,6 @@ class BluetoothGameManager private constructor(private val context: Context) {
             Log.e(TAG, "Error configurando streams: ${e.message}")
         }
     }
-
-
 
     fun sendPlayerPosition(x: Int, y: Int) {
         if (!isConnectionActive) {
@@ -240,6 +241,7 @@ class BluetoothGameManager private constructor(private val context: Context) {
     }
 
 
+
     private fun reconnectToDevice(device: BluetoothDevice) {
         if (reconnectionAttempts >= MAX_RECONNECTION_ATTEMPTS) {
             Log.e(TAG, "Máximo número de intentos de reconexión alcanzado")
@@ -247,18 +249,32 @@ class BluetoothGameManager private constructor(private val context: Context) {
             return
         }
 
+        // Eliminar esta parte que causaba la recursión infinita
+        /* if (outputStreams.isEmpty()) {
+            Log.e(TAG, "No hay streams de salida disponibles - Intentando reconexión")
+            connectedDevices.forEach { device ->
+                reconnectToDevice(device)
+            }
+            return
+        } */
+
         Log.d(TAG, "Intentando reconexión ${reconnectionAttempts + 1}/$MAX_RECONNECTION_ATTEMPTS")
 
         Thread {
             try {
+                // Limpiar conexiones antiguas antes de intentar reconectar
+                clearOldConnections()
+
                 val socket = device.createRfcommSocketToServiceRecord(MY_UUID)
                 socket.connect()
 
-                // Limpiar streams antiguos
-                clearOldConnections()
-
                 // Configurar nuevos streams
                 setupStreams(socket)
+
+                // Agregar el dispositivo si no está en la lista
+                if (!connectedDevices.contains(device)) {
+                    connectedDevices.add(device)
+                }
 
                 reconnectionAttempts = 0
                 Log.d(TAG, "Reconexión exitosa")
@@ -271,16 +287,37 @@ class BluetoothGameManager private constructor(private val context: Context) {
             } catch (e: IOException) {
                 Log.e(TAG, "Error en reconexión: ${e.message}")
                 reconnectionAttempts++
-                handler.postDelayed({ reconnectToDevice(device) }, 5000) // Esperar 5 segundos antes de reintentar
+                if (reconnectionAttempts < MAX_RECONNECTION_ATTEMPTS) {
+                    handler.postDelayed({
+                        if (isConnectionActive) {
+                            reconnectToDevice(device)
+                        }
+                    }, 3000) // 3 segundos entre intentos
+                } else {
+                    handler.post {
+                        connectionListener?.onConnectionFailed("No se pudo restablecer la conexión después de $MAX_RECONNECTION_ATTEMPTS intentos")
+                    }
+                }
             }
         }.start()
     }
 
+
     private fun clearOldConnections() {
-        clientSockets.forEach { it.close() }
-        clientSockets.clear()
-        inputStreams.clear()
-        outputStreams.clear()
+        try {
+            clientSockets.forEach {
+                try {
+                    it.close()
+                } catch (e: IOException) {
+                    Log.e(TAG, "Error cerrando socket: ${e.message}")
+                }
+            }
+            clientSockets.clear()
+            inputStreams.clear()
+            outputStreams.clear()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error en clearOldConnections: ${e.message}")
+        }
     }
 
 
@@ -293,6 +330,10 @@ class BluetoothGameManager private constructor(private val context: Context) {
                     val receivedData = reader.readLine()
                     if (receivedData == null) {
                         Log.e(TAG, "Conexión cerrada por el otro extremo")
+                        val device = socket.remoteDevice
+                        if (isConnectionActive) {
+                            reconnectToDevice(device)
+                        }
                         break
                     }
 
@@ -310,6 +351,7 @@ class BluetoothGameManager private constructor(private val context: Context) {
             }
         }.start()
     }
+
 
     fun stopConnection() {
         isConnectionActive = false
@@ -343,18 +385,30 @@ class BluetoothGameManager private constructor(private val context: Context) {
         }.start()
     }
 
+    // Modificar el método de envío de datos para manejar la reconexión
     private fun sendData(data: String) {
         try {
-            outputStreams.forEach { outputStream ->
+            var streamsClosed = false
+            outputStreams.toList().forEachIndexed { index, outputStream ->
                 try {
                     outputStream.write((data + "\n").toByteArray())
                     outputStream.flush()
+                    Log.d(TAG, "Datos enviados exitosamente")
                 } catch (e: IOException) {
                     Log.e(TAG, "Error enviando datos: ${e.message}")
+                    streamsClosed = true
+                    // Intentar reconectar con el dispositivo correspondiente
+                    if (index < connectedDevices.size) {
+                        reconnectToDevice(connectedDevices[index])
+                    }
                 }
             }
+
+            if (streamsClosed) {
+                cleanupClosedConnections()
+            }
         } catch (e: Exception) {
-            Log.e(TAG, "Error en sendData: ${e.message}")
+            Log.e(TAG, "Error general enviando datos: ${e.message}")
         }
     }
 
