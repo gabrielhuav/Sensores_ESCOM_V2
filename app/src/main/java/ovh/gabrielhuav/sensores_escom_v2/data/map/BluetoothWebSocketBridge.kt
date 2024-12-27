@@ -27,9 +27,15 @@ class BluetoothWebSocketBridge private constructor() {
     fun initialize(serverManager: OnlineServerManager, playerId: String) {
         onlineServerManager = serverManager
         localPlayerId = playerId
-        // Inicializar la posición local
-        updatePosition(localPlayerId, Pair(1, 1))
+
+        // Verificar si ya hay una posición para el jugador
+        if (!playerPositions.containsKey(localPlayerId)) {
+            updatePosition(localPlayerId, Pair(1, 1)) // Solo establecer la posición inicial si no existe
+        } else {
+            Log.d(TAG, "La posición inicial ya está establecida para $localPlayerId: ${playerPositions[localPlayerId]}")
+        }
     }
+
 
     fun synchronizeAllPositions() {
         playerPositions.forEach { (playerId, position) ->

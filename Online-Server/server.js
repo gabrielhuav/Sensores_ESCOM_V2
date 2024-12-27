@@ -94,77 +94,92 @@ wss.on("connection", (ws) => {
 
   ws.on("message", (message) => {
     try {
-      const data = JSON.parse(message);
-      console.log("Received data:", data);
+        const data = JSON.parse(message);
+        console.log("Received data:", data);
 
-      if (data.type === "join") {
-        const trimmedId = data.id.trim();
-        if (!players[trimmedId]) {
-          players[trimmedId] = { positions: {}, currentMap: "main" };
-        }
-        console.log(`Player joined: ${trimmedId}`);
-      } 
-      else if (data.type === "update") {
-        const trimmedId = data.id.trim();
-    
-        if (players[trimmedId]) {
+        if (data.type === "join") {
+            const trimmedId = data.id.trim();
+            if (!players[trimmedId]) {
+                players[trimmedId] = { positions: {}, currentMap: "main" };
+                console.log(`Player joined: ${trimmedId}`);
+            }
+        } else if (data.type === "update") {
+            const trimmedId = data.id.trim();
             const position = processPosition(data);
-            if (position) {
-                players[trimmedId].positions[data.map] = position;
-                players[trimmedId].currentMap = data.map;
-                console.log(`Updated position for ${trimmedId}:`, position);
-            }
-    
-            // Procesar posiciones remotas
-            if (data.remotes && Array.isArray(data.remotes)) {
-                data.remotes.forEach((remote) => {
-                    if (remote.id && typeof remote.x === "number" && typeof remote.y === "number") {
-                        const remoteId = remote.id.trim();
-                        if (!players[remoteId]) {
-                            players[remoteId] = { positions: {}, currentMap: data.map };
+
+            if (players[trimmedId]) {
+                const currentMap = data.map || players[trimmedId].currentMap;
+
+                // Evitar sobrescribir si la posición no cambió
+                const previousPosition = players[trimmedId].positions[currentMap] || {};
+                if (
+                    position &&
+                    (position.x !== previousPosition.x || position.y !== previousPosition.y)
+                ) {
+                    players[trimmedId].positions[currentMap] = position;
+                    players[trimmedId].currentMap = currentMap;
+                    console.log(`Updated position for ${trimmedId}:`, position);
+                }
+
+                // Procesar posiciones remotas
+                if (data.remotes && Array.isArray(data.remotes)) {
+                    data.remotes.forEach((remote) => {
+                        if (remote.id && typeof remote.x === "number" && typeof remote.y === "number") {
+                            const remoteId = remote.id.trim();
+                            if (!players[remoteId]) {
+                                players[remoteId] = { positions: {}, currentMap };
+                            }
+
+                            const remotePreviousPosition = players[remoteId].positions[currentMap] || {};
+                            if (
+                                remote.x !== remotePreviousPosition.x ||
+                                remote.y !== remotePreviousPosition.y
+                            ) {
+                                players[remoteId].positions[currentMap] = { x: remote.x, y: remote.y };
+                                players[remoteId].currentMap = currentMap;
+                                console.log(`Updated remote position for ${remoteId}:`, {
+                                    x: remote.x,
+                                    y: remote.y,
+                                });
+                            }
                         }
-                        players[remoteId].positions[data.map] = { x: remote.x, y: remote.y };
-                        players[remoteId].currentMap = data.map;
-                        console.log(`Updated remote position for ${remoteId}:`, { x: remote.x, y: remote.y });
-                    }
-                });
+                    });
+                }
+            } else {
+                console.warn(`Player ${trimmedId} not found, creating new entry`);
+                players[trimmedId] = { positions: { [data.map]: position }, currentMap: data.map };
             }
-        } else {
-            console.warn(`Player ${trimmedId} not found, creating new entry`);
-            players[trimmedId] = { positions: { [data.map]: processPosition(data) }, currentMap: data.map };
+        } else if (data.type === "leave") {
+            const trimmedId = data.id.trim();
+            if (players[trimmedId]) {
+                console.log(`Player left: ${trimmedId}`);
+                delete players[trimmedId];
+                delete players[`${trimmedId}_remote`];
+            }
         }
-    }
-    
-      else if (data.type === "leave") {
-        const trimmedId = data.id.trim();
-        if (players[trimmedId]) {
-          console.log(`Player left: ${trimmedId}`);
-          delete players[trimmedId];
-          delete players[`${trimmedId}_remote`]; // Limpia también el jugador remoto
-        }
-      }
 
-      // Preparar y enviar actualizaciones a todos los clientes
-      const broadcastData = {
-        type: "positions",
-        players: Object.fromEntries(
-          Object.entries(players).map(([id, playerData]) => [
-            id,
-            {
-              currentMap: playerData.currentMap,
-              x: playerData.positions[playerData.currentMap]?.x || 0,
-              y: playerData.positions[playerData.currentMap]?.y || 0,
-            },
-          ])
-        ),
-      };
+        // Preparar y enviar actualizaciones a todos los clientes
+        const broadcastData = {
+            type: "positions",
+            players: Object.fromEntries(
+                Object.entries(players).map(([id, playerData]) => [
+                    id,
+                    {
+                        currentMap: playerData.currentMap,
+                        x: playerData.positions[playerData.currentMap]?.x || 0,
+                        y: playerData.positions[playerData.currentMap]?.y || 0,
+                    },
+                ])
+            ),
+        };
 
-      broadcast(broadcastData);
+        broadcast(broadcastData);
     } catch (error) {
-      console.error("Error processing message:", error);
-      console.error(error.stack);
+        console.error("Error processing message:", error);
+        console.error(error.stack);
     }
-  });
+});
+
 
   ws.on("close", () => {
     console.log("A player disconnected");
