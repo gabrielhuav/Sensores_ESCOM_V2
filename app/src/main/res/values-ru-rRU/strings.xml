@@ -1,0 +1,56 @@
+<resources>
+    <string name="app_name">Сенсоры ESCOM</string>
+    <string name="single_player_mode">Режим одного игрока</string>
+    <string name="bluetooth_mode">Режим Bluetooth</string>
+    <string name="change_language">Изменить язык</string>
+    <string name="permissions_required">Для использования Bluetooth требуются разрешения.</string>
+    <string name="select_language">Выберите язык</string>
+
+    <string name="dialog_title_select_language">Выберите язык</string>
+    <string-array name="language_names">
+        <item>Español</item>
+        <item>English</item>
+        <item>Русский</item>
+    </string-array>
+
+    <string name="backToMenu">Выйти в главное меню</string>
+    <string name="position">Позиция: (%1$d, %2$d)</string>
+    <string name="north">Север</string>
+    <string name="west">Запад</string>
+    <string name="east">Восток</string>
+    <string name="south">Юг</string>
+
+    <string name="backToMenuBlt">Выйти в главное меню</string>
+    <string name="positionBlt">Позиция: (%1$d, %2$d)</string>
+    <string name="northBlt">Север</string>
+    <string name="westBlt">Запад</string>
+    <string name="eastBlt">Восток</string>
+    <string name="southBlt">Юг</string>
+    <string name="initServer">Запустить сервер</string>
+    <string name="connDevi">Подключиться к устройству</string>
+    <string name="BltSuccess">Bluetooth включен</string>
+    <string name="BltFailure">Bluetooth не был включен</string>
+    <string name="bltInitStatus">Статус: Не подключено</string>
+    <string name="DeviSelCan">Выбор устройства отменен.</string>
+    <string name="BltNotAvaiDevi">Bluetooth недоступен на этом устройстве.</string>
+    <string name="ServSucWConn">Сервер запущен. Ожидание соединения...</string>
+    <string name="unkDevi">Неизвестное устройство</string>
+    <string name="tryToConnect">Пытаюсь подключиться к </string>
+    <string name="connDeviBlt">Подключено к </string>
+    <string name="ConnSucBlt">Соединение установлено.</string>
+    <string name="connFailureBlt">Соединение не удалось</string>
+
+    <string name="ServStrErr">Ошибка запуска сервера</string>
+    <string name="BltAllMiss">Разрешения Bluetooth отсутствуют.</string>
+    <string name="ErrDataPos">Ошибка отправки данных о местоположении</string>
+    <string name="ErrRecvData">Ошибка получения данных</string>
+    <string name="ErrProcData">Ошибка обработки данных JSON:</string>
+    <string name="NotPermit">Разрешение не предоставлено</string>
+    <string name="ErrCloSock">Ошибка закрытия сокета сервера:</string>
+
+    <string name="SearchDevi">Поиск устройств...</string>
+    <string name="SearchEnd">Поиск завершен.</string>
+    <string name="SearchDevis">Поиск устройств.</string>
+
+    <string name="ErrMap">Ошибка: Карта не найдена</string>
+</resources>

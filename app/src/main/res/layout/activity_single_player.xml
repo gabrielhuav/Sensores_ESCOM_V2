@@ -10,7 +10,7 @@
         android:id="@+id/btnBackToMenu"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Regresar al Menú"
+        android:text="@string/backToMenu"
         android:layout_margin="16dp"
         android:backgroundTint="@color/teal_200"
         android:textColor="@color/white"
@@ -28,7 +28,7 @@
         android:id="@+id/tvPlayerPosition"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Posición: (0, 0)"
+        android:text="@string/position"
         android:textSize="18sp"
         android:layout_marginBottom="24dp" />
 
@@ -44,7 +44,7 @@
             android:id="@+id/btnNorth"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Norte"
+            android:text="@string/north"
             android:backgroundTint="#00FF00"
             android:textColor="@android:color/black"
             android:layout_marginBottom="8dp" />
@@ -60,7 +60,7 @@
                 android:id="@+id/btnWest"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Oeste"
+                android:text="@string/west"
                 android:backgroundTint="#FFFF00"
                 android:textColor="@android:color/black"
                 android:layout_marginEnd="8dp" />
@@ -79,7 +79,7 @@
                 android:id="@+id/btnEast"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Este"
+                android:text="@string/east"
                 android:backgroundTint="#0000FF"
                 android:textColor="@android:color/white"
                 android:layout_marginStart="8dp" />
@@ -90,7 +90,7 @@
             android:id="@+id/btnSouth"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Sur"
+            android:text="@string/south"
             android:backgroundTint="#FF00FF"
             android:textColor="@android:color/white"
             android:layout_marginTop="8dp" />

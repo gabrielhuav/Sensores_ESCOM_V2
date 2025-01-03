@@ -1,3 +1,57 @@
 <resources>
     <string name="app_name">Sensores_ESCOM_V2</string>
+
+    <string name="single_player_mode">Modo de un jugador</string>
+    <string name="bluetooth_mode">Modo Bluetooth</string>
+    <string name="change_language">Cambiar idioma</string>
+    <string name="permissions_required">Se requieren permisos para usar Bluetooth.</string>
+    <string name="select_language">Seleccione un idioma</string>
+
+    <string name="dialog_title_select_language">Seleccione un idioma</string>
+    <string-array name="language_names">
+        <item>Español</item>
+        <item>English</item>
+        <item>Русский</item>
+    </string-array>
+
+    <string name="backToMenu">Regresar al menú principal</string>
+    <string name="position">Posición: (%1$d, %2$d)</string>
+    <string name="north">Norte</string>
+    <string name="west">Oeste</string>
+    <string name="east">Este</string>
+    <string name="south">Sur</string>
+
+    <string name="backToMenuBlt">Regresar al menú principal</string>
+    <string name="positionBlt">Posición: (%1$d, %2$d)</string>
+    <string name="northBlt">Norte</string>
+    <string name="westBlt">Oeste</string>
+    <string name="eastBlt">Este</string>
+    <string name="southBlt">Sur</string>
+    <string name="initServer">Iniciar servidor</string>
+    <string name="connDevi">Conectar a dispositivo</string>
+    <string name="BltSuccess">Bluetooth habilitado</string>
+    <string name="BltFailure">Bluetooth no fue habilitado</string>
+    <string name="bltInitStatus">Estado: Desconectado</string>
+    <string name="DeviSelCan">Selección de dispositivo cancelada</string>
+    <string name="BltNotAvaiDevi">Bluetooth no está disponible en este dispositivo.</string>
+    <string name="ServSucWConn">Servidor iniciado. Esperando conexión...</string>
+    <string name="unkDevi">Desconocido</string>
+    <string name="tryToConnect">Intentando conectar a </string>
+    <string name="connDeviBlt">Conectado a </string>
+    <string name="ConnSucBlt">Conexión establecida.</string>
+    <string name="connFailureBlt">Conexión fallida</string>
+
+    <string name="ServStrErr">Error al iniciar el servidor</string>
+    <string name="BltAllMiss">Faltan permisos de Bluetooth para conectarse al dispositivo.</string>
+    <string name="ErrDataPos">Error al enviar datos de posición</string>
+    <string name="ErrRecvData">Error al recibir datos</string>
+    <string name="ErrProcData">Error procesando datos JSON:</string>
+    <string name="NotPermit">Permiso no otorgado</string>
+    <string name="ErrCloSock">Error al cerrar el socket del servidor:</string>
+
+    <string name="SearchDevi">Buscando dispositivos...</string>
+    <string name="SearchEnd">Búsqueda finalizada.</string>
+    <string name="SearchDevis">Buscar dispositivos.</string>
+
+    <string name="ErrMap">Error: Mapa no encontrado</string>
 </resources>

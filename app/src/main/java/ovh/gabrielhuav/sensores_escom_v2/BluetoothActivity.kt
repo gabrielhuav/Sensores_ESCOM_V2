@@ -42,10 +42,10 @@ class BluetoothActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLi
     private val enableBluetoothLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
-                Toast.makeText(this, "Bluetooth habilitado.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "@string/BltSuccess", Toast.LENGTH_SHORT).show()
                 checkPermissions()
             } else {
-                Toast.makeText(this, "Bluetooth no fue habilitado.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "@string/BltFailure", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -58,7 +58,7 @@ class BluetoothActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLi
                     connectToDevice(it)
                 }
             } else {
-                updateBluetoothStatus("Selección de dispositivo cancelada.")
+                updateBluetoothStatus("@string/DeviSelCan")
             }
         }
 
@@ -110,19 +110,21 @@ class BluetoothActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLi
     }
 
     private fun movePlayer(deltaX: Int, deltaY: Int) {
-        val newX = (localPlayerPosition.first + deltaX).coerceIn(0, 19) // Limitar X entre 0 y 49
-        val newY = (localPlayerPosition.second + deltaY).coerceIn(0, 19) // Limitar Y entre 0 y 49
+        val newX = (localPlayerPosition.first + deltaX).coerceIn(0, 19) // Limitar X entre 0 y 19
+        val newY = (localPlayerPosition.second + deltaY).coerceIn(0, 19) // Limitar Y entre 0 y 19
 
         localPlayerPosition = Pair(newX, newY)
         mapView.updateLocalPlayerPosition(localPlayerPosition)
-        tvPlayerPosition.text = "Posición: (${localPlayerPosition.first}, ${localPlayerPosition.second})"
+
+        // Usar la cadena localizada para actualizar la posición
+        val positionText = getString(R.string.position, localPlayerPosition.first, localPlayerPosition.second)
+        tvPlayerPosition.text = positionText
 
         // Enviar posición al jugador remoto
         if (isConnected) {
             BluetoothGameManager.getInstance().sendPlayerPosition(newX, newY)
         }
     }
-
 
     private fun navigateToMainMenu() {
         val intent = Intent(this, MainActivity::class.java)
@@ -133,7 +135,7 @@ class BluetoothActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLi
 
     private fun checkBluetoothSupport() {
         if (bluetoothAdapter == null) {
-            Toast.makeText(this, "Bluetooth no está disponible en este dispositivo.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "@string/BltNotAvaiDevi", Toast.LENGTH_SHORT).show()
             finish()
         } else if (!bluetoothAdapter!!.isEnabled) {
             requestEnableBluetooth()
@@ -169,7 +171,7 @@ class BluetoothActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLi
             return
         }
         BluetoothGameManager.getInstance().startServer()
-        updateBluetoothStatus("Servidor iniciado. Esperando conexión...")
+        updateBluetoothStatus("@string/ServSucWConn")
     }
 
     private fun connectToDevice(device: BluetoothDevice) {
@@ -178,8 +180,22 @@ class BluetoothActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLi
             return
         }
         BluetoothGameManager.getInstance().connectToDevice(device)
-        updateBluetoothStatus("Intentando conectar a ${device.name ?: "Desconocido"}...")
+
+        // Usar la cadena localizada para el mensaje
+        val deviceName = device.name ?: getString(R.string.unkDevi)
+        val statusMessage = getString(R.string.tryToConnect, deviceName)
+        updateBluetoothStatus(statusMessage)
     }
+
+
+    /*private fun connectToDevice(device: BluetoothDevice) {
+        if (!hasRequiredPermissions()) {
+            checkPermissions()
+            return
+        }
+        BluetoothGameManager.getInstance().connectToDevice(device)
+        updateBluetoothStatus("Intentando conectar a ${device.name ?: "Desconocido"}...")
+    }*/
 
     private fun updateBluetoothStatus(status: String) {
         tvBluetoothStatus.text = status
@@ -188,7 +204,9 @@ class BluetoothActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLi
 
     override fun onDeviceConnected(device: BluetoothDevice) {
         isConnected = true
-        updateBluetoothStatus("Conectado a ${device.name ?: "Desconocido"}")
+        val deviceName = device.name ?: getString(R.string.unkDevi)
+        val connectedMessage = getString(R.string.connDeviBlt, deviceName)
+        updateBluetoothStatus(connectedMessage)
     }
 
     override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
@@ -198,13 +216,14 @@ class BluetoothActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLi
 
     override fun onConnectionComplete() {
         runOnUiThread {
-            updateBluetoothStatus("Conexión establecida completamente.")
+            updateBluetoothStatus("@string/ConnSucBlt")
         }
     }
 
     override fun onConnectionFailed(message: String) {
         isConnected = false
-        updateBluetoothStatus("Conexión fallida: $message")
+        val failedMessage = getString(R.string.connFailureBlt, message)
+        updateBluetoothStatus(failedMessage)
     }
 
     companion object {

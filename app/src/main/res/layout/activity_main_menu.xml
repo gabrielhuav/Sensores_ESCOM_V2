@@ -11,12 +11,18 @@
         android:id="@+id/btnSinglePlayer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Un Jugador" />
+        android:text="@string/single_player_mode" />
 
     <!-- Botón para el modo Bluetooth -->
     <Button
         android:id="@+id/btnBluetooth"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Multijugador Bluetooth" />
+        android:text="@string/bluetooth_mode" />
+
+    <Button
+        android:id="@+id/btnChangeLanguage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/change_language" />
 </LinearLayout>

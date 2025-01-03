@@ -1,6 +1,5 @@
 package ovh.gabrielhuav.sensores_escom_v2
 
-import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -9,6 +8,8 @@ import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import java.util.*
+import android.Manifest
 
 class MainActivity : AppCompatActivity() {
 
@@ -54,6 +55,12 @@ class MainActivity : AppCompatActivity() {
                 requestPermissions()
             }
         }
+
+        // Botón para cambiar idioma
+        val languageButton = findViewById<Button>(R.id.btnChangeLanguage)
+        languageButton.setOnClickListener {
+            showLanguageSelectionDialog()
+        }
     }
 
     private fun hasPermissions(): Boolean {
@@ -79,6 +86,36 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun showLanguageSelectionDialog() {
+        val languages = resources.getStringArray(R.array.language_names) // Obtiene los nombres localizados
+        val locales = arrayOf("es", "en", "ru") // Mapeo de idiomas
+
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(getString(R.string.dialog_title_select_language)) // Título localizado
+            .setItems(languages) { _, which ->
+                setLocale(locales[which]) // Cambia el idioma según la selección
+            }
+            .create()
+        dialog.show()
+    }
+
+
+
+    private fun setLocale(language: String) {
+        val locale = Locale(language)
+        Locale.setDefault(locale)
+        val config = resources.configuration
+        config.setLocale(locale)
+        resources.updateConfiguration(config, resources.displayMetrics)
+
+        // Reinicia la actividad para aplicar el idioma
+        val intent = Intent(this, MainActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+        startActivity(intent)
+        finish() // Finaliza la actividad actual
+    }
+
 
     companion object {
         private const val REQUEST_PERMISSIONS_CODE = 101

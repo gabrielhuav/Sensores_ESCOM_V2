@@ -103,7 +103,7 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
                 textSize = 32f
             }
             canvas.drawText(
-                "Error: Mapa no encontrado",
+                "@string/ErrMap",
                 50f,
                 50f,
                 errorPaint

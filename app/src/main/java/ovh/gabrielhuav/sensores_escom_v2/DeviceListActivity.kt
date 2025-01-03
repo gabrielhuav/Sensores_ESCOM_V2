@@ -34,7 +34,7 @@ class DeviceListActivity : AppCompatActivity() {
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
 
         if (bluetoothAdapter == null) {
-            Toast.makeText(this, "Bluetooth no está disponible en este dispositivo.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "@string/BltNotAvaiDevi", Toast.LENGTH_SHORT).show()
             finish()
             return
         }
@@ -141,7 +141,7 @@ class DeviceListActivity : AppCompatActivity() {
                     }
                 }
                 BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
-                    Toast.makeText(context, "Búsqueda finalizada.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "@string/searchDevi", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -152,9 +152,9 @@ class DeviceListActivity : AppCompatActivity() {
                 this, Manifest.permission.BLUETOOTH_CONNECT
             ) == PackageManager.PERMISSION_GRANTED
         ) {
-            device.name ?: "Dispositivo Desconocido"
+            device.name ?: "@string/unkDevi"
         } else {
-            "Permiso no otorgado"
+            "@string/NotPermit"
         }
         return "$deviceName\n${device.address}"
     }

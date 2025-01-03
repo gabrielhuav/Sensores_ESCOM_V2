@@ -1,0 +1,56 @@
+<resources>
+    <string name="app_name">Sensores ESCOM</string>
+    <string name="single_player_mode">Singleplayer Mode</string>
+    <string name="bluetooth_mode">Bluetooth Mode</string>
+    <string name="change_language">Change Language</string>
+    <string name="permissions_required">Permissions are required to use Bluetooth.</string>
+    <string name="select_language">Select a language</string>
+	
+    <string name="dialog_title_select_language">Select a language</string>
+    <string-array name="language_names">
+        <item>Español</item>
+        <item>English</item>
+        <item>Русский</item>
+    </string-array>
+
+    <string name="backToMenu">Back to main menu</string>
+    <string name="position">Position: (%1$d, %2$d)</string>
+    <string name="north">North</string>
+    <string name="west">West</string>
+    <string name="east">East</string>
+    <string name="south">South</string>
+
+    <string name="backToMenuBlt">Back to main menu</string>
+    <string name="positionBlt">Position: (%1$d, %2$d)</string>
+    <string name="northBlt">North</string>
+    <string name="westBlt">West</string>
+    <string name="eastBlt">East</string>
+    <string name="southBlt">South</string>
+    <string name="initServer">Start server</string>
+    <string name="connDevi">Connect to device</string>
+    <string name="BltSuccess">Bluetooth enabled</string>
+    <string name="BltFailure">Bluetooth was not enabled</string>
+    <string name="bltInitStatus">Status: Disconnected</string>
+    <string name="DeviSelCan">Device selection canceled</string>
+    <string name="BltNotAvaiDevi">Bluetooth is not available on this device.</string>
+    <string name="ServSucWConn">Server started. Waiting connection...</string>
+    <string name="unkDevi">Unknown</string>
+    <string name="tryToConnect">Trying to connect to </string>
+    <string name="connDeviBlt">Connected to </string>
+    <string name="ConnSucBlt">Established connection.</string>
+    <string name="connFailureBlt">Connection failed</string>
+
+    <string name="ServStrErr">Error at starting server</string>
+    <string name="BltAllMiss">Bluetooth permissions missing.</string>
+    <string name="ErrDataPos">Error sending position data</string>
+    <string name="ErrRecvData">Error receiving data</string>
+    <string name="ErrProcData">Error processing JSON data:</string>
+    <string name="NotPermit">Permission not granted</string>
+    <string name="ErrCloSock">Error closing server socket:</string>
+
+    <string name="SearchDevi">Searching devices...</string>
+    <string name="SearchEnd">Search completed.</string>
+    <string name="SearchDevis">Search devices.</string>
+
+    <string name="ErrMap">Error: Map not found</string>
+</resources>

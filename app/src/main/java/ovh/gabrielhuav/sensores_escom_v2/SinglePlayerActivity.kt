@@ -36,7 +36,9 @@ class SinglePlayerActivity : AppCompatActivity() {
         gameViewModel.playerPosition.observe(this) { position ->
             position?.let {
                 mapView.updateLocalPlayerPosition(it)
-                tvPlayerPosition.text = "Posición: (${it.first}, ${it.second})"
+                //tvPlayerPosition.text = "Posición: (${it.first}, ${it.second})"
+                val positionText = getString(R.string.position, it.first, it.second)
+                tvPlayerPosition.text = positionText
             }
         }
 

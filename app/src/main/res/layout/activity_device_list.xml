@@ -10,7 +10,7 @@
         android:id="@+id/btnScanDevices"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Buscar Dispositivos" />
+        android:text="@string/SearchDevis" />
 
     <ListView
         android:id="@+id/deviceListView"
@@ -22,6 +22,6 @@
         android:id="@+id/btnBackToMenu"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Regresar al Menú"
+        android:text="@string/backToMenu"
         android:layout_gravity="center" />
 </LinearLayout>
