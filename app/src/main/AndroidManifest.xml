@@ -41,6 +41,10 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".MainActivity"
+            android:exported="true" />
+
         <!-- Gameplay Activity -->
         <activity
             android:name=".presentation.components.GameplayActivity"
