@@ -52,6 +52,12 @@
             android:exported="true"
             android:theme="@style/Theme.Sensores_ESCOM_V2" />
 
+        <!-- Letras Activity -->
+        <activity
+            android:name=".presentation.components.LetrasActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Sensores_ESCOM_V2" />
+
         <!-- DeviceList Activity -->
         <activity
             android:name=".presentation.components.DeviceListActivity"

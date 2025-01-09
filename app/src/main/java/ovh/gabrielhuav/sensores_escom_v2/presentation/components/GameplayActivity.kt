@@ -209,6 +209,19 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
 
                 startActivity(intent)
                 finish()
+            }else if ((x == 17 && y == 17) || (x == 16 && y == 16)) {
+                println("Button A pressed - Player is at (10, 7), entrando letras")
+
+                // Notificar al servidor y cambiar de actividad
+                onlineServerManager.sendUpdateMessage(playerName, x, y, "building")
+
+                val intent = Intent(this, LetrasActivity::class.java).apply {
+                    putExtra("PLAYER_NAME", playerName) // Pasar el nombre del jugador
+                    putExtra("PLAYER_POSITION", Pair(0, 0)) // Establecer posición inicial en el edificio
+                }
+
+                startActivity(intent)
+                finish()
             } else {
                 println("Button A pressed - Player not at (15, 10), interaction not allowed")
                 Toast.makeText(this, "No puedes interactuar aquí", Toast.LENGTH_SHORT).show()
