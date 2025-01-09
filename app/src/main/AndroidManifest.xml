@@ -5,16 +5,21 @@
     <!-- Permisos requeridos -->
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" tools:targetApi="31" />
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" tools:targetApi="31" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" tools:targetApi="31" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_CONNECT"
+        tools:targetApi="31" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_SCAN"
+        tools:targetApi="31" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_ADVERTISE"
+        tools:targetApi="31" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.CAMERA" />
-    <uses-feature android:name="android.hardware.camera" android:required="true"/>
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.CAMERA" />
-    <uses-feature android:name="android.hardware.camera" android:required="true"/>
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -22,7 +27,8 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
-
+        android:supportsRtl="true"
+        android:usesCleartextTraffic="true"
         android:theme="@style/Theme.Sensores_ESCOM_V2">
 
         <!-- Actividad principal -->
@@ -35,24 +41,22 @@
             </intent-filter>
         </activity>
 
-        <!-- Declaración de SinglePlayerActivity -->
+        <!-- Gameplay Activity -->
         <activity
-            android:name=".SinglePlayerActivity"
+            android:name=".presentation.components.GameplayActivity"
+            android:exported="false" />
+
+        <!-- Building Activity -->
+        <activity
+            android:name=".presentation.components.BuildingActivity"
             android:exported="true"
             android:theme="@style/Theme.Sensores_ESCOM_V2" />
 
-        <!-- Declaración de BluetoothActivity -->
+        <!-- DeviceList Activity -->
         <activity
-            android:name=".BluetoothActivity"
+            android:name=".presentation.components.DeviceListActivity"
             android:exported="true"
             android:theme="@style/Theme.Sensores_ESCOM_V2" />
-
-        <!-- Declaración de DeviceListActivity -->
-        <activity
-            android:name=".DeviceListActivity"
-            android:exported="true"
-            android:theme="@style/Theme.Sensores_ESCOM_V2" />
-        <activity android:name=".QRCodeScannerActivity"
-            android:screenOrientation="landscape" />
     </application>
+
 </manifest>

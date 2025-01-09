@@ -1,62 +1,32 @@
 [versions]
-agp = "8.6.0"  # Android Gradle Plugin
-kotlin = "1.9.0"  # Kotlin version
-coreKtx = "1.13.1"  # AndroidX Core KTX
-junit = "4.13.2"  # JUnit
-junitVersion = "1.1.5"  # AndroidX JUnit
-mlkitBarcodeScanning = "17.0.0"  # ML Kit
-cameraX = "1.2.0"  # CameraX (versión unificada para Core, Camera2, Lifecycle y View)
-canvaxAndroid = "1.0.0"  # Canvax
-espressoCore = "3.6.1"  # Espresso
-appcompat = "1.7.0"  # AndroidX AppCompat
-material = "1.12.0"  # Material Components
-activity = "1.9.3"  # AndroidX Activity
-constraintlayout = "2.1.4"  # ConstraintLayout
-media3CommonKtx = "1.5.0"  # Media3 Common KTX
-googlePlayServices = "20.0.0"  # Google Play Services
-cameraView = "1.4.0"
-playServicesMaps = "19.0.0"  # Camera View
-playServicesMlkitBarcodeScanning = "18.3.1"
-playServicesVisionCommon = "19.1.3"
-cameraLifecycle = "1.4.0"
-[plugins]
-android-application = { id = "com.android.application", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+agp = "8.6.0"
+kotlin = "1.9.0"
+coreKtx = "1.13.1"
+junit = "4.13.2"
+junitVersion = "1.2.1"
+espressoCore = "3.6.1"
+appcompat = "1.7.0"
+material = "1.12.0"
+activity = "1.9.3"
+constraintlayout = "2.1.4"
+media3CommonKtx = "1.5.0"
+firebaseDatabaseKtx = "21.0.0"
+okhttp = "4.9.1"
 
 [libraries]
-
-# Core AndroidX
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
-
-# JUnit and Testing
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
-
-# AndroidX UI Components
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
-
-# CameraX (unificada para simplificar)
-cameraX-core = { group = "androidx.camera", name = "camera-core", version.ref = "cameraX" }
-cameraX-camera2 = { group = "androidx.camera", name = "camera-camera2", version.ref = "cameraX" }
-cameraX-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "cameraX" }
-cameraX-view = { group = "androidx.camera", name = "camera-view", version.ref = "cameraView" }
-
-# ML Kit
-mlkit-barcode-scanning = { group = "com.google.mlkit", name = "barcode-scanning", version.ref = "mlkitBarcodeScanning" }
-
-# Google Play Services
-play-services-vision-common = { group = "com.google.android.gms", name = "play-services-vision-common", version.ref = "googlePlayServices" }
-
-# Canvax
-canvax = { group = "com.github.canvax", name = "canvax-android", version.ref = "canvaxAndroid" }
-
-# Media3 Common KTX
 androidx-media3-common-ktx = { group = "androidx.media3", name = "media3-common-ktx", version.ref = "media3CommonKtx" }
-play-services-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "playServicesMaps" }
-play-services-mlkit-barcode-scanning = { group = "com.google.android.gms", name = "play-services-mlkit-barcode-scanning", version.ref = "playServicesMlkitBarcodeScanning" }
-androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "cameraLifecycle" }
-androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "cameraView" }
+firebase-database-ktx = { group = "com.google.firebase", name = "firebase-database-ktx", version.ref = "firebaseDatabaseKtx" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+
