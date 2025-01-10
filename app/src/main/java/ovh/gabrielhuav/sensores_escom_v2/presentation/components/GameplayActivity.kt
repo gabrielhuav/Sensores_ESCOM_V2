@@ -250,22 +250,33 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
     private fun setupInteractionButton(buttonA: Button) {
         buttonA.setOnClickListener {
             val (x, y) = localPlayerPosition
-            if (x == 15 && y == 10) {
-                println("Button A pressed - Player is at (15, 10), entering building")
-
-                // Notificar al servidor y cambiar de actividad
-                onlineServerManager.sendUpdateMessage(playerName, x, y, "building")
-
-                val intent = Intent(this, BuildingActivity::class.java).apply {
-                    putExtra("PLAYER_NAME", playerName) // Pasar el nombre del jugador
-                    putExtra("PLAYER_POSITION", Pair(0, 0)) // Establecer posición inicial en el edificio
+            when {
+                // Interacción para Edificio 3
+                x == 15 && y == 10 -> {
+                    println("Button A pressed - Player is at (15, 10), entering building")
+                    onlineServerManager.sendUpdateMessage(playerName, x, y, "building")
+                    val intent = Intent(this, BuildingActivity::class.java).apply {
+                        putExtra("PLAYER_NAME", playerName)
+                        putExtra("PLAYER_POSITION", Pair(0, 0))
+                    }
+                    startActivity(intent)
+                    finish()
                 }
-
-                startActivity(intent)
-                finish()
-            } else {
-                println("Button A pressed - Player not at (15, 10), interaction not allowed")
-                Toast.makeText(this, "No puedes interactuar aquí", Toast.LENGTH_SHORT).show()
+                // Nueva interacción para Cafetería
+                x == 35 && y == 35 -> {
+                    println("Button A pressed - Player is at (35, 35), entering cafeteria")
+                    onlineServerManager.sendUpdateMessage(playerName, x, y, "cafeteria")
+                    val intent = Intent(this, CafeteriaActivity::class.java).apply {
+                        putExtra("PLAYER_NAME", playerName)
+                        putExtra("PLAYER_POSITION", Pair(0, 0))
+                    }
+                    startActivity(intent)
+                    finish()
+                }
+                else -> {
+                    println("Button A pressed - Player not at interaction point")
+                    Toast.makeText(this, "No puedes interactuar aquí", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }

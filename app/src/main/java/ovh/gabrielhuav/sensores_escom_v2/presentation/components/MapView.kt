@@ -348,6 +348,21 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
         }
     }
 
+    fun setCafeteriaMatrix() {
+        mapMatrix = Array(20) { Array(20) { 2 } }.apply {
+            for (i in 0 until 20) {
+                for (j in 0 until 20) {
+                    this[i][j] = when {
+                        i == 0 || i == 19 || j == 0 || j == 19 -> 1 // Bordes
+                        i % 4 == 0 && j % 4 == 0 -> 0 // Lugares interactivos
+                        i % 3 == 0 && j % 3 == 0 -> 3 // Zonas inaccesibles (mesas, sillas, etc)
+                        else -> 2 // Camino libre
+                    }
+                }
+            }
+        }
+    }
+
 
     fun updateLocalPlayerPosition(position: Pair<Int, Int>?) {
         localPlayerPosition = position
