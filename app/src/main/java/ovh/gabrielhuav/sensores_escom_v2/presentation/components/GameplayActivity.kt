@@ -132,6 +132,15 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         findViewById<Button>(R.id.btnColorPicker).setOnClickListener {
             showColorPickerDialog()
         }
+
+        val prefs = getSharedPreferences("GamePreferences", MODE_PRIVATE)
+        val localColorIndex = prefs.getInt("LOCAL_COLOR_INDEX", 0)
+        val remoteColorIndex = prefs.getInt("REMOTE_COLOR_INDEX", 0)
+
+        mapView.setLocalPlayerColor(localColorIndex)
+        mapView.setRemotePlayerColor(remoteColorIndex)
+
+
     }
 
     private fun showColorPickerDialog() {
