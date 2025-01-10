@@ -51,6 +51,11 @@
             android:name=".presentation.components.BuildingActivity"
             android:exported="true"
             android:theme="@style/Theme.Sensores_ESCOM_V2" />
+ <!-- cafeteria Activity -->
+        <activity
+            android:name=".presentation.components.CafeteriaActivity"
+            android:screenOrientation="portrait"
+            android:exported="false"/>
 
         <!-- DeviceList Activity -->
         <activity

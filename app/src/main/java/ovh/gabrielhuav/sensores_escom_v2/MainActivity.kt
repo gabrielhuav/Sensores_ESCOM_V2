@@ -13,6 +13,11 @@ import androidx.core.app.ActivityCompat
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.DeviceListActivity
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.GameplayActivity
+import android.widget.RadioGroup
+import android.view.View
+import android.widget.RadioButton
+import androidx.appcompat.app.AlertDialog
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -37,6 +42,10 @@ class MainActivity : AppCompatActivity() {
 
         // Obtener instancia de BluetoothGameManager
         val bluetoothManager = BluetoothGameManager.getInstance(applicationContext)
+
+        findViewById<Button>(R.id.btnColorPickerMenu).setOnClickListener {
+            showColorPickerDialog()
+        }
 
         // Verificar permisos
         if (!hasPermissions()) {
@@ -78,6 +87,57 @@ class MainActivity : AppCompatActivity() {
         return requiredPermissions.all {
             ActivityCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
         }
+    }
+
+    private fun showColorPickerDialog() {
+        val localColorNames = arrayOf("Azul", "Verde", "Cian")
+        val remoteColorNames = arrayOf("Rojo", "Magenta", "Amarillo")
+
+        val dialogView = layoutInflater.inflate(R.layout.dialog_color_picker, null)
+        val localColorGroup = dialogView.findViewById<RadioGroup>(R.id.localColorGroup)
+        val remoteColorGroup = dialogView.findViewById<RadioGroup>(R.id.remoteColorGroup)
+
+        // Setup local color options
+        localColorNames.forEachIndexed { index, colorName ->
+            localColorGroup.addView(
+                RadioButton(this).apply {
+                    id = View.generateViewId()
+                    text = colorName
+                    isChecked = index == 0
+                }
+            )
+        }
+
+        // Setup remote color options
+        remoteColorNames.forEachIndexed { index, colorName ->
+            remoteColorGroup.addView(
+                RadioButton(this).apply {
+                    id = View.generateViewId()
+                    text = colorName
+                    isChecked = index == 0
+                }
+            )
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("Seleccionar Colores")
+            .setView(dialogView)
+            .setPositiveButton("Aceptar") { _, _ ->
+                val selectedLocalColorIndex = localColorGroup.indexOfChild(
+                    localColorGroup.findViewById(localColorGroup.checkedRadioButtonId)
+                )
+                val selectedRemoteColorIndex = remoteColorGroup.indexOfChild(
+                    remoteColorGroup.findViewById(remoteColorGroup.checkedRadioButtonId)
+                )
+
+                // Guardar las selecciones en SharedPreferences
+                getSharedPreferences("GamePreferences", MODE_PRIVATE).edit().apply {
+                    putInt("LOCAL_COLOR_INDEX", selectedLocalColorIndex)
+                    putInt("REMOTE_COLOR_INDEX", selectedRemoteColorIndex)
+                    apply()
+                }
+            }
+            .show()
     }
 
     private fun requestPermissions() {

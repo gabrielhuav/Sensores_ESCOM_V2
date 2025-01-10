@@ -19,6 +19,26 @@ import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManag
 
 class MapView(context: Context, attrs: AttributeSet? = null) : View(context, attrs), OnlineServerManager.WebSocketListener {
 
+
+    companion object {
+        // Local player colors
+        val LOCAL_COLORS = listOf(
+            Color.BLUE,    // Default blue
+            Color.GREEN,   // Green option
+            Color.CYAN     // Cyan option
+        )
+
+        // Remote player colors
+        val REMOTE_COLORS = listOf(
+            Color.RED,     // Default red
+            Color.MAGENTA, // Magenta option
+            Color.YELLOW   // Yellow option
+        )
+    }
+
+    private var selectedLocalColor = LOCAL_COLORS[0]
+    private var selectedRemoteColor = REMOTE_COLORS[0]
+
     public var mapMatrix = Array(40) { Array(40) { 2 } }.apply {
         for (i in 0 until 40) {
             for (j in 0 until 40) {
@@ -31,6 +51,46 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
             }
         }
     }
+
+
+    private val paintGrid = Paint().apply {
+        color = Color.GRAY
+        strokeWidth = 2f
+        style = Paint.Style.STROKE
+    }
+
+    private val paintLocalPlayer = Paint().apply {
+        color = selectedLocalColor
+        style = Paint.Style.FILL
+    }
+
+    private val paintRemotePlayer = Paint().apply {
+        color = selectedRemoteColor
+        style = Paint.Style.FILL
+    }
+
+    private var offsetX = 0f
+    private var offsetY = 0f
+    var scaleFactor: Float = 1.0f
+    var localPlayerPosition: Pair<Int, Int>? = null
+    private val remotePlayerPositions = mutableMapOf<String, Pair<Int, Int>>()
+    var localPlayerId: String = "player_local"
+
+    private var backgroundBitmap: Bitmap? = null
+
+
+    fun setLocalPlayerColor(colorIndex: Int) {
+        selectedLocalColor = LOCAL_COLORS[colorIndex.coerceIn(0, LOCAL_COLORS.size - 1)]
+        paintLocalPlayer.color = selectedLocalColor
+        invalidate()
+    }
+
+    fun setRemotePlayerColor(colorIndex: Int) {
+        selectedRemoteColor = REMOTE_COLORS[colorIndex.coerceIn(0, REMOTE_COLORS.size - 1)]
+        paintRemotePlayer.color = selectedRemoteColor
+        invalidate()
+    }
+
 
     // Método para configurar la matriz del edificio
     fun setBuildingMatrix() {
@@ -62,29 +122,6 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
         invalidate() // Redibujar la vista
     }
 
-
-    private val paintGrid = Paint().apply {
-        color = Color.GRAY
-        strokeWidth = 2f
-        style = Paint.Style.STROKE
-    }
-    private val paintLocalPlayer = Paint().apply {
-        color = Color.BLUE
-        style = Paint.Style.FILL
-    }
-    private val paintRemotePlayer = Paint().apply {
-        color = Color.RED
-        style = Paint.Style.FILL
-    }
-
-    private var offsetX = 0f
-    private var offsetY = 0f
-    var scaleFactor: Float = 1.0f
-    var localPlayerPosition: Pair<Int, Int>? = null
-    private val remotePlayerPositions = mutableMapOf<String, Pair<Int, Int>>()
-    var localPlayerId: String = "player_local" // Identificador único del jugador local
-
-    private var backgroundBitmap: Bitmap? = null
 
     private fun scaleBitmapToMatrix() {
         if (backgroundBitmap == null) return
@@ -311,6 +348,21 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
         }
     }
 
+    fun setCafeteriaMatrix() {
+        mapMatrix = Array(20) { Array(20) { 2 } }.apply {
+            for (i in 0 until 20) {
+                for (j in 0 until 20) {
+                    this[i][j] = when {
+                        i == 0 || i == 19 || j == 0 || j == 19 -> 1 // Bordes
+                        i % 4 == 0 && j % 4 == 0 -> 0 // Lugares interactivos
+                        i % 3 == 0 && j % 3 == 0 -> 3 // Zonas inaccesibles (mesas, sillas, etc)
+                        else -> 2 // Camino libre
+                    }
+                }
+            }
+        }
+    }
+
 
     fun updateLocalPlayerPosition(position: Pair<Int, Int>?) {
         localPlayerPosition = position
@@ -346,6 +398,8 @@ class MapView(context: Context, attrs: AttributeSet? = null) : View(context, att
         color = Color.GREEN  // Color para jugador Bluetooth
         style = Paint.Style.FILL
     }
+
+
 
     fun setBluetoothServerMode(isServer: Boolean) {
         isBluetoothServer = isServer

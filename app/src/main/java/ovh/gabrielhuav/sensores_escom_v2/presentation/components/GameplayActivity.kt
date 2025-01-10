@@ -22,6 +22,7 @@ import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
+import androidx.appcompat.app.AlertDialog
 
 @SuppressLint("ClickableViewAccessibility")
 class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionListener, OnlineServerManager.WebSocketListener {
@@ -127,6 +128,59 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         mapContainer.addView(mapView)
         // Inicialmente no es servidor hasta que se inicie como tal
         mapView.setBluetoothServerMode(false)
+
+        findViewById<Button>(R.id.btnColorPicker).setOnClickListener {
+            showColorPickerDialog()
+        }
+
+        val prefs = getSharedPreferences("GamePreferences", MODE_PRIVATE)
+        val localColorIndex = prefs.getInt("LOCAL_COLOR_INDEX", 0)
+        val remoteColorIndex = prefs.getInt("REMOTE_COLOR_INDEX", 0)
+
+        mapView.setLocalPlayerColor(localColorIndex)
+        mapView.setRemotePlayerColor(remoteColorIndex)
+
+
+    }
+
+    private fun showColorPickerDialog() {
+        val localColorNames = arrayOf("Azul", "Verde", "Cian")
+        val remoteColorNames = arrayOf("Rojo", "Magenta", "Amarillo")
+
+        val dialogView = layoutInflater.inflate(R.layout.dialog_color_picker, null)
+        val localColorGroup = dialogView.findViewById<RadioGroup>(R.id.localColorGroup)
+        val remoteColorGroup = dialogView.findViewById<RadioGroup>(R.id.remoteColorGroup)
+
+        // Setup local color options
+        localColorNames.forEachIndexed { index, colorName ->
+            localColorGroup.addView(
+                RadioButton(this).apply {
+                    id = View.generateViewId()
+                    text = colorName
+                    setOnCheckedChangeListener { _, isChecked ->
+                        if (isChecked) mapView.setLocalPlayerColor(index)
+                    }
+                }
+            )
+        }
+        // Setup remote color options
+        remoteColorNames.forEachIndexed { index, colorName ->
+            remoteColorGroup.addView(
+                RadioButton(this).apply {
+                    id = View.generateViewId()
+                    text = colorName
+                    setOnCheckedChangeListener { _, isChecked ->
+                        if (isChecked) mapView.setRemotePlayerColor(index)
+                    }
+                }
+            )
+        }
+        // Show dialog
+        AlertDialog.Builder(this)
+            .setTitle("Seleccionar Colores")
+            .setView(dialogView)
+            .setPositiveButton("Aceptar", null)
+            .show()
     }
 
     private fun setupServerFlow() {
@@ -196,22 +250,33 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
     private fun setupInteractionButton(buttonA: Button) {
         buttonA.setOnClickListener {
             val (x, y) = localPlayerPosition
-            if (x == 15 && y == 10) {
-                println("Button A pressed - Player is at (15, 10), entering building")
-
-                // Notificar al servidor y cambiar de actividad
-                onlineServerManager.sendUpdateMessage(playerName, x, y, "building")
-
-                val intent = Intent(this, BuildingActivity::class.java).apply {
-                    putExtra("PLAYER_NAME", playerName) // Pasar el nombre del jugador
-                    putExtra("PLAYER_POSITION", Pair(0, 0)) // Establecer posición inicial en el edificio
+            when {
+                // Interacción para Edificio 3
+                x == 15 && y == 10 -> {
+                    println("Button A pressed - Player is at (15, 10), entering building")
+                    onlineServerManager.sendUpdateMessage(playerName, x, y, "building")
+                    val intent = Intent(this, BuildingActivity::class.java).apply {
+                        putExtra("PLAYER_NAME", playerName)
+                        putExtra("PLAYER_POSITION", Pair(0, 0))
+                    }
+                    startActivity(intent)
+                    finish()
                 }
-
-                startActivity(intent)
-                finish()
-            } else {
-                println("Button A pressed - Player not at (15, 10), interaction not allowed")
-                Toast.makeText(this, "No puedes interactuar aquí", Toast.LENGTH_SHORT).show()
+                // Nueva interacción para Cafetería
+                x == 35 && y == 35 -> {
+                    println("Button A pressed - Player is at (35, 35), entering cafeteria")
+                    onlineServerManager.sendUpdateMessage(playerName, x, y, "cafeteria")
+                    val intent = Intent(this, CafeteriaActivity::class.java).apply {
+                        putExtra("PLAYER_NAME", playerName)
+                        putExtra("PLAYER_POSITION", Pair(0, 0))
+                    }
+                    startActivity(intent)
+                    finish()
+                }
+                else -> {
+                    println("Button A pressed - Player not at interaction point")
+                    Toast.makeText(this, "No puedes interactuar aquí", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
