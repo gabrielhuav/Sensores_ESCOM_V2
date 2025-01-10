@@ -175,6 +175,13 @@
                     android:backgroundTint="@android:color/holo_green_light"
                     android:contentDescription="Button Server"
                     android:layout_marginStart="8dp"/>
+
+                <Button
+                    android:id="@+id/btnColorPicker"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Cambiar Colores"
+                    android:layout_margin="8dp"/>                   
 </LinearLayout>
         </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

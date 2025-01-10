@@ -22,6 +22,7 @@ import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
+import androidx.appcompat.app.AlertDialog
 
 @SuppressLint("ClickableViewAccessibility")
 class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionListener, OnlineServerManager.WebSocketListener {
@@ -127,6 +128,50 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         mapContainer.addView(mapView)
         // Inicialmente no es servidor hasta que se inicie como tal
         mapView.setBluetoothServerMode(false)
+
+        findViewById<Button>(R.id.btnColorPicker).setOnClickListener {
+            showColorPickerDialog()
+        }
+    }
+
+    private fun showColorPickerDialog() {
+        val localColorNames = arrayOf("Azul", "Verde", "Cian")
+        val remoteColorNames = arrayOf("Rojo", "Magenta", "Amarillo")
+
+        val dialogView = layoutInflater.inflate(R.layout.dialog_color_picker, null)
+        val localColorGroup = dialogView.findViewById<RadioGroup>(R.id.localColorGroup)
+        val remoteColorGroup = dialogView.findViewById<RadioGroup>(R.id.remoteColorGroup)
+
+        // Setup local color options
+        localColorNames.forEachIndexed { index, colorName ->
+            localColorGroup.addView(
+                RadioButton(this).apply {
+                    id = View.generateViewId()
+                    text = colorName
+                    setOnCheckedChangeListener { _, isChecked ->
+                        if (isChecked) mapView.setLocalPlayerColor(index)
+                    }
+                }
+            )
+        }
+        // Setup remote color options
+        remoteColorNames.forEachIndexed { index, colorName ->
+            remoteColorGroup.addView(
+                RadioButton(this).apply {
+                    id = View.generateViewId()
+                    text = colorName
+                    setOnCheckedChangeListener { _, isChecked ->
+                        if (isChecked) mapView.setRemotePlayerColor(index)
+                    }
+                }
+            )
+        }
+        // Show dialog
+        AlertDialog.Builder(this)
+            .setTitle("Seleccionar Colores")
+            .setView(dialogView)
+            .setPositiveButton("Aceptar", null)
+            .show()
     }
 
     private fun setupServerFlow() {
