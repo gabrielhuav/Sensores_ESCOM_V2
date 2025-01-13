@@ -17,7 +17,10 @@ import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.app.ActivityCompat.startActivityForResult
 import org.json.JSONObject
+import ovh.gabrielhuav.sensores_escom_v2.QRScanner.QRCodeScannerActivity
+import ovh.gabrielhuav.sensores_escom_v2.QRScanner.SiteDetailActivity
 import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.BluetoothWebSocketBridge
@@ -38,19 +41,35 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
     private lateinit var playerName: String
     private lateinit var mapContainer: FrameLayout
     private lateinit var mapView: MapView
-
+    private lateinit var btnIra: Button
     private var isConnected = false
     private val handler = Handler(Looper.getMainLooper())
 
     private var localPlayerPosition = Pair(1, 1)
     private var remotePlayerPosition: Pair<Int, Int>? = null
+    private lateinit var tvPositionInfo: TextView
 
     private lateinit var onlineServerManager: OnlineServerManager
     // Declaración del BluetoothWebSocketBridge
     private lateinit var bluetoothBridge: BluetoothWebSocketBridge
+    private val qrCells = listOf(Pair(32, 18), Pair(11, 9), Pair(8, 6),Pair(5, 18),Pair(6, 28),Pair(32,9), Pair(32,27))
 
     private var isServer = false  // Para identificar si es servidor Bluetooth
     private var bluetoothPosition: Pair<Int, Int>? = null
+
+    private val siteData = mapOf(
+        Pair(32, 18) to R.drawable.aula,   // Imagen del salón
+        Pair(11, 9) to R.drawable.letras,
+        Pair(8, 6) to R.drawable.bicicletas,// estacionamiento de bicicletas
+        Pair(5, 18) to R.drawable.auditorio,   // auditorio
+        Pair(6, 28) to R.drawable.palapas,       // palapas
+        Pair(32, 9) to R.drawable.palapas,
+        Pair(32, 27) to R.drawable.canchas
+//        Pair(5, 9) to R.drawable.image_cafeteria   // Imagen de la cafetería
+    )
+
+
+
 
 
     override fun onPause() {
@@ -69,7 +88,6 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
 
         // Initialize views
         initializeViews()
-
         // Get player name from intent
         playerName = intent.getStringExtra("PLAYER_NAME") ?: run {
             Toast.makeText(this, "Nombre de jugador no encontrado", Toast.LENGTH_SHORT).show()
@@ -111,6 +129,10 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         setupButtonListeners()
         setupInteractionButton(findViewById(R.id.button_a))
         checkBluetoothSupport()
+
+
+
+
     }
 
     private fun initializeViews() {
@@ -120,9 +142,12 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         btnSouth = findViewById(R.id.button_south)
         btnEast = findViewById(R.id.button_east)
         btnWest = findViewById(R.id.button_west)
+        btnIra = findViewById(R.id.button_site_detail)
         tvBluetoothStatus = findViewById(R.id.tvBluetoothStatus)
         btnOnlineServer = findViewById(R.id.button_serverOnline)
         mapContainer = findViewById(R.id.map_container)
+        tvPositionInfo = findViewById(R.id.tv_position_info)
+
         mapView = MapView(this)
         mapContainer.addView(mapView)
         // Inicialmente no es servidor hasta que se inicie como tal
@@ -175,7 +200,7 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
     }
 
     private fun connectToOnlineServer(callback: (Boolean) -> Unit) {
-        val serverUrl = "ws://192.168.1.17:3000"
+        val serverUrl = "ws://192.168.0.102:3000"
         onlineServerManager.connectToServer(serverUrl)
 
         onlineServerManager.setOnConnectionCompleteListener {
@@ -289,6 +314,9 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
             localPlayerPosition = Pair(newX, newY)
             mapView.updateLocalPlayerPosition(localPlayerPosition)
 
+            // Actualizar la posición en el TextView
+            tvPositionInfo.text = "Posición actual: $localPlayerPosition"
+
             // Send position via Bluetooth
             BluetoothGameManager.getInstance(applicationContext).sendPlayerPosition(newX, newY)
 
@@ -296,8 +324,19 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
             bluetoothBridge.updatePosition(playerName, localPlayerPosition)
 
             Log.d("GameplayActivity", "Position sent: ($newX, $newY)")
+
+            // Mostrar/ocultar el botón "Ir a" si es una celda QR
+            if (qrCells.contains(localPlayerPosition)) {
+                btnIra.visibility = View.VISIBLE
+                btnIra.setOnClickListener {
+                    onPlayerOnQrCell(localPlayerPosition)
+                }
+            } else {
+                btnIra.visibility = View.GONE
+            }
         }
     }
+
 
 
     private fun connectToOnlineServer() {
@@ -323,6 +362,9 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
             }
         }
     }
+
+    
+    // Observar los cambios en la posición del jugador
 
 
     override fun onMessageReceived(message: String) {
@@ -410,5 +452,21 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
     companion object {
         const val TAG = "GameplayActivity"
         const val REQUEST_BLUETOOTH_PERMISSIONS = 101
+        const val QR_CODE_REQUEST = 1
     }
+
+    private fun onPlayerOnQrCell(position: Pair<Int, Int>) {
+        Log.d("GameplayActivity", "Player is on a QR cell at $position. Launching Site Detail.")
+
+        val imageResId = siteData[position] ?: R.drawable.logoescom
+
+        // Lanza la actividad del sitio con la información correspondiente
+        val intent = Intent(this, SiteDetailActivity::class.java).apply {
+            putExtra("IMAGE_RES_ID", imageResId) // Pasar el recurso de imagen asociado
+        }
+        startActivity(intent)
+    }
+
+
+
 }

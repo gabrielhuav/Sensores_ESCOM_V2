@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     tools:context=".presentation.components.BuildingActivity">
 
-<Button
+    <Button
         android:id="@+id/button_back_to_gameplay"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -81,5 +81,8 @@
             android:layout_height="64dp"
             android:text="E"
             android:contentDescription="Move East" />
+
+
+
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -19,6 +19,17 @@ import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManag
 
 class MapView(context: Context, attrs: AttributeSet? = null) : View(context, attrs), OnlineServerManager.WebSocketListener {
 
+
+    interface OnMapTouchListener {
+        fun onMapTouched()
+    }
+
+    private var mapTouchListener: OnMapTouchListener? = null
+
+    fun setOnMapTouchListener(listener: OnMapTouchListener) {
+        mapTouchListener = listener
+    }
+
     public var mapMatrix = Array(40) { Array(40) { 2 } }.apply {
         for (i in 0 until 40) {
             for (j in 0 until 40) {

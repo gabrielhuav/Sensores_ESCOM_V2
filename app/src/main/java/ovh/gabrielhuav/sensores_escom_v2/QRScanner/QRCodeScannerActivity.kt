@@ -1,5 +1,5 @@
 
-package ovh.gabrielhuav.sensores_escom_v2
+package ovh.gabrielhuav.sensores_escom_v2.QRScanner
 
 import android.Manifest
 import android.content.Intent
@@ -21,6 +21,7 @@ import androidx.core.content.ContextCompat
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
 import com.squareup.picasso.Picasso
+import ovh.gabrielhuav.sensores_escom_v2.R
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -34,7 +35,7 @@ class QRCodeScannerActivity : AppCompatActivity() {
     private val requestPermissionsLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
             if (permissions[Manifest.permission.CAMERA] == true) {
-                startCameraPreview() // Iniciar el escáner si los permisos son otorgados
+                startCameraPreview()
             } else {
                 Toast.makeText(this, "Se requieren permisos para usar la cámara", Toast.LENGTH_SHORT).show()
             }
@@ -66,6 +67,8 @@ class QRCodeScannerActivity : AppCompatActivity() {
     }
 
     private fun startCameraPreview() {
+        Log.d("QRCodeScannerActivity", "Iniciando cámara...")
+
         if (!hasPermissions()) return
 
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
@@ -108,7 +111,7 @@ class QRCodeScannerActivity : AppCompatActivity() {
                         val barcode = barcodes.first()
                         val barcodeValue = barcode.displayValue
                         Log.d("QRCodeScanner", "Código QR detectado: $barcodeValue") // Mostrar en Log
-                        // Aquí también puedes agregar un Toast para ver los datos
+
                         Toast.makeText(this, "Código QR detectado: $barcodeValue", Toast.LENGTH_SHORT).show()
                         handleScanResult(barcodeValue ?: "")
                     }
