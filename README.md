@@ -55,3 +55,31 @@ Este proyecto tiene como objetivo desarrollar una aplicación móvil para Androi
 - **Mejoras en los Sensoress:**
   - Integración de sensores adicionales como acelerómetro y cámara.
   - Reconocimiento de voz y escaneo de códigos QR.
+
+
+### IMPLEMENTACIÓN DE QR###
+Archivos principales
+1. GameplayActivity.kt
+Maneja la lógica principal del juego: movimiento, interacción con celdas QR y sincronización de posiciones.
+
+2. SiteDetailActivity.kt
+Muestra información detallada sobre una ubicación específica basada en la coordenada QR.
+
+3. activity_gameplay.xml
+Archivo de diseño para la interfaz de la actividad principal, incluyendo el mapa y los botones de navegación.
+
+### Personalización
+Cambiar coordenadas QR
+Modifica la lista qrCells en GameplayActivity:
+private val qrCells = listOf(Pair(1,1), Pair(11, 9), Pair(17, 17), Pair(2,17), Pair(5,9))
+
+### Añadir nuevas imágenes para celdas QR
+Agrega nuevas imágenes a la carpeta res/drawable.
+Actualiza el mapa siteData para asociar coordenadas a las imágenes:
+
+private val siteData = mapOf(
+    Pair(16, 4) to R.drawable.new_image,
+    Pair(11, 9) to R.drawable.another_image
+)
+
+
