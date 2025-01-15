@@ -1,0 +1,82 @@
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".presentation.components.BathroomActivity">
+
+    <!-- Botón para regresar -->
+    <Button
+        android:id="@+id/button_back_to_main"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Back"
+        android:contentDescription="Return to Main Menu"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_margin="16dp" />
+
+    <!-- Espejo -->
+    <View
+        android:id="@+id/mirror"
+        android:layout_width="200dp"
+        android:layout_height="100dp"
+        android:background="#CCCCCC"
+        android:contentDescription="Mirror"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp" />
+
+    <!-- Lavamanos -->
+    <ImageView
+        android:id="@+id/sink"
+        android:layout_width="120dp"
+        android:layout_height="80dp"
+        android:src="@drawable/ic_sink" <!-- Asegúrate de agregar un ícono adecuado -->
+        android:contentDescription="Sink"
+        app:layout_constraintTop_toBottomOf="@id/mirror"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp" />
+
+    <!-- Inodoro -->
+    <ImageView
+        android:id="@+id/toilet"
+        android:layout_width="100dp"
+        android:layout_height="120dp"
+        android:src="@drawable/ic_toilet" <!-- Asegúrate de agregar un ícono adecuado -->
+        android:contentDescription="Toilet"
+        app:layout_constraintTop_toBottomOf="@id/sink"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp" />
+
+    <!-- Contenedor de botones -->
+    <LinearLayout
+        android:id="@+id/bathroom_buttons_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_margin="16dp"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/button_turn_on_sink"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:text="Sink"
+            android:contentDescription="Turn On Sink" />
+
+        <Button
+            android:id="@+id/button_flush_toilet"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:text="Flush"
+            android:contentDescription="Flush Toilet" />
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
