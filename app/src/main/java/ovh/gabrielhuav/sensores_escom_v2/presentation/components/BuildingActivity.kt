@@ -8,6 +8,7 @@ import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import ovh.gabrielhuav.sensores_escom_v2.QRScanner.SiteDetailActivity
 import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
 
@@ -17,6 +18,7 @@ class BuildingActivity : AppCompatActivity(), OnlineServerManager.WebSocketListe
     private lateinit var playerName: String
     private lateinit var mapView: MapView
     private var currentPosition: Pair<Int, Int> = Pair(0, 0)
+    private val qrCells = listOf(Pair(16,4), Pair(11, 9), Pair(17, 17),Pair(2,17),Pair(5,9))
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -85,7 +87,11 @@ class BuildingActivity : AppCompatActivity(), OnlineServerManager.WebSocketListe
             onlineServerManager.sendUpdateMessage(playerName, newPosition.first, newPosition.second, "building")
             currentPosition = newPosition // Actualizar la posición actual
         }
+
+
     }
+
+
 
     private fun setupBackButton() {
         findViewById<Button>(R.id.button_back_to_gameplay).setOnClickListener {
