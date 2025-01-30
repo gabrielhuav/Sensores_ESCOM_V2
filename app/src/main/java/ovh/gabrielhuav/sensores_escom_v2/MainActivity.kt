@@ -10,8 +10,7 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.DeviceListActivity
+
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.GameplayActivity
 
 class MainActivity : AppCompatActivity() {
@@ -35,20 +34,21 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main_menu)
 
-        // Obtener instancia de BluetoothGameManager
-        val bluetoothManager = BluetoothGameManager.getInstance(applicationContext)
-
         // Verificar permisos
         if (!hasPermissions()) {
             requestPermissions()
         }
 
-        val btnStartGame = findViewById<Button>(R.id.btnStartGame)
-        val btnBluetoothConnect = findViewById<Button>(R.id.btnBluetoothConnect)
+        // Botón para el modo de un jugador
+        val refactorButton = findViewById<Button>(R.id.btnRefactor)
         val etPlayerName = findViewById<EditText>(R.id.etPlayerName)
 
-        // Botón para iniciar el juego
-        btnStartGame.setOnClickListener {
+        refactorButton.setOnClickListener {
+            val intent = Intent(this, GameplayActivity::class.java)
+            startActivity(intent)
+        }
+
+        refactorButton.setOnClickListener {
             val playerName = etPlayerName.text.toString()
             if (playerName.isNotEmpty()) {
                 val intent = Intent(this, GameplayActivity::class.java).apply {
@@ -60,18 +60,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Botón para conectarse por Bluetooth
-        btnBluetoothConnect.setOnClickListener {
-            val playerName = etPlayerName.text.toString()
-            if (playerName.isNotEmpty()) {
-                val intent = Intent(this, DeviceListActivity::class.java).apply {
-                    putExtra("PLAYER_NAME", playerName)
-                }
-                startActivity(intent)
-            } else {
-                Toast.makeText(this, "Por favor, ingrese su nombre antes de conectarse por Bluetooth.", Toast.LENGTH_SHORT).show()
-            }
-        }
     }
 
     private fun hasPermissions(): Boolean {

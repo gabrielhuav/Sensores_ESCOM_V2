@@ -16,9 +16,8 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import ovh.gabrielhuav.sensores_escom_v2.R
-import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 
-class DeviceListActivity : AppCompatActivity(), BluetoothGameManager.ConnectionListener {
+class DeviceListActivity : AppCompatActivity() {
 
     private lateinit var bluetoothAdapter: BluetoothAdapter
     private lateinit var deviceListView: ListView
@@ -29,7 +28,6 @@ class DeviceListActivity : AppCompatActivity(), BluetoothGameManager.ConnectionL
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_device_list)
 
-        // Initialize views
         deviceListView = findViewById(R.id.deviceListView)
         val scanButton = findViewById<Button>(R.id.btnScanDevices)
         val backToMenuButton = findViewById<Button>(R.id.btnBackToMenu)
@@ -42,26 +40,13 @@ class DeviceListActivity : AppCompatActivity(), BluetoothGameManager.ConnectionL
             return
         }
 
-        // Get player name from intent
-        val playerName = intent.getStringExtra("PLAYER_NAME") ?: run {
-            Toast.makeText(this, "Nombre de jugador no encontrado", Toast.LENGTH_SHORT).show()
-            finish()
-            return
-        }
-
-        // Initialize BluetoothGameManager with context
-        BluetoothGameManager.getInstance(applicationContext).apply {
-            setConnectionListener(this@DeviceListActivity)
-            initialize(playerName)
-        }
-
+        // Verificar y solicitar permisos
         checkAndRequestPermissions()
+
+        // Mostrar dispositivos emparejados
         showPairedDevices()
 
-        // Check if device is Bluetooth server or client
-        val isServer = intent.getBooleanExtra("IS_SERVER", false)
-
-        // Event setup
+        // Configuración de eventos
         scanButton.setOnClickListener {
             if (hasRequiredPermissions()) {
                 startDiscovery()
@@ -78,93 +63,19 @@ class DeviceListActivity : AppCompatActivity(), BluetoothGameManager.ConnectionL
             val deviceInfo = deviceList[position]
             val device = deviceMap[deviceInfo]
             if (device != null) {
-                connectToDevice(device)
+                val intent = Intent()
+                intent.putExtra(EXTRA_DEVICE, device)
+                setResult(RESULT_OK, intent)
+                finish()
             }
         }
 
-        // Register broadcast receiver
+        // Registrar receptor de broadcast
         val filter = IntentFilter().apply {
             addAction(BluetoothDevice.ACTION_FOUND)
             addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
         }
         registerReceiver(receiver, filter)
-    }
-    private fun connectToDevice(device: BluetoothDevice) {
-        val isServer = intent.getBooleanExtra("IS_SERVER", false)
-
-        if (isServer) {
-            BluetoothGameManager.getInstance(applicationContext).startServer() // Pasando el contexto
-            launchGameplayActivity(isServer = true)
-        } else {
-            BluetoothGameManager.getInstance(applicationContext).connectToDevice(device) // Pasando el contexto
-            BluetoothGameManager.getInstance(applicationContext).setConnectionListener(object :
-                BluetoothGameManager.ConnectionListener {
-                override fun onDeviceConnected(device: BluetoothDevice) {
-                    runOnUiThread {
-                        Toast.makeText(
-                            this@DeviceListActivity,
-                            "Conexión exitosa con ${device.name ?: "Dispositivo desconocido"}",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        launchGameplayActivity(isServer = false, selectedDevice = device)
-                    }
-                }
-
-                override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
-                    // Manejado en GameplayActivity
-                }
-
-                override fun onConnectionComplete() {
-                    // Conexión completa, manejada en `onDeviceConnected`
-                }
-
-                override fun onConnectionFailed(message: String) {
-                    runOnUiThread {
-                        Toast.makeText(
-                            this@DeviceListActivity,
-                            "Error al conectar: $message",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-            })
-        }
-    }
-
-    // Add required interface implementations
-    override fun onDeviceConnected(device: BluetoothDevice) {
-        runOnUiThread {
-            Toast.makeText(this, "Conectado a ${device.name ?: "Dispositivo desconocido"}", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
-        // Not needed in DeviceListActivity
-    }
-
-    override fun onConnectionComplete() {
-        runOnUiThread {
-            Toast.makeText(this, "Conexión establecida", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    override fun onConnectionFailed(message: String) {
-        runOnUiThread {
-            Toast.makeText(this, "Error de conexión: $message", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun launchGameplayActivity(isServer: Boolean, selectedDevice: BluetoothDevice? = null) {
-        val playerName = intent.getStringExtra("PLAYER_NAME") ?: "Jugador"
-        val intent = Intent(this, GameplayActivity::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", isServer)
-            if (!isServer) {
-                putExtra("SELECTED_DEVICE", selectedDevice)
-            }
-        }
-        startActivity(intent)
-        finish()
     }
 
     private fun navigateToMainMenu() {
@@ -263,6 +174,7 @@ class DeviceListActivity : AppCompatActivity(), BluetoothGameManager.ConnectionL
     }
 
     companion object {
+        const val EXTRA_DEVICE = "device"
         private const val PERMISSION_REQUEST_CODE = 1001
         private val REQUIRED_PERMISSIONS = arrayOf(
             Manifest.permission.BLUETOOTH_SCAN,
@@ -270,4 +182,5 @@ class DeviceListActivity : AppCompatActivity(), BluetoothGameManager.ConnectionL
             Manifest.permission.ACCESS_FINE_LOCATION
         )
     }
+
 }

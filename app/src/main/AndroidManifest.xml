@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-
     <!-- Permisos requeridos -->
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
@@ -31,28 +30,20 @@
         android:usesCleartextTraffic="true"
         android:theme="@style/Theme.Sensores_ESCOM_V2">
 
+        <activity
+            android:name=".presentation.components.GameplayActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:exported="false"/>
         <!-- Actividad principal -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <!-- Gameplay Activity -->
-        <activity
-            android:name=".presentation.components.GameplayActivity"
-            android:exported="false" />
-
-        <!-- Building Activity -->
-        <activity
-            android:name=".presentation.components.BuildingActivity"
-            android:exported="true"
-            android:theme="@style/Theme.Sensores_ESCOM_V2" />
-
-        <!-- DeviceList Activity -->
         <activity
             android:name=".presentation.components.DeviceListActivity"
             android:exported="true"
