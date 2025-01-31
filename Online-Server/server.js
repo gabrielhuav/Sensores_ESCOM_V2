@@ -1,55 +1,3 @@
-/**
- * WebSocket Server for Player Synchronization
- *
- * This server allows players to connect via WebSocket, update their positions in real-time,
- * and receive updates about other players' positions.
- *
- * Technologies Used:
- * - Node.js
- * - Express.js
- * - WebSocket (via the `ws` library)
- *
- * Features:
- * 1. Handles player connections and disconnections.
- * 2. Synchronizes player positions across all connected clients.
- * 3. Provides a basic HTTP route for server status.
- *
- * Setup Instructions:
- * 1. Ensure Node.js is installed.
- * 2. Install dependencies using `npm install express ws`.
- * 3. Start the server using `node <filename>.js`.
- *
- * WebSocket Message Types:
- * - Incoming Messages:
- *   1. `join`: A new player joins the server.
- *      Example:
- *      {
- *          "type": "join",
- *          "id": "player1"
- *      }
- *   2. `update`: A player updates their position.
- *      Example:
- *      {
- *          "type": "update",
- *          "id": "player1",
- *          "x": 100,
- *          "y": 200
- *      }
- *
- * - Outgoing Messages:
- *   1. `positions`: The server broadcasts the updated positions of all players.
- *      Example:
- *      {
- *          "type": "positions",
- *          "players": {
- *              "player1": { "x": 100, "y": 200 },
- *              "player2": { "x": 50, "y": 75 }
- *          }
- *      }
- *
- * API Endpoints:
- * - `GET /`: Returns a simple status message indicating the server is running.
- */
 const express = require("express");
 const { WebSocketServer } = require("ws");
 const path = require("path");
@@ -58,151 +6,201 @@ const app = express();
 const PORT = 3000;
 
 const server = app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
 });
 
 const wss = new WebSocketServer({ server });
 
-// Estructura de datos para almacenar jugadores y sus coordenadas por mapa
-const players = {};
+const POSITION_THRESHOLD = 1;
+const UPDATE_INTERVAL = 50;
+const RECONNECT_TIMEOUT = 5000; // Tiempo para mantener la información del jugador después de desconexión
 
-// Función para enviar mensajes a todos los clientes conectados
-function broadcast(data) {
-  const message = JSON.stringify(data);
-  wss.clients.forEach((client) => {
-    if (client.readyState === client.OPEN) {
-      client.send(message);
-    }
-  });
+const players = {};
+const lastUpdateTime = {};
+const disconnectedPlayers = new Map(); // Para manejar reconexiones
+
+function generateRandomColor() {
+    return '#' + Math.floor(Math.random()*16777215).toString(16);
 }
 
-// Función auxiliar para procesar las coordenadas
+function broadcast(data, excludeWs = null) {
+    const message = JSON.stringify(data);
+    wss.clients.forEach((client) => {
+        if (client !== excludeWs && client.readyState === client.OPEN) {
+            client.send(message);
+        }
+    });
+}
+
+function shouldUpdate(playerId) {
+    const currentTime = Date.now();
+    if (!lastUpdateTime[playerId] || currentTime - lastUpdateTime[playerId] >= UPDATE_INTERVAL) {
+        lastUpdateTime[playerId] = currentTime;
+        return true;
+    }
+    return false;
+}
+
+function hasPositionChangedSignificantly(oldPos, newPos) {
+    if (!oldPos) return true;
+    return oldPos.x !== newPos.x || oldPos.y !== newPos.y;
+}
+
 function processPosition(data) {
-  // Si viene en formato {x, y} directo
-  if (typeof data.x === "number" && typeof data.y === "number") {
-    return { x: data.x, y: data.y };
-  }
-  // Si viene dentro de un objeto local
-  if (data.local && typeof data.local.x === "number" && typeof data.local.y === "number") {
-    return { x: data.local.x, y: data.local.y };
-  }
-  return null;
+    if (typeof data.x === "number" && typeof data.y === "number") {
+        return { x: data.x, y: data.y };
+    }
+    if (data.local && typeof data.local.x === "number" && typeof data.local.y === "number") {
+        return { x: data.local.x, y: data.local.y };
+    }
+    return null;
+}
+
+function handlePlayerDisconnection(playerId) {
+    if (players[playerId]) {
+        // Guardar el estado del jugador
+        disconnectedPlayers.set(playerId, {
+            data: players[playerId],
+            timestamp: Date.now()
+        });
+
+        // Programar la eliminación después del timeout
+        setTimeout(() => {
+            if (disconnectedPlayers.has(playerId)) {
+                disconnectedPlayers.delete(playerId);
+                delete players[playerId];
+                delete players[`${playerId}_remote`];
+                delete lastUpdateTime[playerId];
+                broadcast({
+                    type: "player_timeout",
+                    playerId: playerId
+                });
+            }
+        }, RECONNECT_TIMEOUT);
+    }
 }
 
 wss.on("connection", (ws) => {
-  console.log("A player connected");
+    console.log("A player connected");
+    ws.isAlive = true;
 
-  ws.on("message", (message) => {
-    try {
-        const data = JSON.parse(message);
-        console.log("Received data:", data);
+    ws.on("pong", () => {
+        ws.isAlive = true;
+    });
 
-        if (data.type === "join") {
-            const trimmedId = data.id.trim();
-            if (!players[trimmedId]) {
-                players[trimmedId] = { positions: {}, currentMap: "main" };
-                console.log(`Player joined: ${trimmedId}`);
-            }
-        } else if (data.type === "update") {
-            const trimmedId = data.id.trim();
-            const position = processPosition(data);
+    ws.on("message", (message) => {
+        try {
+            const data = JSON.parse(message);
+            console.log("Received data:", data);
 
-            if (players[trimmedId]) {
-                const currentMap = data.map || players[trimmedId].currentMap;
+            const trimmedId = data.id?.trim();
+            if (!trimmedId) return;
 
-                // Evitar sobrescribir si la posición no cambió
-                const previousPosition = players[trimmedId].positions[currentMap] || {};
-                if (
-                    position &&
-                    (position.x !== previousPosition.x || position.y !== previousPosition.y)
-                ) {
-                    players[trimmedId].positions[currentMap] = position;
-                    players[trimmedId].currentMap = currentMap;
-                    console.log(`Updated position for ${trimmedId}:`, position);
-                }
+            ws.playerId = trimmedId; // Asociar el ID del jugador con la conexión
 
-                // Procesar posiciones remotas
-                if (data.remotes && Array.isArray(data.remotes)) {
-                    data.remotes.forEach((remote) => {
-                        if (remote.id && typeof remote.x === "number" && typeof remote.y === "number") {
-                            const remoteId = remote.id.trim();
-                            if (!players[remoteId]) {
-                                players[remoteId] = { positions: {}, currentMap };
-                            }
+            switch (data.type) {
+                case "join":
+                    // Verificar si el jugador estaba desconectado recientemente
+                    const disconnectedPlayer = disconnectedPlayers.get(trimmedId);
+                    if (disconnectedPlayer) {
+                        players[trimmedId] = disconnectedPlayer.data;
+                        disconnectedPlayers.delete(trimmedId);
+                    } else if (!players[trimmedId]) {
+                        players[trimmedId] = {
+                            x: 0,
+                            y: 0,
+                            currentMap: "main",
+                            color: generateRandomColor(),
+                            type: "local"
+                        };
+                    }
+                    console.log(`Player joined/reconnected: ${trimmedId}`);
+                    
+                    // Enviar estado actual a todos
+                    broadcast({
+                        type: "positions",
+                        players: players
+                    });
+                    break;
 
-                            const remotePreviousPosition = players[remoteId].positions[currentMap] || {};
-                            if (
-                                remote.x !== remotePreviousPosition.x ||
-                                remote.y !== remotePreviousPosition.y
-                            ) {
-                                players[remoteId].positions[currentMap] = { x: remote.x, y: remote.y };
-                                players[remoteId].currentMap = currentMap;
-                                console.log(`Updated remote position for ${remoteId}:`, {
-                                    x: remote.x,
-                                    y: remote.y,
+                case "update":
+                    if (shouldUpdate(trimmedId)) {
+                        const position = processPosition(data);
+                        const currentMap = data.map || "main";
+
+                        if (position) {
+                            const previousPosition = players[trimmedId];
+
+                            if (hasPositionChangedSignificantly(previousPosition, position)) {
+                                players[trimmedId] = {
+                                    x: position.x,
+                                    y: position.y,
+                                    currentMap: currentMap,
+                                    color: players[trimmedId]?.color || generateRandomColor(),
+                                    type: "local"
+                                };
+
+                                if (data.remote) {
+                                    const remoteId = `${trimmedId}_remote`;
+                                    players[remoteId] = {
+                                        x: data.remote.x,
+                                        y: data.remote.y,
+                                        currentMap: currentMap,
+                                        color: "#FF0000",
+                                        type: "remote"
+                                    };
+                                }
+
+                                broadcast({
+                                    type: "positions",
+                                    players: players
                                 });
                             }
                         }
-                    });
-                }
-            } else {
-                console.warn(`Player ${trimmedId} not found, creating new entry`);
-                players[trimmedId] = { positions: { [data.map]: position }, currentMap: data.map };
+                    }
+                    break;
+
+                case "leave":
+                    handlePlayerDisconnection(trimmedId);
+                    break;
             }
-        } else if (data.type === "leave") {
-            const trimmedId = data.id.trim();
-            if (players[trimmedId]) {
-                console.log(`Player left: ${trimmedId}`);
-                delete players[trimmedId];
-                delete players[`${trimmedId}_remote`];
-            }
+
+        } catch (error) {
+            console.error("Error processing message:", error);
+            console.error(error.stack);
         }
+    });
 
-        // Preparar y enviar actualizaciones a todos los clientes
-        const broadcastData = {
-            type: "positions",
-            players: Object.fromEntries(
-                Object.entries(players).map(([id, playerData]) => [
-                    id,
-                    {
-                        currentMap: playerData.currentMap,
-                        x: playerData.positions[playerData.currentMap]?.x || 0,
-                        y: playerData.positions[playerData.currentMap]?.y || 0,
-                    },
-                ])
-            ),
-        };
-
-        broadcast(broadcastData);
-    } catch (error) {
-        console.error("Error processing message:", error);
-        console.error(error.stack);
-    }
+    ws.on("close", () => {
+        if (ws.playerId) {
+            handlePlayerDisconnection(ws.playerId);
+        }
+        console.log("A player disconnected");
+    });
 });
 
+// Ping para mantener conexiones activas
+const interval = setInterval(() => {
+    wss.clients.forEach((ws) => {
+        if (ws.isAlive === false) {
+            if (ws.playerId) {
+                handlePlayerDisconnection(ws.playerId);
+            }
+            return ws.terminate();
+        }
+        ws.isAlive = false;
+        ws.ping();
+    });
+}, 30000);
 
-  ws.on("close", () => {
-    console.log("A player disconnected");
-    broadcast({ type: "positions", players });
-  });
+wss.on("close", () => {
+    clearInterval(interval);
 });
 
-// Endpoint HTTP para mostrar el estado del servidor
 app.get("/", (req, res) => {
-  res.json({
-    message: "WebSocket server is running. Connect to synchronize positions.",
-    players: Object.fromEntries(
-      Object.entries(players).map(([id, playerData]) => [
-        id,
-        {
-          currentMap: playerData.currentMap,
-          positions: playerData.positions,
-        },
-      ])
-    ),
-  });
-});
-
-app.get("/documentation", (req, res) => {
-  res.sendFile(path.join(__dirname, "documentation.html"));
+    res.json({
+        message: "WebSocket server is running.",
+        connectedPlayers: Object.keys(players).length,
+        players: players
+    });
 });

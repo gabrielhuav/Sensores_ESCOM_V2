@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.content.ContentValues.TAG
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -22,6 +23,7 @@ import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.MapView
 
 @SuppressLint("ClickableViewAccessibility")
 class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionListener, OnlineServerManager.WebSocketListener {
@@ -63,55 +65,97 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         BluetoothGameManager.getInstance(applicationContext).resumeConnection()
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putSerializable("LOCAL_PLAYER_POSITION", localPlayerPosition)
+        outState.putSerializable("REMOTE_PLAYER_POSITION", remotePlayerPosition)
+        outState.putBoolean("IS_SERVER", isServer)
+        outState.putBoolean("IS_CONNECTED", isConnected)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_gameplay)
 
-        // Initialize views
-        initializeViews()
+        try {
+            // Initialize views
+            initializeViews()
 
-        // Get player name from intent
-        playerName = intent.getStringExtra("PLAYER_NAME") ?: run {
-            Toast.makeText(this, "Nombre de jugador no encontrado", Toast.LENGTH_SHORT).show()
+            // Get player name from intent
+            playerName = intent.getStringExtra("PLAYER_NAME") ?: run {
+                Toast.makeText(this, "Nombre de jugador no encontrado", Toast.LENGTH_SHORT).show()
+                finish()
+                return
+            }
+
+            // Restaurar estado si existe
+            if (savedInstanceState != null) {
+                localPlayerPosition = savedInstanceState.getSerializable("LOCAL_PLAYER_POSITION") as Pair<Int, Int>
+                remotePlayerPosition = savedInstanceState.getSerializable("REMOTE_PLAYER_POSITION") as? Pair<Int, Int>
+                isServer = savedInstanceState.getBoolean("IS_SERVER")
+                isConnected = savedInstanceState.getBoolean("IS_CONNECTED")
+            } else {
+                // Set initial position solo si no hay estado guardado
+                localPlayerPosition = intent.getSerializableExtra("PLAYER_POSITION") as? Pair<Int, Int> ?: Pair(1, 1)
+                isServer = intent.getBooleanExtra("IS_SERVER", false)
+            }
+
+            // Actualizar posición en el MapView
+            mapView.updateLocalPlayerPosition(localPlayerPosition)
+            remotePlayerPosition?.let { pos ->
+                mapView.updateRemotePlayerPosition("remote", pos)
+            }
+
+            // Initialize managers and continue with the rest of setup
+            initializeManagers()
+            setupRole()
+            setupUI()
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error en onCreate: ${e.message}")
+            Toast.makeText(this, "Error inicializando la aplicación", Toast.LENGTH_LONG).show()
             finish()
-            return
         }
+    }
 
-        // Set initial position
-        localPlayerPosition = intent.getSerializableExtra("PLAYER_POSITION") as? Pair<Int, Int> ?: Pair(1, 1)
-        mapView.updateLocalPlayerPosition(localPlayerPosition)
-
-        // Check if device is Bluetooth server or client
-        val isServer = intent.getBooleanExtra("IS_SERVER", false)
+    private fun initializeManagers() {
+        // Configure OnlineServerManager first
+        onlineServerManager = OnlineServerManager.getInstance(applicationContext)
+        onlineServerManager.setListener(this) // Establecer el listener después de obtener la instancia
 
         // Configure BluetoothGameManager
-        val bluetoothManager = BluetoothGameManager.getInstance(applicationContext).apply {
-            setConnectionListener(this@GameplayActivity)
-            initialize(playerName, this@GameplayActivity) // Pasando this como WebSocketListener
+        try {
+            val bluetoothManager = BluetoothGameManager.getInstance(applicationContext)
+            bluetoothManager.setConnectionListener(this)
+            bluetoothManager.initialize(playerName, this)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error inicializando BluetoothGameManager: ${e.message}")
         }
-
-        // Configure OnlineServerManager
-        onlineServerManager = OnlineServerManager(this@GameplayActivity, this)
-
-        //BluetoothGameManager.getInstance().initialize(onlineServerManager, playerName)
 
         // Configure BluetoothWebSocketBridge
-        bluetoothBridge = BluetoothWebSocketBridge.getInstance()
-        bluetoothBridge.initialize(onlineServerManager, playerName)
-        setupBridgePositionListener()
+        try {
+            bluetoothBridge = BluetoothWebSocketBridge.getInstance()
+            bluetoothBridge.initialize(onlineServerManager, playerName)
+            setupBridgePositionListener()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error inicializando BluetoothWebSocketBridge: ${e.message}")
+        }
+    }
 
+    private fun setupRole() {
         if (isServer) {
-            // Server flow: Connect to Node.js server first
             setupServerFlow()
         } else {
-            // Client flow: Connect via Bluetooth
             setupClientFlow()
         }
+    }
 
+    private fun setupUI() {
         setupButtonListeners()
         setupInteractionButton(findViewById(R.id.button_a))
         checkBluetoothSupport()
     }
+
 
     private fun initializeViews() {
         btnStartServer = findViewById(R.id.button_small_1)
@@ -175,7 +219,7 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
     }
 
     private fun connectToOnlineServer(callback: (Boolean) -> Unit) {
-        val serverUrl = "ws://192.168.1.17:3000"
+        val serverUrl = "ws://192.168.1.19:3000"
         onlineServerManager.connectToServer(serverUrl)
 
         onlineServerManager.setOnConnectionCompleteListener {
@@ -196,21 +240,21 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
     private fun setupInteractionButton(buttonA: Button) {
         buttonA.setOnClickListener {
             val (x, y) = localPlayerPosition
-            if (x == 15 && y == 10) {
-                println("Button A pressed - Player is at (15, 10), entering building")
+            if (mapView.isInteractivePosition(x, y)) {
+                println("Button A pressed - Player is at interactive position")
 
                 // Notificar al servidor y cambiar de actividad
                 onlineServerManager.sendUpdateMessage(playerName, x, y, "building")
 
-                val intent = Intent(this, BuildingActivity::class.java).apply {
-                    putExtra("PLAYER_NAME", playerName) // Pasar el nombre del jugador
-                    putExtra("PLAYER_POSITION", Pair(0, 0)) // Establecer posición inicial en el edificio
-                }
+                //val intent = Intent(this, BuildingActivity::class.java).apply {
+                  //  putExtra("PLAYER_NAME", playerName)
+                    //putExtra("PLAYER_POSITION", Pair(0, 0))
+                //}
 
                 startActivity(intent)
                 finish()
             } else {
-                println("Button A pressed - Player not at (15, 10), interaction not allowed")
+                println("Button A pressed - Not at interactive position")
                 Toast.makeText(this, "No puedes interactuar aquí", Toast.LENGTH_SHORT).show()
             }
         }
@@ -227,7 +271,7 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
 
     private fun startBluetoothServer() {
         isServer = true
-        mapView.setBluetoothServerMode(true)
+        //mapView.setBluetoothServerMode(true)
         if (!isConnected) {
             Toast.makeText(this, "Debe estar conectado al servidor online para iniciar el servidor Bluetooth.", Toast.LENGTH_SHORT).show()
             return
@@ -267,7 +311,8 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
                     override fun run() {
                         val newX = (localPlayerPosition.first + deltaX).coerceIn(0, 39)
                         val newY = (localPlayerPosition.second + deltaY).coerceIn(0, 39)
-                        if (mapView.mapMatrix[newY][newX] != 1 && mapView.mapMatrix[newY][newX] != 3) {
+                        // Usar el MapMatrixManager para verificar la posición
+                        if (mapView.isValidPosition(newX, newY)) {
                             movePlayer(deltaX, deltaY)
                         }
                         handler.postDelayed(this, 100)
@@ -280,28 +325,39 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
         }
     }
 
-    // In GameplayActivity.kt - Update movePlayer method
     private fun movePlayer(deltaX: Int, deltaY: Int) {
         val newX = (localPlayerPosition.first + deltaX).coerceIn(0, 39)
         val newY = (localPlayerPosition.second + deltaY).coerceIn(0, 39)
 
-        if (mapView.mapMatrix[newY][newX] != 1 && mapView.mapMatrix[newY][newX] != 3) {
+        if (mapView.isValidPosition(newX, newY)) {
             localPlayerPosition = Pair(newX, newY)
             mapView.updateLocalPlayerPosition(localPlayerPosition)
 
-            // Send position via Bluetooth
-            BluetoothGameManager.getInstance(applicationContext).sendPlayerPosition(newX, newY)
+            try {
+                // Enviar posición por Bluetooth
+                BluetoothGameManager.getInstance(applicationContext).sendPlayerPosition(newX, newY)
 
-            // Update through bridge
-            bluetoothBridge.updatePosition(playerName, localPlayerPosition)
+                // Actualizar a través del bridge
+                bluetoothBridge.updatePosition(playerName, localPlayerPosition)
 
-            Log.d("GameplayActivity", "Position sent: ($newX, $newY)")
+                // Notificar al servidor (usar solo 'main' como mapa)
+                onlineServerManager.sendUpdateMessage(
+                    playerId = playerName,
+                    x = newX,
+                    y = newY,
+                    map = "main"  // Usar solo un tipo de mapa
+                )
+
+                Log.d(TAG, "Position sent: ($newX, $newY)")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error sending position: ${e.message}")
+            }
         }
     }
 
 
     private fun connectToOnlineServer() {
-        val serverUrl = "ws://192.168.1.17:3000"
+        val serverUrl = "ws://192.168.1.19:3000"
         onlineServerManager.connectToServer(serverUrl)
         Toast.makeText(this, "Conectando al servidor online...", Toast.LENGTH_SHORT).show()
 
@@ -388,8 +444,7 @@ class GameplayActivity : AppCompatActivity(), BluetoothGameManager.ConnectionLis
 
     override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
         runOnUiThread {
-            val bluetoothPosition = Pair(x, y)
-            mapView.updateBluetoothPlayerPosition(bluetoothPosition)
+            mapView.updateRemotePlayerPosition(device.name ?: "Unknown", Pair(x, y))
             Log.d("GameplayActivity", "Recibida posición del dispositivo ${device.name}: ($x, $y)")
             Toast.makeText(this, "Dispositivo ${device.name} se movió a ($x, $y)", Toast.LENGTH_SHORT).show()
         }
