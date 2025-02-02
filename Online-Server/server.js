@@ -132,12 +132,13 @@ wss.on("connection", (ws) => {
 
                             if (hasChanges) {
                                 // Enviar actualización a todos los clientes
+
                                 const updateMessage = {
                                     type: "update",
                                     id: trimmedId,
-                                    map: currentMap,
-                                    local: positions.local,
-                                    remote: positions.remote
+                                    x: positions.local.x,  // Enviar directamente x e y
+                                    y: positions.local.y,
+                                    map: currentMap
                                 };
                                 broadcast(updateMessage);
                             }

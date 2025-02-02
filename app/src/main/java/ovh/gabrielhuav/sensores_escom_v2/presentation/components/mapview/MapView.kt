@@ -11,9 +11,17 @@ import android.view.View
 import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
 
-class MapView(context: Context, attrs: AttributeSet? = null) :
-    View(context, attrs),
-    OnlineServerManager.WebSocketListener {
+class MapView @JvmOverloads constructor(
+    context: Context,
+    attrs: AttributeSet? = null,
+    private val mapResourceId: Int = R.drawable.escom_mapa
+) : View(context, attrs), OnlineServerManager.WebSocketListener {
+
+    companion object {
+        fun createWithCustomMap(context: Context, mapResourceId: Int): MapView {
+            return MapView(context, mapResourceId = mapResourceId)
+        }
+    }
 
     private val renderer = MapRenderer()
     private val gestureHandler = MapGestureHandler(this)
@@ -46,7 +54,8 @@ class MapView(context: Context, attrs: AttributeSet? = null) :
                 inScaled = false
                 inMutable = true
             }
-            val bitmap = BitmapFactory.decodeResource(resources, R.drawable.escom_mapa, options)
+            // Usar el mapResourceId en lugar del recurso hardcodeado
+            val bitmap = BitmapFactory.decodeResource(resources, mapResourceId, options)
             mapState.backgroundBitmap = bitmap
             gestureHandler.setBitmap(bitmap)
         } catch (e: Exception) {

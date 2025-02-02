@@ -20,7 +20,7 @@ import ovh.gabrielhuav.sensores_escom_v2.data.map.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
 
-class GameplayActivity : AppCompatActivity(),
+class BuildingNumber2 : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,
     BluetoothGameManager.ConnectionListener,
     OnlineServerManager.WebSocketListener {
@@ -56,7 +56,13 @@ class GameplayActivity : AppCompatActivity(),
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_gameplay)
+        setContentView(R.layout.activity_building)
+
+        mapView = MapView(
+            context = this,
+            mapResourceId = R.drawable.escom_edificio3
+        )
+        findViewById<FrameLayout>(R.id.map_container).addView(mapView)
 
         try {
             initializeComponents(savedInstanceState)
@@ -98,7 +104,8 @@ class GameplayActivity : AppCompatActivity(),
     }
 
     private fun initializeViews() {
-        mapView = MapView(this)
+        mapView = MapView.createWithCustomMap(this, R.drawable.escom_edificio2)
+
         findViewById<FrameLayout>(R.id.map_container).addView(mapView)
 
         uiManager = UIManager(findViewById(R.id.main_layout), mapView).apply {
@@ -108,14 +115,14 @@ class GameplayActivity : AppCompatActivity(),
 
     private fun initializeManagers() {
         bluetoothManager = BluetoothManager.getInstance(this, uiManager.tvBluetoothStatus).apply {
-            setCallback(this@GameplayActivity)
+            setCallback(this@BuildingNumber2)
         }
 
         bluetoothBridge = BluetoothWebSocketBridge.getInstance()
 
         // Configurar OnlineServerManager con el listener
         val onlineServerManager = OnlineServerManager.getInstance(this).apply {
-            setListener(this@GameplayActivity)
+            setListener(this@BuildingNumber2)
         }
 
         serverConnectionManager = ServerConnectionManager(
@@ -217,35 +224,20 @@ class GameplayActivity : AppCompatActivity(),
             btnSouth.setOnTouchListener { _, event -> handleMovement(event, 0, 1); true }
             btnEast.setOnTouchListener { _, event -> handleMovement(event, 1, 0); true }
             btnWest.setOnTouchListener { _, event -> handleMovement(event, -1, 0); true }
-
-            // Configurar el botón A para verificar la posición
-            buttonA.setOnClickListener {
-                val currentPosition = gameState.playerPosition
-                if (currentPosition.first == 15 && currentPosition.second == 10) {
-                    val intent = Intent(this@GameplayActivity, BuildingNumber2::class.java).apply {
-                        putExtra("PLAYER_NAME", playerName)
-                        putExtra("IS_SERVER", gameState.isServer)
-                        putExtra("INITIAL_POSITION", Pair(1, 1))
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    }
-                    startActivity(intent)
-                    finish()
-                } else {
-                    showToast("No hay interacción disponible en esta posición")
-                }
-            }
         }
     }
 
-
-    private var canChangeMap = false  // Variable para controlar si se puede cambiar de mapa
-
     private fun checkPositionForMapChange(position: Pair<Int, Int>) {
         runOnUiThread {
-            canChangeMap = position.first == 15 && position.second == 10
-            // Opcionalmente mostrar un indicador visual de que se puede interactuar
-            if (canChangeMap) {
-                Toast.makeText(this, "Presiona A para entrar al edificio", Toast.LENGTH_SHORT).show()
+            if (position.first == 15 && position.second == 10) {
+                val intent = Intent(this, BuildingNumber2::class.java).apply {
+                    putExtra("PLAYER_NAME", playerName)
+                    putExtra("IS_SERVER", gameState.isServer)
+                    putExtra("INITIAL_POSITION", Pair(1, 1))
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                }
+                startActivity(intent)
+                finish()
             }
         }
     }
@@ -256,7 +248,7 @@ class GameplayActivity : AppCompatActivity(),
             mapView.updateLocalPlayerPosition(position)
 
             if (gameState.isConnected) {
-                serverConnectionManager.sendUpdateMessage(playerName, position, "main")
+                serverConnectionManager.sendUpdateMessage(playerName, position, "escom_building2")
             }
 
             checkPositionForMapChange(position)

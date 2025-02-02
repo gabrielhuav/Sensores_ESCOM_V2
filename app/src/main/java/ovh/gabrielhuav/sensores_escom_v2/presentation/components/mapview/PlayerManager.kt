@@ -3,6 +3,7 @@ package ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Typeface
 import org.json.JSONObject
 
 class PlayerManager {
@@ -24,6 +25,17 @@ class PlayerManager {
     private val paintBluetoothPlayer = Paint().apply {
         color = Color.GREEN
         style = Paint.Style.FILL
+    }
+
+    // Paint para el texto de los nombres
+    private val paintText = Paint().apply {
+        color = Color.BLACK
+        textSize = 30f
+        typeface = Typeface.DEFAULT_BOLD
+        textAlign = Paint.Align.CENTER
+        style = Paint.Style.FILL
+        // Agregar sombra para mejor legibilidad
+        setShadowLayer(3f, 0f, 0f, Color.WHITE)
     }
 
     fun updateLocalPlayerPosition(position: Pair<Int, Int>?) {
@@ -70,7 +82,15 @@ class PlayerManager {
         localPlayerPosition?.let {
             val playerX = it.first * cellWidth + cellWidth / 2
             val playerY = it.second * cellHeight + cellHeight / 2
+            // Dibujar círculo del jugador
             canvas.drawCircle(playerX, playerY, cellWidth / 4f, paintLocalPlayer)
+            // Dibujar nombre del jugador
+            canvas.drawText(
+                "Tú ($localPlayerId)",
+                playerX,
+                playerY - cellHeight / 2,
+                paintText
+            )
         }
 
         // Dibujar jugadores remotos
@@ -78,7 +98,15 @@ class PlayerManager {
             if (id != localPlayerId) {
                 val remotePlayerX = position.first * cellWidth + cellWidth / 2
                 val remotePlayerY = position.second * cellHeight + cellHeight / 2
+                // Dibujar círculo del jugador remoto
                 canvas.drawCircle(remotePlayerX, remotePlayerY, cellWidth / 4f, paintRemotePlayer)
+                // Dibujar nombre del jugador remoto
+                canvas.drawText(
+                    id,
+                    remotePlayerX,
+                    remotePlayerY - cellHeight / 2,
+                    paintText
+                )
             }
         }
 
@@ -86,7 +114,15 @@ class PlayerManager {
         bluetoothPlayerPosition?.let {
             val bluetoothX = it.first * cellWidth + cellWidth / 2
             val bluetoothY = it.second * cellHeight + cellHeight / 2
+            // Dibujar círculo del jugador Bluetooth
             canvas.drawCircle(bluetoothX, bluetoothY, cellWidth / 4f, paintBluetoothPlayer)
+            // Dibujar texto indicando que es jugador Bluetooth
+            canvas.drawText(
+                if (isBluetoothServer) "BT Server" else "BT Client",
+                bluetoothX,
+                bluetoothY - cellHeight / 2,
+                paintText
+            )
         }
     }
 
@@ -105,12 +141,11 @@ class PlayerManager {
                 updateRemotePlayerPositions(positions)
             }
         } catch (e: Exception) {
-            // Manejar errores de parsing JSON
             e.printStackTrace()
         }
     }
+
     fun getLocalPlayerPosition(): Pair<Int, Int>? {
         return localPlayerPosition
     }
-
 }
