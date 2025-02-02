@@ -57,28 +57,40 @@ class OnlineServerManager private constructor(private val context: Context) {
     }
 
     fun sendUpdateMessage(playerId: String, x: Int, y: Int, map: String) {
-        val message = """{"type": "update", "id": "$playerId", "x": $x, "y": $y, "map": "$map"}"""
-        queueMessage(message)
-    }
-
-    fun sendBothPositions(playerId: String, localX: Int, localY: Int, remoteX: Int?, remoteY: Int?, map: String) {
         val message = JSONObject().apply {
             put("type", "update")
             put("id", playerId)
+            put("x", x)
+            put("y", y)
             put("map", map)
-            put("local", JSONObject().apply {
+        }.toString()
+        queueMessage(message)
+    }
+
+
+    fun sendBothPositions(playerId: String, localX: Int, localY: Int, remoteX: Int?, remoteY: Int?, map: String) {
+        // Solo enviar la posición que cambió, no ambas
+        if (remoteX != null && remoteY != null) {
+            // Si es una actualización remota
+            val message = JSONObject().apply {
+                put("type", "update")
+                put("id", playerId)
+                put("x", remoteX)
+                put("y", remoteY)
+                put("map", map)
+            }.toString()
+            queueMessage(message)
+        } else {
+            // Si es una actualización local
+            val message = JSONObject().apply {
+                put("type", "update")
+                put("id", playerId)
                 put("x", localX)
                 put("y", localY)
-            })
-            if (remoteX != null && remoteY != null) {
-                put("remote", JSONObject().apply {
-                    put("x", remoteX)
-                    put("y", remoteY)
-                })
-            }
-        }.toString()
-
-        queueMessage(message)
+                put("map", map)
+            }.toString()
+            queueMessage(message)
+        }
     }
 
     fun queueMessage(message: String) {
@@ -146,4 +158,11 @@ class OnlineServerManager private constructor(private val context: Context) {
             onConnectionFailedListener?.invoke()
         }
     }
+
+    fun requestPositionsUpdate() {
+        webSocket?.send(JSONObject().apply {
+            put("type", "request_positions")
+        }.toString())
+    }
+
 }

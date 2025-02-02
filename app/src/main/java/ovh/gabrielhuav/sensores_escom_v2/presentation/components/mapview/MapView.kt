@@ -17,7 +17,7 @@ class MapView(context: Context, attrs: AttributeSet? = null) :
 
     private val renderer = MapRenderer()
     private val gestureHandler = MapGestureHandler(this)
-    private val playerManager = PlayerManager()
+    val playerManager = PlayerManager()
     private val mapState = MapState()
     val mapMatrixManager = MapMatrixManager()
 
