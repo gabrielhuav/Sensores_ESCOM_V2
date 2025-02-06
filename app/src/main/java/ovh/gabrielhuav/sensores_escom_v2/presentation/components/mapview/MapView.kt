@@ -230,8 +230,8 @@ class MapView @JvmOverloads constructor(
         invalidate()
     }
 
-    fun updateRemotePlayerPosition(playerId: String, position: Pair<Int, Int>?) {
-        playerManager.updateRemotePlayerPosition(playerId, position)
+    fun updateRemotePlayerPosition(playerId: String, position: Pair<Int, Int>, map: String) {
+        playerManager.updateRemotePlayerPosition(playerId, position, map)
         invalidate()
     }
 

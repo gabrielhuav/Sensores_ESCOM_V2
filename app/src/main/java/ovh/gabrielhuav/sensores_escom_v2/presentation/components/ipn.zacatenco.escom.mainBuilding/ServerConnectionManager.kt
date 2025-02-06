@@ -9,7 +9,7 @@ class ServerConnectionManager(
     private val context: Context,
     val onlineServerManager: OnlineServerManager
 ) {
-    private val serverUrl = "ws://192.168.1.19:3000"
+    private val serverUrl = "ws://192.168.1.11:3000"
     private var isConnecting = false
 
     fun connectToServer(callback: (Boolean) -> Unit) {

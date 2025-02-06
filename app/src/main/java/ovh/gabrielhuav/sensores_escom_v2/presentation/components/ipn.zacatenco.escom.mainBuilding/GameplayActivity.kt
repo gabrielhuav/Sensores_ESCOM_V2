@@ -40,9 +40,14 @@ class GameplayActivity : AppCompatActivity(),
         var isServer: Boolean = false,
         var isConnected: Boolean = false,
         var playerPosition: Pair<Int, Int> = Pair(1, 1),
-        var remotePlayerPositions: Map<String, Pair<Int, Int>> = emptyMap(),
+        var remotePlayerPositions: Map<String, PlayerInfo> = emptyMap(), // Cambiado para incluir mapa
         var remotePlayerName: String? = null
-    )
+    ) {
+        data class PlayerInfo(
+            val position: Pair<Int, Int>,
+            val map: String
+        )
+    }
 
     private val enableBluetoothLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -60,6 +65,14 @@ class GameplayActivity : AppCompatActivity(),
 
         try {
             initializeComponents(savedInstanceState)
+
+            // Después de inicializar los componentes, configura el playerManager
+            mapView.playerManager.apply {
+                setCurrentMap("main")
+                localPlayerId = playerName
+                gameState.playerPosition?.let { updateLocalPlayerPosition(it) }
+            }
+
         } catch (e: Exception) {
             Log.e(TAG, "Error en onCreate: ${e.message}")
             Toast.makeText(this, "Error inicializando la actividad.", Toast.LENGTH_LONG).show()
@@ -142,7 +155,7 @@ class GameplayActivity : AppCompatActivity(),
                 ?: Pair(1, 1)
             @Suppress("UNCHECKED_CAST")
             remotePlayerPositions = (savedInstanceState.getSerializable("REMOTE_PLAYER_POSITIONS")
-                    as? HashMap<String, Pair<Int, Int>>)?.toMap() ?: emptyMap()
+                    as? HashMap<String, GameState.PlayerInfo>)?.toMap() ?: emptyMap()
             remotePlayerName = savedInstanceState.getString("REMOTE_PLAYER_NAME")
         }
 
@@ -220,31 +233,31 @@ class GameplayActivity : AppCompatActivity(),
 
             // Configurar el botón A para verificar la posición
             buttonA.setOnClickListener {
-                val currentPosition = gameState.playerPosition
-                if (currentPosition.first == 15 && currentPosition.second == 10) {
-                    val intent = Intent(this@GameplayActivity, BuildingNumber2::class.java).apply {
-                        putExtra("PLAYER_NAME", playerName)
-                        putExtra("IS_SERVER", gameState.isServer)
-                        putExtra("INITIAL_POSITION", Pair(1, 1))
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    }
-                    startActivity(intent)
-                    finish()
+                if (canChangeMap) {
+                    startBuildingActivity()
                 } else {
                     showToast("No hay interacción disponible en esta posición")
                 }
             }
         }
     }
-
+    private fun startBuildingActivity() {
+        val intent = Intent(this, BuildingNumber2::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(1, 1))
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
 
     private var canChangeMap = false  // Variable para controlar si se puede cambiar de mapa
 
     private fun checkPositionForMapChange(position: Pair<Int, Int>) {
-        runOnUiThread {
-            canChangeMap = position.first == 15 && position.second == 10
-            // Opcionalmente mostrar un indicador visual de que se puede interactuar
-            if (canChangeMap) {
+        canChangeMap = position.first == 15 && position.second == 10
+        if (canChangeMap) {
+            runOnUiThread {
                 Toast.makeText(this, "Presiona A para entrar al edificio", Toast.LENGTH_SHORT).show()
             }
         }
@@ -269,9 +282,9 @@ class GameplayActivity : AppCompatActivity(),
 
     private fun updateRemotePlayersOnMap() {
         runOnUiThread {
-            for ((id, position) in gameState.remotePlayerPositions) {
+            for ((id, playerInfo) in gameState.remotePlayerPositions) {
                 if (id != playerName) {
-                    mapView.updateRemotePlayerPosition(id, position)
+                    mapView.updateRemotePlayerPosition(id, playerInfo.position, playerInfo.map)
                 }
             }
         }
@@ -318,10 +331,11 @@ class GameplayActivity : AppCompatActivity(),
         }
     }
 
+    // Actualiza handlePositionsMessage
     private fun handlePositionsMessage(jsonObject: JSONObject) {
         runOnUiThread {
             val players = jsonObject.getJSONObject("players")
-            val newPositions = mutableMapOf<String, Pair<Int, Int>>()
+            val newPositions = mutableMapOf<String, GameState.PlayerInfo>()
 
             players.keys().forEach { playerId ->
                 val playerData = players.getJSONObject(playerId)
@@ -329,9 +343,10 @@ class GameplayActivity : AppCompatActivity(),
                     playerData.getInt("x"),
                     playerData.getInt("y")
                 )
+                val map = playerData.getString("map")
 
                 if (playerId != playerName) {
-                    newPositions[playerId] = position
+                    newPositions[playerId] = GameState.PlayerInfo(position, map)
                 }
             }
 
@@ -340,7 +355,7 @@ class GameplayActivity : AppCompatActivity(),
             mapView.invalidate()
         }
     }
-
+    // Actualiza handleUpdateMessage
     private fun handleUpdateMessage(jsonObject: JSONObject) {
         runOnUiThread {
             val playerId = jsonObject.getString("id")
@@ -349,16 +364,18 @@ class GameplayActivity : AppCompatActivity(),
                     jsonObject.getInt("x"),
                     jsonObject.getInt("y")
                 )
+                val map = jsonObject.getString("currentmap")  // Cambiado de "currentmap" a "map"
 
-                gameState.remotePlayerPositions = gameState.remotePlayerPositions + (playerId to position)
-                mapView.updateRemotePlayerPosition(playerId, position)
+                gameState.remotePlayerPositions = gameState.remotePlayerPositions +
+                        (playerId to GameState.PlayerInfo(position, map))
+
+                mapView.updateRemotePlayerPosition(playerId, position, map)
                 mapView.invalidate()
 
-                Log.d(TAG, "Updated player $playerId position to $position")
+                Log.d(TAG, "Updated player $playerId position to $position in map $map")
             }
         }
     }
-
 
     private fun handleJoinMessage(jsonObject: JSONObject) {
         val newPlayerId = jsonObject.getString("id")
@@ -369,7 +386,8 @@ class GameplayActivity : AppCompatActivity(),
     override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
         runOnUiThread {
             val deviceName = device.name ?: "Unknown"
-            mapView.updateRemotePlayerPosition(deviceName, Pair(x, y))
+            val currentMap = mapView.playerManager.getCurrentMap()
+            mapView.updateRemotePlayerPosition(deviceName, Pair(x, y), currentMap)
             Log.d("GameplayActivity", "Recibida posición del dispositivo $deviceName: ($x, $y)")
             mapView.invalidate()
         }

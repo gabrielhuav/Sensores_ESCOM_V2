@@ -40,9 +40,14 @@ class BuildingNumber2 : AppCompatActivity(),
         var isServer: Boolean = false,
         var isConnected: Boolean = false,
         var playerPosition: Pair<Int, Int> = Pair(1, 1),
-        var remotePlayerPositions: Map<String, Pair<Int, Int>> = emptyMap(),
+        var remotePlayerPositions: Map<String, PlayerInfo> = emptyMap(),
         var remotePlayerName: String? = null
-    )
+    ) {
+        data class PlayerInfo(
+            val position: Pair<Int, Int>,
+            val map: String
+        )
+    }
 
     private val enableBluetoothLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -58,14 +63,24 @@ class BuildingNumber2 : AppCompatActivity(),
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_building)
 
+        // Primero inicializamos el mapView
         mapView = MapView(
             context = this,
-            mapResourceId = R.drawable.escom_edificio3
+            mapResourceId = R.drawable.escom_edificio2
         )
         findViewById<FrameLayout>(R.id.map_container).addView(mapView)
 
         try {
             initializeComponents(savedInstanceState)
+
+            // Después de inicializar los componentes, configura el mapa
+            mapView.playerManager.apply {
+                setCurrentMap("escom_building2")
+                localPlayerId = playerName
+                updateLocalPlayerPosition(gameState.playerPosition)
+            }
+
+            Log.d("BuildingNumber2", "Set map to: escom_building2")
         } catch (e: Exception) {
             Log.e(TAG, "Error en onCreate: ${e.message}")
             Toast.makeText(this, "Error inicializando la actividad.", Toast.LENGTH_LONG).show()
@@ -104,9 +119,6 @@ class BuildingNumber2 : AppCompatActivity(),
     }
 
     private fun initializeViews() {
-        mapView = MapView.createWithCustomMap(this, R.drawable.escom_edificio2)
-
-        findViewById<FrameLayout>(R.id.map_container).addView(mapView)
 
         uiManager = UIManager(findViewById(R.id.main_layout), mapView).apply {
             initializeViews()
@@ -149,7 +161,7 @@ class BuildingNumber2 : AppCompatActivity(),
                 ?: Pair(1, 1)
             @Suppress("UNCHECKED_CAST")
             remotePlayerPositions = (savedInstanceState.getSerializable("REMOTE_PLAYER_POSITIONS")
-                    as? HashMap<String, Pair<Int, Int>>)?.toMap() ?: emptyMap()
+                    as? HashMap<String, GameState.PlayerInfo>)?.toMap() ?: emptyMap()
             remotePlayerName = savedInstanceState.getString("REMOTE_PLAYER_NAME")
         }
 
@@ -224,20 +236,35 @@ class BuildingNumber2 : AppCompatActivity(),
             btnSouth.setOnTouchListener { _, event -> handleMovement(event, 0, 1); true }
             btnEast.setOnTouchListener { _, event -> handleMovement(event, 1, 0); true }
             btnWest.setOnTouchListener { _, event -> handleMovement(event, -1, 0); true }
+
+            // Configurar el botón A para verificar la posición
+            buttonA.setOnClickListener {
+                if (canChangeMap) {
+                    startBuildingActivity()
+                } else {
+                    showToast("No hay interacción disponible en esta posición")
+                }
+            }
         }
     }
+    private fun startBuildingActivity() {
+        val intent = Intent(this, BuildingNumber2::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(1, 1))
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
+
+    private var canChangeMap = false  // Variable para controlar si se puede cambiar de mapa
 
     private fun checkPositionForMapChange(position: Pair<Int, Int>) {
-        runOnUiThread {
-            if (position.first == 15 && position.second == 10) {
-                val intent = Intent(this, BuildingNumber2::class.java).apply {
-                    putExtra("PLAYER_NAME", playerName)
-                    putExtra("IS_SERVER", gameState.isServer)
-                    putExtra("INITIAL_POSITION", Pair(1, 1))
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                }
-                startActivity(intent)
-                finish()
+        canChangeMap = position.first == 15 && position.second == 10
+        if (canChangeMap) {
+            runOnUiThread {
+                Toast.makeText(this, "Presiona A para entrar al edificio", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -261,9 +288,9 @@ class BuildingNumber2 : AppCompatActivity(),
 
     private fun updateRemotePlayersOnMap() {
         runOnUiThread {
-            for ((id, position) in gameState.remotePlayerPositions) {
+            for ((id, playerInfo) in gameState.remotePlayerPositions) {
                 if (id != playerName) {
-                    mapView.updateRemotePlayerPosition(id, position)
+                    mapView.updateRemotePlayerPosition(id, playerInfo.position, playerInfo.map)
                 }
             }
         }
@@ -310,10 +337,11 @@ class BuildingNumber2 : AppCompatActivity(),
         }
     }
 
+    // Actualiza handlePositionsMessage
     private fun handlePositionsMessage(jsonObject: JSONObject) {
         runOnUiThread {
             val players = jsonObject.getJSONObject("players")
-            val newPositions = mutableMapOf<String, Pair<Int, Int>>()
+            val newPositions = mutableMapOf<String, GameState.PlayerInfo>()
 
             players.keys().forEach { playerId ->
                 val playerData = players.getJSONObject(playerId)
@@ -321,9 +349,10 @@ class BuildingNumber2 : AppCompatActivity(),
                     playerData.getInt("x"),
                     playerData.getInt("y")
                 )
+                val map = playerData.getString("map")
 
                 if (playerId != playerName) {
-                    newPositions[playerId] = position
+                    newPositions[playerId] = GameState.PlayerInfo(position, map)
                 }
             }
 
@@ -332,7 +361,7 @@ class BuildingNumber2 : AppCompatActivity(),
             mapView.invalidate()
         }
     }
-
+    // Actualiza handleUpdateMessage
     private fun handleUpdateMessage(jsonObject: JSONObject) {
         runOnUiThread {
             val playerId = jsonObject.getString("id")
@@ -341,16 +370,18 @@ class BuildingNumber2 : AppCompatActivity(),
                     jsonObject.getInt("x"),
                     jsonObject.getInt("y")
                 )
+                val map = jsonObject.getString("currentmap")  // Cambiado de "currentmap" a "map"
 
-                gameState.remotePlayerPositions = gameState.remotePlayerPositions + (playerId to position)
-                mapView.updateRemotePlayerPosition(playerId, position)
+                gameState.remotePlayerPositions = gameState.remotePlayerPositions +
+                        (playerId to GameState.PlayerInfo(position, map))
+
+                mapView.updateRemotePlayerPosition(playerId, position, map)
                 mapView.invalidate()
 
-                Log.d(TAG, "Updated player $playerId position to $position")
+                Log.d(TAG, "Updated player $playerId position to $position in map $map")
             }
         }
     }
-
 
     private fun handleJoinMessage(jsonObject: JSONObject) {
         val newPlayerId = jsonObject.getString("id")
@@ -361,7 +392,8 @@ class BuildingNumber2 : AppCompatActivity(),
     override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
         runOnUiThread {
             val deviceName = device.name ?: "Unknown"
-            mapView.updateRemotePlayerPosition(deviceName, Pair(x, y))
+            val currentMap = mapView.playerManager.getCurrentMap()
+            mapView.updateRemotePlayerPosition(deviceName, Pair(x, y), currentMap)
             Log.d("GameplayActivity", "Recibida posición del dispositivo $deviceName: ($x, $y)")
             mapView.invalidate()
         }

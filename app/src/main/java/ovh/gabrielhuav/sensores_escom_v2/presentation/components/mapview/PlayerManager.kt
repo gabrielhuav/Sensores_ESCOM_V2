@@ -4,148 +4,138 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
+import android.util.Log
 import org.json.JSONObject
 
 class PlayerManager {
     private var localPlayerPosition: Pair<Int, Int>? = null
-    private val remotePlayerPositions = mutableMapOf<String, Pair<Int, Int>>()
+    private var remotePlayerPositions = mutableMapOf<String, PlayerInfo>()
     var localPlayerId: String = "player_local"
-    private var isBluetoothServer = false
-    private var bluetoothPlayerPosition: Pair<Int, Int>? = null
+    private var currentMap = "main"
 
-    // Paints para los diferentes tipos de jugadores
+    data class PlayerInfo(
+        val position: Pair<Int, Int>,
+        val map: String
+    )
+
     private val paintLocalPlayer = Paint().apply {
         color = Color.BLUE
         style = Paint.Style.FILL
     }
+
     private val paintRemotePlayer = Paint().apply {
         color = Color.RED
         style = Paint.Style.FILL
     }
-    private val paintBluetoothPlayer = Paint().apply {
-        color = Color.GREEN
-        style = Paint.Style.FILL
-    }
 
-    // Paint para el texto de los nombres
     private val paintText = Paint().apply {
         color = Color.BLACK
         textSize = 30f
         typeface = Typeface.DEFAULT_BOLD
         textAlign = Paint.Align.CENTER
-        style = Paint.Style.FILL
-        // Agregar sombra para mejor legibilidad
         setShadowLayer(3f, 0f, 0f, Color.WHITE)
     }
 
+    fun getCurrentMap(): String = currentMap
+
     fun updateLocalPlayerPosition(position: Pair<Int, Int>?) {
+        Log.d("PlayerManager", "Updating local player position: $position in map: $currentMap")
         localPlayerPosition = position
+        // Actualizar también en el mapa de jugadores remotos
+        position?.let {
+            remotePlayerPositions[localPlayerId] = PlayerInfo(it, currentMap)
+        }
     }
 
     fun updateRemotePlayerPositions(positions: Map<String, Pair<Int, Int>>) {
-        remotePlayerPositions.clear()
-        positions.forEach { (id, position) ->
+        positions.forEach { (id, pos) ->
             if (id != localPlayerId) {
-                remotePlayerPositions[id] = position
+                // Aquí mantenemos el mapa original del jugador remoto si ya existe
+                val existingPlayerInfo = remotePlayerPositions[id]
+                val playerMap = existingPlayerInfo?.map ?: currentMap
+                remotePlayerPositions[id] = PlayerInfo(pos, playerMap)
             }
         }
+    }
+
+    fun updateRemotePlayerPosition(playerId: String, position: Pair<Int, Int>, receivedMap: String) {
+        // Usar el mapa recibido, no "main"
+        remotePlayerPositions[playerId] = PlayerInfo(position, receivedMap)
+        Log.d("PlayerManager", "Updated player $playerId position: $position in map: $receivedMap")
+    }
+
+
+    private fun drawPlayer(canvas: Canvas, position: Pair<Int, Int>, playerId: String, paint: Paint, cellWidth: Float, cellHeight: Float) {
+        val playerX = position.first * cellWidth + cellWidth / 2
+        val playerY = position.second * cellHeight + cellHeight / 2
+        canvas.drawCircle(playerX, playerY, cellWidth / 4f, paint)
+        canvas.drawText(
+            playerId,
+            playerX,
+            playerY - cellHeight / 2,
+            paintText
+        )
+    }
+
+
+    fun drawPlayers(canvas: Canvas, mapState: MapState) {
+        val cellWidth = mapState.backgroundBitmap?.width?.div(40f) ?: return
+        val cellHeight = mapState.backgroundBitmap?.height?.div(40f) ?: return
+
+        Log.d("PlayerManager", "Drawing players in map: $currentMap")
+
+        // Solo dibujar jugadores que coincidan con el mapa actual
+        remotePlayerPositions.entries
+            .filter { it.value.map == currentMap }
+            .forEach { (id, info) ->
+                Log.d("PlayerManager", "Drawing player $id in map ${info.map}")
+                val paint = if (id == localPlayerId) paintLocalPlayer else paintRemotePlayer
+                val label = if (id == localPlayerId) "Tú ($id)" else id
+                drawPlayer(canvas, info.position, label, paint, cellWidth, cellHeight)
+            }
+    }
+
+    // Método para actualizar el mapa actual
+    fun setCurrentMap(map: String) {
+        currentMap = map
+        Log.d("PlayerManager", "Current map set to: $map")
+    }
+
+    fun cleanup() {
+        remotePlayerPositions.clear()
+        localPlayerPosition = null
     }
 
     fun removeRemotePlayer(playerId: String) {
         remotePlayerPositions.remove(playerId)
     }
 
-    fun updateRemotePlayerPosition(playerId: String, position: Pair<Int, Int>?) {
-        if (playerId != localPlayerId) {
-            if (position != null) {
-                remotePlayerPositions[playerId] = position
-            } else {
-                remotePlayerPositions.remove(playerId)
-            }
-        }
-    }
+    fun getLocalPlayerPosition(): Pair<Int, Int>? = localPlayerPosition
 
-    fun setBluetoothServerMode(isServer: Boolean) {
-        isBluetoothServer = isServer
-        paintBluetoothPlayer.color = if (isServer) Color.YELLOW else Color.GREEN
-    }
-
-    fun updateBluetoothPlayerPosition(position: Pair<Int, Int>?) {
-        bluetoothPlayerPosition = position
-    }
-
-    fun drawPlayers(canvas: Canvas, mapState: MapState) {
-        val cellWidth = mapState.backgroundBitmap?.width?.div(mapState.mapMatrix[0].size.toFloat()) ?: return
-        val cellHeight = mapState.backgroundBitmap?.height?.div(mapState.mapMatrix.size.toFloat()) ?: return
-
-        // Dibujar jugador local
-        localPlayerPosition?.let {
-            val playerX = it.first * cellWidth + cellWidth / 2
-            val playerY = it.second * cellHeight + cellHeight / 2
-            // Dibujar círculo del jugador
-            canvas.drawCircle(playerX, playerY, cellWidth / 4f, paintLocalPlayer)
-            // Dibujar nombre del jugador
-            canvas.drawText(
-                "Tú ($localPlayerId)",
-                playerX,
-                playerY - cellHeight / 2,
-                paintText
-            )
-        }
-
-        // Dibujar jugadores remotos
-        for ((id, position) in remotePlayerPositions) {
-            if (id != localPlayerId) {
-                val remotePlayerX = position.first * cellWidth + cellWidth / 2
-                val remotePlayerY = position.second * cellHeight + cellHeight / 2
-                // Dibujar círculo del jugador remoto
-                canvas.drawCircle(remotePlayerX, remotePlayerY, cellWidth / 4f, paintRemotePlayer)
-                // Dibujar nombre del jugador remoto
-                canvas.drawText(
-                    id,
-                    remotePlayerX,
-                    remotePlayerY - cellHeight / 2,
-                    paintText
-                )
-            }
-        }
-
-        // Dibujar jugador Bluetooth
-        bluetoothPlayerPosition?.let {
-            val bluetoothX = it.first * cellWidth + cellWidth / 2
-            val bluetoothY = it.second * cellHeight + cellHeight / 2
-            // Dibujar círculo del jugador Bluetooth
-            canvas.drawCircle(bluetoothX, bluetoothY, cellWidth / 4f, paintBluetoothPlayer)
-            // Dibujar texto indicando que es jugador Bluetooth
-            canvas.drawText(
-                if (isBluetoothServer) "BT Server" else "BT Client",
-                bluetoothX,
-                bluetoothY - cellHeight / 2,
-                paintText
-            )
-        }
-    }
 
     fun handleWebSocketMessage(message: String) {
         try {
             val jsonObject = JSONObject(message)
-            if (jsonObject.getString("type") == "positions") {
-                val players = jsonObject.getJSONObject("players")
-                val positions = mutableMapOf<String, Pair<Int, Int>>()
-                players.keys().forEach { playerId ->
-                    val position = players.getJSONObject(playerId)
-                    val x = position.getInt("x")
-                    val y = position.getInt("y")
-                    positions[playerId] = Pair(x, y)
+            when (jsonObject.getString("type")) {
+                "update" -> {
+                    val playerId = jsonObject.getString("id")
+                    val position = Pair(
+                        jsonObject.getInt("x"),
+                        jsonObject.getInt("y")
+                    )
+                    val receivedMap = jsonObject.getString("currentmap")
+
+                    // Solo actualizar si coincide con el mapa actual
+                    if (receivedMap == currentMap) {
+                        remotePlayerPositions[playerId] = PlayerInfo(position, receivedMap)
+                        Log.d("PlayerManager", "Stored player $playerId position: $position in map: $receivedMap")
+                    } else {
+                        Log.d("PlayerManager", "Ignored update for player $playerId - different map (received: $receivedMap, current: $currentMap)")
+                    }
                 }
-                updateRemotePlayerPositions(positions)
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("PlayerManager", "Error processing WebSocket message", e)
         }
-    }
-
-    fun getLocalPlayerPosition(): Pair<Int, Int>? {
-        return localPlayerPosition
     }
 }
