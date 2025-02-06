@@ -232,21 +232,36 @@ class BuildingNumber2 : AppCompatActivity(),
                 else showToast("Debe conectarse al servidor online primero.")
             }
 
+            // Añadir el listener para el botón de regreso
+            btnConnectDevice.setOnClickListener {
+                returnToMainActivity()
+            }
+
             btnNorth.setOnTouchListener { _, event -> handleMovement(event, 0, -1); true }
             btnSouth.setOnTouchListener { _, event -> handleMovement(event, 0, 1); true }
             btnEast.setOnTouchListener { _, event -> handleMovement(event, 1, 0); true }
             btnWest.setOnTouchListener { _, event -> handleMovement(event, -1, 0); true }
-
-            // Configurar el botón A para verificar la posición
-            buttonA.setOnClickListener {
-                if (canChangeMap) {
-                    startBuildingActivity()
-                } else {
-                    showToast("No hay interacción disponible en esta posición")
-                }
-            }
         }
     }
+
+    private fun returnToMainActivity() {
+        // Obtener la posición previa del intent
+        val previousPosition = intent.getSerializableExtra("PREVIOUS_POSITION") as? Pair<Int, Int>
+            ?: Pair(15, 10) // Posición por defecto si no hay previa
+
+        val intent = Intent(this, GameplayActivity::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", previousPosition) // Usar la posición previa
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+
+        // Limpiar datos antes de cambiar de activity
+        mapView.playerManager.cleanup()
+        startActivity(intent)
+        finish()
+    }
+    
     private fun startBuildingActivity() {
         val intent = Intent(this, BuildingNumber2::class.java).apply {
             putExtra("PLAYER_NAME", playerName)

@@ -81,7 +81,6 @@ class GameplayActivity : AppCompatActivity(),
     }
 
     private fun initializeComponents(savedInstanceState: Bundle?) {
-        // Obtener datos desde Intent o restaurar el estado guardado
         playerName = intent.getStringExtra("PLAYER_NAME") ?: run {
             Toast.makeText(this, "Nombre de jugador no encontrado.", Toast.LENGTH_SHORT).show()
             finish()
@@ -89,9 +88,10 @@ class GameplayActivity : AppCompatActivity(),
         }
 
         if (savedInstanceState == null) {
-            // Inicializar el estado del juego desde el Intent
             gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
-            gameState.playerPosition = intent.getParcelableExtra("INITIAL_POSITION") ?: Pair(1, 1)
+            // Usar la posición inicial proporcionada
+            gameState.playerPosition = intent.getSerializableExtra("INITIAL_POSITION") as? Pair<Int, Int>
+                ?: Pair(1, 1)
         } else {
             restoreState(savedInstanceState)
         }
@@ -241,11 +241,13 @@ class GameplayActivity : AppCompatActivity(),
             }
         }
     }
+
     private fun startBuildingActivity() {
         val intent = Intent(this, BuildingNumber2::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_POSITION", Pair(1, 1))
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         startActivity(intent)
