@@ -6,36 +6,49 @@ import okio.ByteString
 import org.json.JSONObject
 import java.util.concurrent.LinkedBlockingQueue
 
-class OnlineServerManager(private val context: Context, private var listener: WebSocketListener? = null) {
+class OnlineServerManager private constructor(private val context: Context) {
     companion object {
         @Volatile
         private var INSTANCE: OnlineServerManager? = null
 
-        fun getInstance(context: Context, listener: WebSocketListener? = null): OnlineServerManager {
-            return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: OnlineServerManager(context, listener).also { INSTANCE = it }
+        fun getInstance(context: Context): OnlineServerManager =
+            INSTANCE ?: synchronized(this) {
+                INSTANCE ?: OnlineServerManager(context.applicationContext).also { INSTANCE = it }
             }
-        }
     }
 
     private val client = OkHttpClient()
     private var webSocket: WebSocket? = null
     private val messageQueue = LinkedBlockingQueue<String>()
     private var isConnected = false
+    private var currentUrl: String? = null
+    private var listener: WebSocketListener? = null
 
-    // Listeners para eventos de conexión
+    fun setListener(listener: WebSocketListener) {
+        this.listener = listener
+    }
+
     private var onConnectionCompleteListener: (() -> Unit)? = null
     private var onConnectionFailedListener: (() -> Unit)? = null
 
     fun connectToServer(url: String) {
+        // Evitar reconexión si ya está conectado a la misma URL
+        if (isConnected && url == currentUrl) return
+
+        // Cerrar conexión existente si hay
+        webSocket?.close(1000, "Reconnecting")
+
+        currentUrl = url
         val request = Request.Builder().url(url).build()
         webSocket = client.newWebSocket(request, DefaultWebSocketListener())
-        client.dispatcher.executorService.shutdown() // Cierra los hilos después de conectarse
     }
+
+    fun isConnected() = isConnected
 
     fun disconnectFromServer() {
         webSocket?.close(1000, "Client disconnected")
         isConnected = false
+        currentUrl = null
     }
 
     fun sendJoinMessage(playerId: String) {
@@ -44,42 +57,55 @@ class OnlineServerManager(private val context: Context, private var listener: We
     }
 
     fun sendUpdateMessage(playerId: String, x: Int, y: Int, map: String) {
-        val message = """{"type": "update", "id": "$playerId", "x": $x, "y": $y, "map": "$map"}"""
+        val message = JSONObject().apply {
+            put("type", "update")
+            put("id", playerId)
+            put("x", x)
+            put("y", y)
+            put("map", map)
+        }.toString()
         queueMessage(message)
+    }
+
+
+    fun sendBothPositions(playerId: String, localX: Int, localY: Int, remoteX: Int?, remoteY: Int?, map: String) {
+        // Solo enviar la posición que cambió, no ambas
+        if (remoteX != null && remoteY != null) {
+            // Si es una actualización remota
+            val message = JSONObject().apply {
+                put("type", "update")
+                put("id", playerId)
+                put("x", remoteX)
+                put("y", remoteY)
+                put("map", map)
+            }.toString()
+            queueMessage(message)
+        } else {
+            // Si es una actualización local
+            val message = JSONObject().apply {
+                put("type", "update")
+                put("id", playerId)
+                put("x", localX)
+                put("y", localY)
+                put("map", map)
+            }.toString()
+            queueMessage(message)
+        }
     }
 
     fun queueMessage(message: String) {
         if (isConnected) {
             webSocket?.send(message)
         } else {
-            messageQueue.offer(message) // Almacena los mensajes hasta que la conexión esté lista
+            messageQueue.offer(message)
         }
-    }
-
-    fun sendBothPositions(playerId: String, localX: Int, localY: Int, remoteX: Int?, remoteY: Int?, map: String) {
-        val message = JSONObject().apply {
-            put("type", "update")
-            put("id", playerId)
-            put("map", map)
-            put("local", JSONObject().apply {
-                put("x", localX)
-                put("y", localY)
-            })
-            if (remoteX != null && remoteY != null) {
-                put("remote", JSONObject().apply {
-                    put("x", remoteX)
-                    put("y", remoteY)
-                })
-            }
-        }.toString()
-
-        queueMessage(message)
     }
 
     private fun flushMessageQueue() {
         while (messageQueue.isNotEmpty() && isConnected) {
-            val message = messageQueue.poll()
-            webSocket?.send(message)
+            messageQueue.poll()?.let { message ->
+                webSocket?.send(message)
+            }
         }
     }
 
@@ -88,11 +114,11 @@ class OnlineServerManager(private val context: Context, private var listener: We
     }
 
     fun setOnConnectionCompleteListener(listener: () -> Unit) {
-        this.onConnectionCompleteListener = listener
+        onConnectionCompleteListener = listener
     }
 
     fun setOnConnectionFailedListener(listener: () -> Unit) {
-        this.onConnectionFailedListener = listener
+        onConnectionFailedListener = listener
     }
 
     private inner class DefaultWebSocketListener : okhttp3.WebSocketListener() {
@@ -100,13 +126,13 @@ class OnlineServerManager(private val context: Context, private var listener: We
             println("Connected to server")
             this@OnlineServerManager.webSocket = webSocket
             isConnected = true
-            flushMessageQueue() // Envía los mensajes en cola
-            onConnectionCompleteListener?.invoke() // Notificar que la conexión se completó
+            flushMessageQueue()
+            onConnectionCompleteListener?.invoke()
         }
 
         override fun onMessage(webSocket: WebSocket, text: String) {
             println("ServerReceived message: $text")
-            listener?.onMessageReceived(text)  // Usar ?. en lugar de .
+            listener?.onMessageReceived(text)
         }
 
         override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
@@ -115,18 +141,28 @@ class OnlineServerManager(private val context: Context, private var listener: We
 
         override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
             println("Closing: $code / $reason")
-            isConnected = false
+            webSocket.close(1000, null)
         }
 
         override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
             println("Closed: $code / $reason")
             isConnected = false
+            if (code != 1000) {
+                onConnectionFailedListener?.invoke()
+            }
         }
 
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
             println("Error: ${t.message}")
             isConnected = false
-            onConnectionFailedListener?.invoke() // Notificar que la conexión falló
+            onConnectionFailedListener?.invoke()
         }
     }
+
+    fun requestPositionsUpdate() {
+        webSocket?.send(JSONObject().apply {
+            put("type", "request_positions")
+        }.toString())
+    }
+
 }

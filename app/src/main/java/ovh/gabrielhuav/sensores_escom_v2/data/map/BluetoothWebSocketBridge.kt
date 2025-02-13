@@ -84,24 +84,29 @@ class BluetoothWebSocketBridge private constructor() {
     }
 
     fun updatePosition(playerId: String, position: Pair<Int, Int>) {
-        playerPositions[playerId] = position
+        val previousPosition = playerPositions[playerId]
 
-        // Notificar al listener de la UI
-        positionUpdateListener?.onPositionUpdated(playerId, position)
+        // Solo actualizar si la posición ha cambiado
+        if (previousPosition != position) {
+            playerPositions[playerId] = position
 
-        // Si hay conexión a internet, enviar al servidor WebSocket
-        if (hasInternetConnection) {
-            onlineServerManager?.sendUpdateMessage(
-                playerId,
-                position.first,
-                position.second,
-                "main"
-            )
-        }
+            // Notificar al listener de la UI
+            positionUpdateListener?.onPositionUpdated(playerId, position)
 
-        // Si es un cliente Bluetooth, propagar la actualización localmente
-        if (connectedClients.containsKey(playerId)) {
-            broadcastPositionUpdate(playerId, position)
+            // Si hay conexión a internet y es el jugador local, enviar al servidor
+            if (hasInternetConnection && playerId == localPlayerId) {
+                onlineServerManager?.sendUpdateMessage(
+                    playerId,
+                    position.first,
+                    position.second,
+                    "main"
+                )
+            }
+
+            // Si es un cliente Bluetooth, propagar la actualización
+            if (connectedClients.containsKey(playerId)) {
+                broadcastPositionUpdate(playerId, position)
+            }
         }
     }
 
@@ -134,28 +139,61 @@ class BluetoothWebSocketBridge private constructor() {
     fun handleWebSocketMessage(message: String) {
         try {
             val jsonObject = JSONObject(message)
-            when (jsonObject.getString("type")) {
+            val type = jsonObject.getString("type")
+
+            when (type) {
                 "positions" -> {
                     val players = jsonObject.getJSONObject("players")
+                    val currentLocalPosition = playerPositions[localPlayerId]
+
                     players.keys().forEach { playerId ->
-                        if (playerId != localPlayerId && !connectedClients.containsKey(playerId)) {
+                        if (playerId != localPlayerId) {
                             val position = players.getJSONObject(playerId)
                             val x = position.getInt("x")
                             val y = position.getInt("y")
                             updatePosition(playerId, Pair(x, y))
                         }
                     }
+
+                    // Mantener la posición local
+                    currentLocalPosition?.let {
+                        playerPositions[localPlayerId] = it
+                    }
+                }
+                "update" -> {
+                    val id = jsonObject.getString("id")
+
+                    // Si el mensaje tiene posición local
+                    if (jsonObject.has("local")) {
+                        val local = jsonObject.getJSONObject("local")
+                        if (id == localPlayerId) {
+                            val currentLocalPosition = playerPositions[localPlayerId]
+                            if (currentLocalPosition != null) {
+                                updatePosition(localPlayerId, currentLocalPosition)
+                            }
+                        }
+                    }
+
+                    // Si el mensaje tiene posición remota
+                    if (jsonObject.has("remote")) {
+                        val remote = jsonObject.getJSONObject("remote")
+                        val remoteId = "${id}_remote"
+                        updatePosition(remoteId, Pair(remote.getInt("x"), remote.getInt("y")))
+                    }
                 }
                 "disconnect" -> {
                     val disconnectedId = jsonObject.getString("id")
-                    playerPositions.remove(disconnectedId)
-                    positionUpdateListener?.onPositionUpdated(disconnectedId, null)
+                    if (disconnectedId != localPlayerId) {
+                        playerPositions.remove(disconnectedId)
+                        positionUpdateListener?.onPositionUpdated(disconnectedId, null)
+                    }
                 }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error processing WebSocket message: ${e.message}")
         }
     }
+
 
     companion object {
         private const val TAG = "BluetoothWebSocketBridge"

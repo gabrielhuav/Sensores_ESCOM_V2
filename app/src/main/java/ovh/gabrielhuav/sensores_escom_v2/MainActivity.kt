@@ -16,6 +16,7 @@ import ovh.gabrielhuav.sensores_escom_v2.presentation.components.GameplayActivit
 
 class MainActivity : AppCompatActivity() {
 
+    // Lista de permisos necesarios
     private val requiredPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         arrayOf(
             Manifest.permission.BLUETOOTH,
@@ -43,16 +44,19 @@ class MainActivity : AppCompatActivity() {
             requestPermissions()
         }
 
+        // Referencias a los elementos de la interfaz
         val btnStartGame = findViewById<Button>(R.id.btnStartGame)
         val btnBluetoothConnect = findViewById<Button>(R.id.btnBluetoothConnect)
         val etPlayerName = findViewById<EditText>(R.id.etPlayerName)
 
-        // Botón para iniciar el juego
+        // Botón para iniciar el juego como servidor
         btnStartGame.setOnClickListener {
             val playerName = etPlayerName.text.toString()
             if (playerName.isNotEmpty()) {
+                // Inicia `GameplayActivity` como servidor
                 val intent = Intent(this, GameplayActivity::class.java).apply {
                     putExtra("PLAYER_NAME", playerName)
+                    putExtra("IS_SERVER", true) // Especifica que actuará como servidor
                 }
                 startActivity(intent)
             } else {
@@ -60,12 +64,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Botón para conectarse por Bluetooth
+        // Botón para conectarse a un dispositivo Bluetooth
         btnBluetoothConnect.setOnClickListener {
             val playerName = etPlayerName.text.toString()
             if (playerName.isNotEmpty()) {
+                // Abre la lista de dispositivos Bluetooth
                 val intent = Intent(this, DeviceListActivity::class.java).apply {
-                    putExtra("PLAYER_NAME", playerName)
+                    putExtra("PLAYER_NAME", playerName) // Envía el nombre del jugador
                 }
                 startActivity(intent)
             } else {
@@ -74,16 +79,25 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Verifica si los permisos ya han sido otorgados.
+     */
     private fun hasPermissions(): Boolean {
         return requiredPermissions.all {
             ActivityCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
         }
     }
 
+    /**
+     * Solicita los permisos necesarios al usuario.
+     */
     private fun requestPermissions() {
         ActivityCompat.requestPermissions(this, requiredPermissions, REQUEST_PERMISSIONS_CODE)
     }
 
+    /**
+     * Maneja los resultados de la solicitud de permisos.
+     */
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,

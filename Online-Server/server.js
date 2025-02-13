@@ -1,55 +1,3 @@
-/**
- * WebSocket Server for Player Synchronization
- *
- * This server allows players to connect via WebSocket, update their positions in real-time,
- * and receive updates about other players' positions.
- *
- * Technologies Used:
- * - Node.js
- * - Express.js
- * - WebSocket (via the `ws` library)
- *
- * Features:
- * 1. Handles player connections and disconnections.
- * 2. Synchronizes player positions across all connected clients.
- * 3. Provides a basic HTTP route for server status.
- *
- * Setup Instructions:
- * 1. Ensure Node.js is installed.
- * 2. Install dependencies using `npm install express ws`.
- * 3. Start the server using `node <filename>.js`.
- *
- * WebSocket Message Types:
- * - Incoming Messages:
- *   1. `join`: A new player joins the server.
- *      Example:
- *      {
- *          "type": "join",
- *          "id": "player1"
- *      }
- *   2. `update`: A player updates their position.
- *      Example:
- *      {
- *          "type": "update",
- *          "id": "player1",
- *          "x": 100,
- *          "y": 200
- *      }
- *
- * - Outgoing Messages:
- *   1. `positions`: The server broadcasts the updated positions of all players.
- *      Example:
- *      {
- *          "type": "positions",
- *          "players": {
- *              "player1": { "x": 100, "y": 200 },
- *              "player2": { "x": 50, "y": 75 }
- *          }
- *      }
- *
- * API Endpoints:
- * - `GET /`: Returns a simple status message indicating the server is running.
- */
 const express = require("express");
 const { WebSocketServer } = require("ws");
 const path = require("path");
@@ -58,151 +6,213 @@ const app = express();
 const PORT = 3000;
 
 const server = app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
 });
 
 const wss = new WebSocketServer({ server });
 
-// Estructura de datos para almacenar jugadores y sus coordenadas por mapa
-const players = {};
+const POSITION_THRESHOLD = 1;
+const UPDATE_INTERVAL = 50;
 
-// Función para enviar mensajes a todos los clientes conectados
-function broadcast(data) {
-  const message = JSON.stringify(data);
-  wss.clients.forEach((client) => {
-    if (client.readyState === client.OPEN) {
-      client.send(message);
-    }
-  });
+const players = {};
+const lastUpdateTime = {};
+
+function generateRandomColor() {
+    return '#' + Math.floor(Math.random()*16777215).toString(16);
 }
 
-// Función auxiliar para procesar las coordenadas
+function broadcast(data) {
+    const message = JSON.stringify(data);
+    wss.clients.forEach((client) => {
+        if (client.readyState === client.OPEN) {
+            client.send(message);
+        }
+    });
+}
+
+function shouldUpdate(playerId) {
+    const currentTime = Date.now();
+    if (!lastUpdateTime[playerId] || currentTime - lastUpdateTime[playerId] >= UPDATE_INTERVAL) {
+        lastUpdateTime[playerId] = currentTime;
+        return true;
+    }
+    return false;
+}
+
+function hasPositionChangedSignificantly(oldPos, newPos) {
+    if (!oldPos) return true;
+    return oldPos.x !== newPos.x || oldPos.y !== newPos.y;
+}
+
 function processPosition(data) {
-  // Si viene en formato {x, y} directo
-  if (typeof data.x === "number" && typeof data.y === "number") {
-    return { x: data.x, y: data.y };
-  }
-  // Si viene dentro de un objeto local
-  if (data.local && typeof data.local.x === "number" && typeof data.local.y === "number") {
-    return { x: data.local.x, y: data.local.y };
-  }
-  return null;
+    // Si es una actualización simple
+    if (typeof data.x === "number" && typeof data.y === "number") {
+        return {
+            local: { x: data.x, y: data.y }
+        };
+    }
+    // Si es una actualización con posiciones local y remota
+    if (data.local || data.remote) {
+        return {
+            local: data.local || null,
+            remote: data.remote || null
+        };
+    }
+    return null;
 }
 
 wss.on("connection", (ws) => {
-  console.log("A player connected");
+    console.log("A player connected");
 
-  ws.on("message", (message) => {
-    try {
-        const data = JSON.parse(message);
-        console.log("Received data:", data);
+    ws.on("message", (message) => {
+        try {
+            const data = JSON.parse(message);
+            console.log("Received data:", JSON.stringify(data, null, 2));
 
-        if (data.type === "join") {
-            const trimmedId = data.id.trim();
-            if (!players[trimmedId]) {
-                players[trimmedId] = { positions: {}, currentMap: "main" };
-                console.log(`Player joined: ${trimmedId}`);
-            }
-        } else if (data.type === "update") {
-            const trimmedId = data.id.trim();
-            const position = processPosition(data);
+            const trimmedId = data.id?.trim();
+            if (!trimmedId) return;
 
-            if (players[trimmedId]) {
-                const currentMap = data.map || players[trimmedId].currentMap;
+            switch (data.type) {
+                case "join":
+                    if (!players[trimmedId]) {
+                        players[trimmedId] = {
+                            x: 1,
+                            y: 1,
+                            currentMap: "main",
+                            color: generateRandomColor(),
+                            type: "local"
+                        };
+                        console.log(`Player joined: ${trimmedId}`);
+                        // Informar al nuevo jugador sobre los jugadores existentes
+                        ws.send(JSON.stringify({
+                            type: "positions",
+                            players: players
+                        }));
+                    }
+                    break;
 
-                // Evitar sobrescribir si la posición no cambió
-                const previousPosition = players[trimmedId].positions[currentMap] || {};
-                if (
-                    position &&
-                    (position.x !== previousPosition.x || position.y !== previousPosition.y)
-                ) {
-                    players[trimmedId].positions[currentMap] = position;
-                    players[trimmedId].currentMap = currentMap;
-                    console.log(`Updated position for ${trimmedId}:`, position);
-                }
+                case "update":
+                    if (shouldUpdate(trimmedId)) {
+                        const positions = processPosition(data);
+                        const currentMap = data.map || "main";
 
-                // Procesar posiciones remotas
-                if (data.remotes && Array.isArray(data.remotes)) {
-                    data.remotes.forEach((remote) => {
-                        if (remote.id && typeof remote.x === "number" && typeof remote.y === "number") {
-                            const remoteId = remote.id.trim();
-                            if (!players[remoteId]) {
-                                players[remoteId] = { positions: {}, currentMap };
+                        if (positions) {
+                            let hasChanges = false;
+
+                            // Actualizar posición local
+                            if (positions.local) {
+                                const previousPosition = players[trimmedId];
+                                if (hasPositionChangedSignificantly(previousPosition, positions.local)) {
+                                    players[trimmedId] = {
+                                        x: positions.local.x,
+                                        y: positions.local.y,
+                                        currentMap: currentMap,
+                                        color: players[trimmedId]?.color || generateRandomColor(),
+                                        type: "local"
+                                    };
+                                    hasChanges = true;
+                                }
                             }
 
-                            const remotePreviousPosition = players[remoteId].positions[currentMap] || {};
-                            if (
-                                remote.x !== remotePreviousPosition.x ||
-                                remote.y !== remotePreviousPosition.y
-                            ) {
-                                players[remoteId].positions[currentMap] = { x: remote.x, y: remote.y };
-                                players[remoteId].currentMap = currentMap;
-                                console.log(`Updated remote position for ${remoteId}:`, {
-                                    x: remote.x,
-                                    y: remote.y,
-                                });
+                            // Actualizar posición remota si existe
+                            if (positions.remote) {
+                                const remoteId = `${trimmedId}_remote`;
+                                const previousRemotePosition = players[remoteId];
+                                if (hasPositionChangedSignificantly(previousRemotePosition, positions.remote)) {
+                                    players[remoteId] = {
+                                        x: positions.remote.x,
+                                        y: positions.remote.y,
+                                        currentMap: currentMap,
+                                        color: "#FF0000",
+                                        type: "remote"
+                                    };
+                                    hasChanges = true;
+                                }
+                            }
+
+                            if (hasChanges) {
+                                // Enviar actualización a todos los clientes
+
+                                const updateMessage = {
+                                    type: "update",
+                                    id: trimmedId,
+                                    x: positions.local.x,  // Enviar directamente x e y
+                                    y: positions.local.y,
+                                    map: currentMap
+                                };
+                                broadcast(updateMessage);
                             }
                         }
-                    });
-                }
-            } else {
-                console.warn(`Player ${trimmedId} not found, creating new entry`);
-                players[trimmedId] = { positions: { [data.map]: position }, currentMap: data.map };
+                    }
+                    break;
+
+                case "leave":
+                    if (players[trimmedId]) {
+                        console.log(`Player left: ${trimmedId}`);
+                        delete players[trimmedId];
+                        delete players[`${trimmedId}_remote`];
+                        delete lastUpdateTime[trimmedId];
+                        broadcast({
+                            type: "disconnect",
+                            id: trimmedId
+                        });
+                    }
+                    break;
             }
-        } else if (data.type === "leave") {
-            const trimmedId = data.id.trim();
-            if (players[trimmedId]) {
-                console.log(`Player left: ${trimmedId}`);
-                delete players[trimmedId];
-                delete players[`${trimmedId}_remote`];
-            }
+
+        } catch (error) {
+            console.error("Error processing message:", error);
+            console.error(error.stack);
         }
+    });
 
-        // Preparar y enviar actualizaciones a todos los clientes
-        const broadcastData = {
-            type: "positions",
-            players: Object.fromEntries(
-                Object.entries(players).map(([id, playerData]) => [
-                    id,
-                    {
-                        currentMap: playerData.currentMap,
-                        x: playerData.positions[playerData.currentMap]?.x || 0,
-                        y: playerData.positions[playerData.currentMap]?.y || 0,
-                    },
-                ])
-            ),
-        };
-
-        broadcast(broadcastData);
-    } catch (error) {
-        console.error("Error processing message:", error);
-        console.error(error.stack);
-    }
+    ws.on("close", () => {
+        console.log("A player disconnected");
+        // Buscar y eliminar el jugador desconectado
+        Object.keys(players).forEach(playerId => {
+            if (players[playerId].ws === ws) {
+                delete players[playerId];
+                delete players[`${playerId}_remote`];
+                delete lastUpdateTime[playerId];
+                broadcast({
+                    type: "disconnect",
+                    id: playerId
+                });
+            }
+        });
+    });
 });
 
-
-  ws.on("close", () => {
-    console.log("A player disconnected");
-    broadcast({ type: "positions", players });
-  });
-});
-
-// Endpoint HTTP para mostrar el estado del servidor
 app.get("/", (req, res) => {
-  res.json({
-    message: "WebSocket server is running. Connect to synchronize positions.",
-    players: Object.fromEntries(
-      Object.entries(players).map(([id, playerData]) => [
-        id,
-        {
-          currentMap: playerData.currentMap,
-          positions: playerData.positions,
-        },
-      ])
-    ),
-  });
+    res.json({
+        message: "WebSocket server is running.",
+        connectedPlayers: Object.keys(players).length,
+        players: players
+    });
 });
 
-app.get("/documentation", (req, res) => {
-  res.sendFile(path.join(__dirname, "documentation.html"));
+// Limpieza de jugadores inactivos
+setInterval(() => {
+    const currentTime = Date.now();
+    Object.keys(lastUpdateTime).forEach(playerId => {
+        if (currentTime - lastUpdateTime[playerId] > 30000) { // 30 segundos de inactividad
+            console.log(`Removing inactive player: ${playerId}`);
+            delete players[playerId];
+            delete players[`${playerId}_remote`];
+            delete lastUpdateTime[playerId];
+            broadcast({
+                type: "disconnect",
+                id: playerId
+            });
+        }
+    });
+}, 10000);
+
+// Manejo de errores no capturados
+process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });

@@ -46,7 +46,7 @@ class BluetoothGameManager private constructor(private val context: Context) {
     // Elimina el init block anterior y usa esta función
     fun initialize(playerName: String, listener: OnlineServerManager.WebSocketListener? = null) {
         this.playerName = playerName
-        onlineServerManager = OnlineServerManager.getInstance(context, listener)
+        onlineServerManager = OnlineServerManager.getInstance(context)
     }
 
     interface ConnectionListener {
