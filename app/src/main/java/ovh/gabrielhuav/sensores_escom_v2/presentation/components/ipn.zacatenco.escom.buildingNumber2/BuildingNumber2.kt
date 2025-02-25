@@ -338,19 +338,43 @@ class BuildingNumber2 : AppCompatActivity(),
     override fun onMessageReceived(message: String) {
         runOnUiThread {
             try {
-                Log.d(TAG, "WebSocket message received: $message")
+                Log.d(TAG, "Received WebSocket message: $message")
                 val jsonObject = JSONObject(message)
 
                 when (jsonObject.getString("type")) {
-                    "positions" -> handlePositionsMessage(jsonObject)
-                    "update" -> handleUpdateMessage(jsonObject)
-                    "join" -> handleJoinMessage(jsonObject)
+                    "positions" -> {
+                        val players = jsonObject.getJSONObject("players")
+                        players.keys().forEach { playerId ->
+                            if (playerId != playerName) {
+                                val playerData = players.getJSONObject(playerId.toString())
+                                val position = Pair(
+                                    playerData.getInt("x"),
+                                    playerData.getInt("y")
+                                )
+                                val map = playerData.getString("map")
+                                mapView.updateRemotePlayerPosition(playerId, position, map)
+                            }
+                        }
+                    }
+                    "update" -> {
+                        val playerId = jsonObject.getString("id")
+                        if (playerId != playerName) {
+                            val position = Pair(
+                                jsonObject.getInt("x"),
+                                jsonObject.getInt("y")
+                            )
+                            val map = jsonObject.getString("map")
+                            mapView.updateRemotePlayerPosition(playerId, position, map)
+                        }
+                    }
                 }
+                mapView.invalidate()
             } catch (e: Exception) {
-                Log.e(TAG, "Error processing WebSocket message: ${e.message}", e)
+                Log.e(TAG, "Error processing message: ${e.message}")
             }
         }
     }
+
 
     // Actualiza handlePositionsMessage
     private fun handlePositionsMessage(jsonObject: JSONObject) {

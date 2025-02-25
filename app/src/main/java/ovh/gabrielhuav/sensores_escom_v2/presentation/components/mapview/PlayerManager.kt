@@ -83,17 +83,22 @@ class PlayerManager {
         val cellHeight = mapState.backgroundBitmap?.height?.div(40f) ?: return
 
         Log.d("PlayerManager", "Drawing players in map: $currentMap")
+        Log.d("PlayerManager", "Total remote players: ${remotePlayerPositions.size}")
 
-        // Solo dibujar jugadores que coincidan con el mapa actual
+        remotePlayerPositions.forEach { (id, info) ->
+            Log.d("PlayerManager", "Player $id is in map ${info.map}, current map is $currentMap")
+        }
+
         remotePlayerPositions.entries
             .filter { it.value.map == currentMap }
             .forEach { (id, info) ->
-                Log.d("PlayerManager", "Drawing player $id in map ${info.map}")
                 val paint = if (id == localPlayerId) paintLocalPlayer else paintRemotePlayer
-                val label = if (id == localPlayerId) "Tú ($id)" else id
+                val label = if (id == localPlayerId) "Tú" else id
                 drawPlayer(canvas, info.position, label, paint, cellWidth, cellHeight)
+                Log.d("PlayerManager", "Drew player $id at position ${info.position}")
             }
     }
+
 
     // Método para actualizar el mapa actual
     fun setCurrentMap(map: String) {
@@ -123,14 +128,25 @@ class PlayerManager {
                         jsonObject.getInt("x"),
                         jsonObject.getInt("y")
                     )
-                    val receivedMap = jsonObject.getString("currentmap")
+                    val receivedMap = jsonObject.getString("map")  // Cambiado de "currentmap" a "map"
 
-                    // Solo actualizar si coincide con el mapa actual
-                    if (receivedMap == currentMap) {
-                        remotePlayerPositions[playerId] = PlayerInfo(position, receivedMap)
-                        Log.d("PlayerManager", "Stored player $playerId position: $position in map: $receivedMap")
-                    } else {
-                        Log.d("PlayerManager", "Ignored update for player $playerId - different map (received: $receivedMap, current: $currentMap)")
+                    // Actualizar sin importar el mapa
+                    remotePlayerPositions[playerId] = PlayerInfo(position, receivedMap)
+                    Log.d("PlayerManager", "Updated remote player $playerId: pos=$position, map=$receivedMap")
+                }
+                "positions" -> {
+                    val players = jsonObject.getJSONObject("players")
+                    players.keys().forEach { playerId ->
+                        if (playerId != localPlayerId) {
+                            val playerData = players.getJSONObject(playerId.toString())
+                            val position = Pair(
+                                playerData.getInt("x"),
+                                playerData.getInt("y")
+                            )
+                            val playerMap = playerData.getString("map")
+                            remotePlayerPositions[playerId] = PlayerInfo(position, playerMap)
+                            Log.d("PlayerManager", "Updated player $playerId from positions update")
+                        }
                     }
                 }
             }
@@ -138,4 +154,5 @@ class PlayerManager {
             Log.e("PlayerManager", "Error processing WebSocket message", e)
         }
     }
+
 }
