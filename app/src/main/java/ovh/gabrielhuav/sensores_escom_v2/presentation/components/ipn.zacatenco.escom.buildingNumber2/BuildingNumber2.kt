@@ -164,18 +164,38 @@ class BuildingNumber2 : AppCompatActivity(),
         updatePlayerPosition(gameState.playerPosition)
     }
 
-    // Implementación de la interfaz MapTransitionListener
+    // Actualiza el método onMapTransitionRequested para manejar la transición al salón 2009
     override fun onMapTransitionRequested(targetMap: String, initialPosition: Pair<Int, Int>) {
         when (targetMap) {
             MapMatrixProvider.MAP_MAIN -> {
                 // Transición al mapa principal
                 returnToMainActivity()
             }
+            MapMatrixProvider.MAP_SALON2009 -> {
+                // Transición al salón 2009
+                startSalon2009Activity()
+            }
             // Añadir más casos según sea necesario para otros mapas
             else -> {
                 Log.d(TAG, "Mapa destino no reconocido: $targetMap")
             }
         }
+    }
+
+    // Método para iniciar la Activity del salón 2009
+    private fun startSalon2009Activity() {
+        val intent = Intent(this, Salon2009::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(20, 20)) // Posición inicial en el salón
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guardar la posición actual para regresar
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+
+        // Limpiar datos antes de cambiar de activity
+        mapView.playerManager.cleanup()
+        startActivity(intent)
+        finish()
     }
 
     private fun restoreState(savedInstanceState: Bundle) {

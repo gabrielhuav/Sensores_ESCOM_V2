@@ -3,6 +3,7 @@ package ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.util.Log
 
 /**
  * Provee matrices específicas para cada mapa del juego.
@@ -20,13 +21,18 @@ class MapMatrixProvider {
         const val MAP_WIDTH = 40
         const val MAP_HEIGHT = 40
 
-        // Mapas disponibles
-        const val MAP_MAIN = "main"
+        // Constantes para los mapas
+        const val MAP_MAIN = "escom_main"
         const val MAP_BUILDING2 = "escom_building2"
+        const val MAP_SALON2009 = "escom_salon2009"
+
 
         // Puntos de transición entre mapas
         val MAIN_TO_BUILDING2_POSITION = Pair(15, 10)
-        val BUILDING2_TO_MAIN_POSITION = Pair(1, 1)
+        val BUILDING2_TO_MAIN_POSITION = Pair(5, 5)  // Posición segura en la esquina superior izquierda
+        val BUILDING2_TO_SALON2009_POSITION = Pair(15, 16)  // Punto en el pasillo principal
+        val SALON2009_TO_BUILDING2_POSITION = Pair(1, 20)  // Punto en la puerta del salón
+
 
         /**
          * Obtiene la matriz para el mapa especificado
@@ -35,6 +41,7 @@ class MapMatrixProvider {
             return when (mapId) {
                 MAP_MAIN -> createMainMapMatrix()
                 MAP_BUILDING2 -> createBuilding2Matrix()
+                MAP_SALON2009 -> createSalon2009Matrix()  // Nueva matriz para el salón 2009
                 else -> createDefaultMatrix() // Por defecto, un mapa básico
             }
         }
@@ -80,100 +87,105 @@ class MapMatrixProvider {
 
         /**
          * Matriz para el edificio 2
+         * Basada exactamente en el mapa ASCII:
+         * +-------------------------------------------------------------------------+
+         * |                               Edificio 2                                |
+         * |                              Planta Baja                                |
+         * |                                                                         |
+         * |  +--------+--------+--------+-----+--------+--------+--------+----+     |
+         * |  |  2001  |  2002  |  2003  | ⬆️  |  2004  |  2005  |  2006  | 🚾 |     |
+         * |  |🏫 Aula |🏫 Aula |🏫 Aula | 🪜  |🏫 Aula |🏫 Aula |🏫 Aula | WC |     |
+         * |  +🚪------+🚪------+🚪------+ ⬇️  +🚪------+🚪------+🚪------+🚪--+     |
+         * |                                                                         |
+         * |                      [    Pasillo Principal 🚶    ]                     |
+         * |                                                                         |
+         * +-------------------------------------------------------------------------+
          */
         private fun createBuilding2Matrix(): Array<Array<Int>> {
+            // Crear matriz inicialmente con todo como PATH (transitable)
             val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
 
-            // Configuración de paredes interiores
-            for (i in 0 until MAP_HEIGHT) {
-                for (j in 0 until MAP_WIDTH) {
-                    // Bordes exteriores
-                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
-                        matrix[i][j] = WALL
+            // .... (código existente para crear el mapa) ....
+
+            // -----------------------------------------
+            // PUNTOS DE TRANSICIÓN - ASEGURARNOS QUE SEAN VISIBLES
+            // -----------------------------------------
+
+            // Salida al mapa principal (ubicada en un lugar accesible)
+            matrix[5][5] = INTERACTIVE
+
+            // Entrada al Salón 2009 - PUNTO CLARAMENTE MARCADO EN EL PASILLO PRINCIPAL
+            // Colocamos varios puntos interactivos para asegurar que sea fácil de encontrar
+
+            // Hacemos un punto interactivo más grande en el pasillo
+            for (offsetX in -1..1) {
+                for (offsetY in -1..1) {
+                    val x = 15 + offsetX
+                    val y = 16 + offsetY
+
+                    if (x > 0 && x < MAP_WIDTH && y > 0 && y < MAP_HEIGHT) {
+                        if (matrix[y][x] == PATH) {  // Solo convertimos si es un camino
+                            matrix[y][x] = INTERACTIVE
+                        }
                     }
-                    // Punto de salida al mapa principal
-                    else if (i == 1 && j == 1) {
-                        matrix[i][j] = INTERACTIVE
-                    }
-                    // Estructura de laboratorios (lado izquierdo)
-                    else if (j > 3 && j < 18 && i > 3 && i < 18) {
-                        // Paredes exteriores de los laboratorios
-                        if (j == 4 || j == 17 || i == 4 || i == 17) {
-                            matrix[i][j] = WALL
-                        }
-                        // Puertas a los laboratorios
-                        else if ((j == 10 && i == 4) || (j == 10 && i == 17)) {
-                            matrix[i][j] = PATH
-                        }
-                        // Divisiones internas
-                        else if (j == 10 && i != 10) {
-                            matrix[i][j] = WALL
-                        }
-                        // Pasillo central horizontal
-                        else if (i == 10) {
-                            matrix[i][j] = PATH
-                        }
-                        // Puntos de interés en los laboratorios
-                        else if ((j == 7 && i == 7) || (j == 14 && i == 7) ||
-                            (j == 7 && i == 14) || (j == 14 && i == 14)) {
-                            matrix[i][j] = INTERACTIVE
-                        }
-                        // Objetos inamovibles (computadoras, mesas)
-                        else if ((j == 6 && i == 6) || (j == 8 && i == 6) ||
-                            (j == 13 && i == 6) || (j == 15 && i == 6) ||
-                            (j == 6 && i == 13) || (j == 8 && i == 13) ||
-                            (j == 13 && i == 13) || (j == 15 && i == 13)) {
+                }
+            }
+
+            // También añadimos puntos interactivos en posiciones alternativas
+            if (20 < MAP_WIDTH && 20 < MAP_HEIGHT) matrix[20][20] = INTERACTIVE
+            if (25 < MAP_WIDTH && 16 < MAP_HEIGHT) matrix[16][25] = INTERACTIVE
+
+            return matrix
+        }
+
+        /**
+         * Matriz para el salón 2009
+         */
+        private fun createSalon2009Matrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
+
+            // Dimensiones del aula
+            val roomWidth = 30
+            val roomHeight = 25
+            val startX = 5
+            val startY = 5
+
+            // Interior del salón (espacio abierto)
+            for (i in startY until startY + roomHeight) {
+                for (j in startX until startX + roomWidth) {
+                    matrix[i][j] = PATH
+                }
+            }
+
+            // Puerta de salida hacia el edificio 2 (lado izquierdo)
+            matrix[startY + roomHeight/2][1] = INTERACTIVE
+
+            // Pizarrón (pared frontal)
+            for (j in startX + 2 until startX + roomWidth - 2) {
+                matrix[startY + 1][j] = INACCESSIBLE
+            }
+            // Centro del pizarrón es interactivo
+            matrix[startY + 1][startX + roomWidth/2] = INTERACTIVE
+
+            // Escritorio del profesor
+            for (j in startX + 10 until startX + 20) {
+                for (i in startY + 3 until startY + 6) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            // Filas de pupitres para estudiantes
+            for (row in 0 until 4) {
+                val rowY = startY + 8 + (row * 4)
+
+                // 5 pupitres por fila
+                for (desk in 0 until 5) {
+                    val deskX = startX + 3 + (desk * 5)
+
+                    // Cada pupitre ocupa 3x2
+                    for (i in rowY until rowY + 2) {
+                        for (j in deskX until deskX + 3) {
                             matrix[i][j] = INACCESSIBLE
-                        }
-                    }
-
-                    // Estructura de aulas (lado derecho)
-                    else if (j > 22 && j < 37 && i > 3 && i < 37) {
-                        // Paredes exteriores de las aulas
-                        if (j == 23 || j == 36 || i == 4 || i == 36) {
-                            matrix[i][j] = WALL
-                        }
-                        // Divisiones verticales entre aulas
-                        else if (j == 30 && (i < 15 || i > 25)) {
-                            matrix[i][j] = WALL
-                        }
-                        // Divisiones horizontales entre aulas
-                        else if ((i == 15 || i == 25) && j > 22 && j < 37) {
-                            matrix[i][j] = WALL
-                        }
-                        // Puertas a las aulas
-                        else if ((j == 23 && i == 10) || (j == 30 && i == 20) ||
-                            (j == 36 && i == 10) || (j == 36 && i == 30)) {
-                            matrix[i][j] = PATH
-                        }
-                        // Puntos de interés en las aulas (pizarrones, proyectores)
-                        else if ((j == 27 && i == 10) || (j == 33 && i == 10) ||
-                            (j == 27 && i == 20) || (j == 33 && i == 20) ||
-                            (j == 27 && i == 30) || (j == 33 && i == 30)) {
-                            matrix[i][j] = INTERACTIVE
-                        }
-                        // Objetos inamovibles (escritorios, pupitres)
-                        else if ((j == 25 && i == 8) || (j == 28 && i == 8) ||
-                            (j == 32 && i == 8) || (j == 34 && i == 8) ||
-                            (j == 25 && i == 18) || (j == 28 && i == 18) ||
-                            (j == 32 && i == 18) || (j == 34 && i == 18) ||
-                            (j == 25 && i == 28) || (j == 28 && i == 28) ||
-                            (j == 32 && i == 28) || (j == 34 && i == 28)) {
-                            matrix[i][j] = INACCESSIBLE
-                        }
-                    }
-
-                    // Pasillos centrales
-                    else if ((j == 20 && i > 4 && i < 36) || (i == 20 && j > 4 && j < 36)) {
-                        matrix[i][j] = PATH
-                    }
-
-                    // Área de descanso central
-                    else if (j > 17 && j < 23 && i > 17 && i < 23) {
-                        if (j == 20 && i == 20) {
-                            matrix[i][j] = INTERACTIVE  // Punto central interactivo
-                        } else {
-                            matrix[i][j] = PATH
                         }
                     }
                 }
@@ -204,20 +216,47 @@ class MapMatrixProvider {
          * Comprueba si la coordenada especificada es un punto de transición entre mapas
          */
         fun isMapTransitionPoint(mapId: String, x: Int, y: Int): String? {
-            return when {
-                mapId == MAP_MAIN && x == MAIN_TO_BUILDING2_POSITION.first && y == MAIN_TO_BUILDING2_POSITION.second -> MAP_BUILDING2
-                mapId == MAP_BUILDING2 && x == BUILDING2_TO_MAIN_POSITION.first && y == BUILDING2_TO_MAIN_POSITION.second -> MAP_MAIN
-                else -> null
+            // Imprimimos para depuración
+            Log.d("MapTransition", "Checking transition at $mapId: ($x, $y)")
+
+            // Para el edificio 2, cualquier punto interactivo cerca del centro del pasillo
+            // nos lleva al salón 2009
+            if (mapId == MAP_BUILDING2) {
+                // Si estamos en o cerca de las coordenadas (15,16) o cualquiera de las alternativas
+                val nearCenter = (x >= 14 && x <= 16 && y >= 15 && y <= 17)
+                val alternative1 = (x == 20 && y == 20)
+                val alternative2 = (x == 25 && y == 16)
+
+                if (nearCenter || alternative1 || alternative2) {
+                    Log.d("MapTransition", "Transition to salon2009 triggered!")
+                    return MAP_SALON2009
+                }
+
+                // Punto para regresar al mapa principal
+                if (x == 5 && y == 5) {
+                    return MAP_MAIN
+                }
             }
+
+            // Si estamos en el salón 2009, la coordenada (1,20) nos lleva de vuelta al edificio 2
+            if (mapId == MAP_SALON2009 && x == 1 && y == 20) {
+                return MAP_BUILDING2
+            }
+
+            // Resto de transiciones...
+
+            return null
         }
+
 
         /**
          * Obtiene la posición inicial para un mapa destino
          */
         fun getInitialPositionForMap(mapId: String): Pair<Int, Int> {
             return when (mapId) {
-                MAP_MAIN -> BUILDING2_TO_MAIN_POSITION
-                MAP_BUILDING2 -> MAIN_TO_BUILDING2_POSITION
+                MAP_MAIN -> Pair(15, 15)  // Posición central en el mapa principal
+                MAP_BUILDING2 -> Pair(20, 16)  // Centro del pasillo principal del edificio 2
+                MAP_SALON2009 -> Pair(20, 20)  // Posición central dentro del salón 2009
                 else -> Pair(MAP_WIDTH / 2, MAP_HEIGHT / 2)
             }
         }

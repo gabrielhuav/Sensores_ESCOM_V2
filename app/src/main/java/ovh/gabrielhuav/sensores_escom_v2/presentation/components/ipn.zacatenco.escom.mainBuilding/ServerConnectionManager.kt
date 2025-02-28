@@ -11,7 +11,7 @@ class ServerConnectionManager(
     private val context: Context,
     val onlineServerManager: OnlineServerManager
 ) {
-    private val serverUrl = "ws://172.100.73.197:3000"
+    private val serverUrl = "ws://192.168.1.33:3000"
     private var isConnecting = false
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -57,6 +57,11 @@ class ServerConnectionManager(
                 callback(false)
             }
         }
+    }
+
+    // Método para verificar la conexión
+    fun isConnected(): Boolean {
+        return onlineServerManager.isWebSocketConnected()
     }
 
     fun sendUpdateMessage(playerId: String, position: Pair<Int, Int>, map: String) {

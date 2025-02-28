@@ -54,6 +54,11 @@ class OnlineServerManager private constructor(private val context: Context) {
         currentUrl = null
     }
 
+    // Método para verificar si el WebSocket está conectado
+    fun isWebSocketConnected(): Boolean {
+        return webSocket != null
+    }
+
     fun sendJoinMessage(playerId: String) {
         val message = """{"type": "join", "id": "$playerId"}"""
         queueMessage(message)

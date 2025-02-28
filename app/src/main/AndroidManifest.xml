@@ -53,7 +53,6 @@
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
 
-        <!-- Salon 2009Activity -->
         <activity
             android:name=".presentation.components.Salon2009"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
