@@ -34,7 +34,7 @@ class MapRenderer {
             canvas.scale(mapState.scaleFactor, mapState.scaleFactor)
 
             // Dibujar matriz del mapa
-            drawMapMatrix(canvas, mapState, bitmap.width.toFloat(), bitmap.height.toFloat())
+            mapState.drawMapMatrix(canvas, bitmap.width.toFloat(), bitmap.height.toFloat())
 
             // Dibujar el bitmap del mapa con cierta transparencia
             val alphaPaint = Paint().apply { alpha = 128 }
@@ -46,30 +46,6 @@ class MapRenderer {
             canvas.restore()
         } ?: run {
             drawErrorState(canvas)
-        }
-    }
-
-    private fun drawMapMatrix(canvas: Canvas, mapState: MapState, width: Float, height: Float) {
-        val cellWidth = width / mapState.mapMatrix[0].size
-        val cellHeight = height / mapState.mapMatrix.size
-
-        for (i in mapState.mapMatrix.indices) {
-            for (j in mapState.mapMatrix[i].indices) {
-                val paint = when (mapState.mapMatrix[i][j]) {
-                    0 -> paintInteractive
-                    1 -> paintWall
-                    2 -> paintPath
-                    3 -> paintInaccessible
-                    else -> paintPath
-                }
-                canvas.drawRect(
-                    j * cellWidth,
-                    i * cellHeight,
-                    (j + 1) * cellWidth,
-                    (i + 1) * cellHeight,
-                    paint
-                )
-            }
         }
     }
 

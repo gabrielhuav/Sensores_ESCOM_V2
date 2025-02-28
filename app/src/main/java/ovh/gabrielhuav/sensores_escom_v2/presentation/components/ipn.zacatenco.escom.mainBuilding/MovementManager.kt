@@ -46,8 +46,8 @@ class MovementManager(
     }
 
     private fun movePlayer(deltaX: Int, deltaY: Int) {
-        val newX = (localPlayerPosition.first + deltaX).coerceIn(0, 39)
-        val newY = (localPlayerPosition.second + deltaY).coerceIn(0, 39)
+        val newX = (localPlayerPosition.first + deltaX).coerceIn(0, MapMatrixProvider.MAP_WIDTH - 1)
+        val newY = (localPlayerPosition.second + deltaY).coerceIn(0, MapMatrixProvider.MAP_HEIGHT - 1)
 
         if (mapView.isValidPosition(newX, newY)) {
             localPlayerPosition = Pair(newX, newY)

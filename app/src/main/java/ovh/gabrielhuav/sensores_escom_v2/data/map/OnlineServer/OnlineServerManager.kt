@@ -1,6 +1,8 @@
 package ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import okhttp3.*
 import okio.ByteString
 import org.json.JSONObject
@@ -23,6 +25,7 @@ class OnlineServerManager private constructor(private val context: Context) {
     private var isConnected = false
     private var currentUrl: String? = null
     private var listener: WebSocketListener? = null
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     fun setListener(listener: WebSocketListener) {
         this.listener = listener
@@ -66,7 +69,6 @@ class OnlineServerManager private constructor(private val context: Context) {
         }.toString()
         queueMessage(message)
     }
-
 
     fun sendBothPositions(playerId: String, localX: Int, localY: Int, remoteX: Int?, remoteY: Int?, map: String) {
         // Solo enviar la posición que cambió, no ambas
@@ -127,12 +129,18 @@ class OnlineServerManager private constructor(private val context: Context) {
             this@OnlineServerManager.webSocket = webSocket
             isConnected = true
             flushMessageQueue()
-            onConnectionCompleteListener?.invoke()
+            // Ejecutar en el hilo principal
+            mainHandler.post {
+                onConnectionCompleteListener?.invoke()
+            }
         }
 
         override fun onMessage(webSocket: WebSocket, text: String) {
             println("ServerReceived message: $text")
-            listener?.onMessageReceived(text)
+            // Entregar mensaje al listener en el hilo principal
+            mainHandler.post {
+                listener?.onMessageReceived(text)
+            }
         }
 
         override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
@@ -147,15 +155,21 @@ class OnlineServerManager private constructor(private val context: Context) {
         override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
             println("Closed: $code / $reason")
             isConnected = false
+            // Ejecutar en el hilo principal
             if (code != 1000) {
-                onConnectionFailedListener?.invoke()
+                mainHandler.post {
+                    onConnectionFailedListener?.invoke()
+                }
             }
         }
 
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
             println("Error: ${t.message}")
             isConnected = false
-            onConnectionFailedListener?.invoke()
+            // Ejecutar en el hilo principal
+            mainHandler.post {
+                onConnectionFailedListener?.invoke()
+            }
         }
     }
 
@@ -164,5 +178,4 @@ class OnlineServerManager private constructor(private val context: Context) {
             put("type", "request_positions")
         }.toString())
     }
-
 }

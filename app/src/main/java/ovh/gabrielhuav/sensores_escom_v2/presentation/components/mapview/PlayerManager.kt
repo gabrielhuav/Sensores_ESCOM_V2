@@ -11,7 +11,7 @@ class PlayerManager {
     private var localPlayerPosition: Pair<Int, Int>? = null
     private var remotePlayerPositions = mutableMapOf<String, PlayerInfo>()
     var localPlayerId: String = "player_local"
-    private var currentMap = "main"
+    private var currentMap = MapMatrixProvider.MAP_MAIN
 
     data class PlayerInfo(
         val position: Pair<Int, Int>,
@@ -19,21 +19,24 @@ class PlayerManager {
     )
 
     private val paintLocalPlayer = Paint().apply {
-        color = Color.BLUE
-        style = Paint.Style.FILL
+        color = Color.rgb(50, 205, 50)  // Verde lima para el jugador local
+        style = Paint.Style.FILL_AND_STROKE
+        strokeWidth = 2f
     }
 
     private val paintRemotePlayer = Paint().apply {
-        color = Color.RED
-        style = Paint.Style.FILL
+        color = Color.rgb(255, 105, 180)  // Rosa intenso para jugadores remotos
+        style = Paint.Style.FILL_AND_STROKE
+        strokeWidth = 2f
     }
 
+
     private val paintText = Paint().apply {
-        color = Color.BLACK
+        color = Color.rgb(255, 255, 255)  // Texto blanco
         textSize = 30f
         typeface = Typeface.DEFAULT_BOLD
         textAlign = Paint.Align.CENTER
-        setShadowLayer(3f, 0f, 0f, Color.WHITE)
+        setShadowLayer(3f, 0f, 0f, Color.BLACK)  // Sombra negra para legibilidad
     }
 
     fun getCurrentMap(): String = currentMap
@@ -59,16 +62,15 @@ class PlayerManager {
     }
 
     fun updateRemotePlayerPosition(playerId: String, position: Pair<Int, Int>, receivedMap: String) {
-        // Usar el mapa recibido, no "main"
+        // Usar el mapa recibido
         remotePlayerPositions[playerId] = PlayerInfo(position, receivedMap)
         Log.d("PlayerManager", "Updated player $playerId position: $position in map: $receivedMap")
     }
 
-
     private fun drawPlayer(canvas: Canvas, position: Pair<Int, Int>, playerId: String, paint: Paint, cellWidth: Float, cellHeight: Float) {
         val playerX = position.first * cellWidth + cellWidth / 2
         val playerY = position.second * cellHeight + cellHeight / 2
-        canvas.drawCircle(playerX, playerY, cellWidth / 4f, paint)
+        canvas.drawCircle(playerX, playerY, cellWidth / 3f, paint)
         canvas.drawText(
             playerId,
             playerX,
@@ -77,33 +79,37 @@ class PlayerManager {
         )
     }
 
-
     fun drawPlayers(canvas: Canvas, mapState: MapState) {
-        val cellWidth = mapState.backgroundBitmap?.width?.div(40f) ?: return
-        val cellHeight = mapState.backgroundBitmap?.height?.div(40f) ?: return
+        val cellWidth = mapState.backgroundBitmap?.width?.div(MapMatrixProvider.MAP_WIDTH.toFloat()) ?: return
+        val cellHeight = mapState.backgroundBitmap?.height?.div(MapMatrixProvider.MAP_HEIGHT.toFloat()) ?: return
 
         Log.d("PlayerManager", "Drawing players in map: $currentMap")
         Log.d("PlayerManager", "Total remote players: ${remotePlayerPositions.size}")
 
-        remotePlayerPositions.forEach { (id, info) ->
-            Log.d("PlayerManager", "Player $id is in map ${info.map}, current map is $currentMap")
-        }
-
-        remotePlayerPositions.entries
+        // Solo dibujar los jugadores que están en el mapa actual
+        val playersToDraw = remotePlayerPositions.entries
             .filter { it.value.map == currentMap }
-            .forEach { (id, info) ->
-                val paint = if (id == localPlayerId) paintLocalPlayer else paintRemotePlayer
-                val label = if (id == localPlayerId) "Tú" else id
-                drawPlayer(canvas, info.position, label, paint, cellWidth, cellHeight)
-                Log.d("PlayerManager", "Drew player $id at position ${info.position}")
-            }
-    }
 
+        Log.d("PlayerManager", "Players in current map: ${playersToDraw.size}")
+
+        playersToDraw.forEach { (id, info) ->
+            val paint = if (id == localPlayerId) paintLocalPlayer else paintRemotePlayer
+            val label = if (id == localPlayerId) "Tú" else id
+            drawPlayer(canvas, info.position, label, paint, cellWidth, cellHeight)
+            Log.d("PlayerManager", "Drew player $id at position ${info.position}")
+        }
+    }
 
     // Método para actualizar el mapa actual
     fun setCurrentMap(map: String) {
-        currentMap = map
-        Log.d("PlayerManager", "Current map set to: $map")
+        if (currentMap != map) {
+            Log.d("PlayerManager", "Current map changed from $currentMap to $map")
+            currentMap = map
+            // Actualizar la posición del jugador local en el nuevo mapa
+            localPlayerPosition?.let { pos ->
+                remotePlayerPositions[localPlayerId] = PlayerInfo(pos, map)
+            }
+        }
     }
 
     fun cleanup() {
@@ -117,7 +123,6 @@ class PlayerManager {
 
     fun getLocalPlayerPosition(): Pair<Int, Int>? = localPlayerPosition
 
-
     fun handleWebSocketMessage(message: String) {
         try {
             val jsonObject = JSONObject(message)
@@ -128,7 +133,7 @@ class PlayerManager {
                         jsonObject.getInt("x"),
                         jsonObject.getInt("y")
                     )
-                    val receivedMap = jsonObject.getString("map")  // Cambiado de "currentmap" a "map"
+                    val receivedMap = jsonObject.getString("map")
 
                     // Actualizar sin importar el mapa
                     remotePlayerPositions[playerId] = PlayerInfo(position, receivedMap)
@@ -145,8 +150,15 @@ class PlayerManager {
                             )
                             val playerMap = playerData.getString("map")
                             remotePlayerPositions[playerId] = PlayerInfo(position, playerMap)
-                            Log.d("PlayerManager", "Updated player $playerId from positions update")
+                            Log.d("PlayerManager", "Updated player $playerId from positions update: map=$playerMap")
                         }
+                    }
+                }
+                "disconnect" -> {
+                    val disconnectedId = jsonObject.getString("id")
+                    if (disconnectedId != localPlayerId) {
+                        remotePlayerPositions.remove(disconnectedId)
+                        Log.d("PlayerManager", "Removed disconnected player: $disconnectedId")
                     }
                 }
             }
@@ -154,5 +166,4 @@ class PlayerManager {
             Log.e("PlayerManager", "Error processing WebSocket message", e)
         }
     }
-
 }

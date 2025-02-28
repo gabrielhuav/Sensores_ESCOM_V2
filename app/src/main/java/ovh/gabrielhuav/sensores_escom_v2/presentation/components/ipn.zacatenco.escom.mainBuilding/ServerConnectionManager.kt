@@ -1,6 +1,8 @@
 package ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
 import android.util.Log
 
@@ -9,8 +11,9 @@ class ServerConnectionManager(
     private val context: Context,
     val onlineServerManager: OnlineServerManager
 ) {
-    private val serverUrl = "ws://10.3.56.106:3000"
+    private val serverUrl = "ws://172.100.73.197:3000"
     private var isConnecting = false
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     fun connectToServer(callback: (Boolean) -> Unit) {
         if (isConnecting) return
@@ -28,13 +31,19 @@ class ServerConnectionManager(
                     Log.d(TAG, "Conexión al servidor completada")
                     sendJoinMessage(context.getSharedPreferences("game_prefs", Context.MODE_PRIVATE)
                         .getString("player_name", "") ?: "")
-                    callback(true)
+                    // Asegurar que el callback se ejecute en el hilo principal
+                    mainHandler.post {
+                        callback(true)
+                    }
                 }
 
                 setOnConnectionFailedListener {
                     isConnecting = false
                     Log.e(TAG, "Falló la conexión al servidor")
-                    callback(false)
+                    // Asegurar que el callback se ejecute en el hilo principal
+                    mainHandler.post {
+                        callback(false)
+                    }
                 }
 
                 // Intentar conectar
@@ -43,7 +52,10 @@ class ServerConnectionManager(
         } catch (e: Exception) {
             Log.e(TAG, "Error al conectar al servidor: ${e.message}")
             isConnecting = false
-            callback(false)
+            // Asegurar que el callback se ejecute en el hilo principal
+            mainHandler.post {
+                callback(false)
+            }
         }
     }
 

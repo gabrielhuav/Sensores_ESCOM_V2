@@ -106,7 +106,11 @@ class BluetoothManager private constructor(
             isServer = false
             connectionState = ConnectionState.CONNECTING
             connectedDevice = device
-            updateStatus("Conectando a ${device.name}...")
+
+            // Usar handler para actualizar UI
+            handler.post {
+                updateStatus("Conectando a ${device.name}...")
+            }
 
             BluetoothGameManager.getInstance(activity).apply {
                 setConnectionListener(createConnectionListener())
@@ -172,6 +176,7 @@ class BluetoothManager private constructor(
     }
 
     private fun updateStatus(message: String) {
+        // Asegurarse de que la actualización de UI ocurra en el hilo principal
         handler.post {
             statusTextView.text = message
             Log.d(TAG, message)

@@ -1,9 +1,7 @@
 package ovh.gabrielhuav.sensores_escom_v2.presentation.components
 
-import android.Manifest
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Bundle
 import android.util.Log
@@ -12,7 +10,6 @@ import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import org.json.JSONObject
 import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
@@ -20,11 +17,10 @@ import ovh.gabrielhuav.sensores_escom_v2.data.map.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
 
-class BuildingNumber2 : AppCompatActivity(),
+class Salon2009 : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,
     BluetoothGameManager.ConnectionListener,
-    OnlineServerManager.WebSocketListener,
-    MapView.MapTransitionListener {
+    OnlineServerManager.WebSocketListener {
 
     private lateinit var bluetoothManager: BluetoothManager
     private lateinit var movementManager: MovementManager
@@ -50,6 +46,8 @@ class BuildingNumber2 : AppCompatActivity(),
         )
     }
 
+
+
     private val enableBluetoothLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
@@ -62,33 +60,26 @@ class BuildingNumber2 : AppCompatActivity(),
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_building)
+        setContentView(R.layout.activity_salon2009)
+
+        // Primero inicializamos el mapView
+        mapView = MapView(
+            context = this,
+            mapResourceId = R.drawable.salon2009
+        )
+        findViewById<FrameLayout>(R.id.map_container).addView(mapView)
 
         try {
-            // Primero inicializamos el mapView
-            mapView = MapView(
-                context = this,
-                mapResourceId = R.drawable.escom_edificio2
-            )
-            findViewById<FrameLayout>(R.id.map_container).addView(mapView)
-
-            // Inicializar componentes
             initializeComponents(savedInstanceState)
 
-            // Esperar a que el mapView esté listo
-            mapView.post {
-                // Configurar el mapa
-                mapView.setCurrentMap(MapMatrixProvider.MAP_BUILDING2, R.drawable.escom_edificio2)
-
-                // Después configurar el playerManager
-                mapView.playerManager.apply {
-                    setCurrentMap(MapMatrixProvider.MAP_BUILDING2)
-                    localPlayerId = playerName
-                    updateLocalPlayerPosition(gameState.playerPosition)
-                }
-
-                Log.d("BuildingNumber2", "Set map to: " + MapMatrixProvider.MAP_BUILDING2)
+            // Después de inicializar los componentes, configura el mapa
+            mapView.playerManager.apply {
+                setCurrentMap("escom_salon_2009")
+                localPlayerId = playerName
+                updateLocalPlayerPosition(gameState.playerPosition)
             }
+
+            Log.d("Salon2009", "Set map to: escom_salon_2009")
         } catch (e: Exception) {
             Log.e(TAG, "Error en onCreate: ${e.message}")
             Toast.makeText(this, "Error inicializando la actividad.", Toast.LENGTH_LONG).show()
@@ -135,14 +126,14 @@ class BuildingNumber2 : AppCompatActivity(),
 
     private fun initializeManagers() {
         bluetoothManager = BluetoothManager.getInstance(this, uiManager.tvBluetoothStatus).apply {
-            setCallback(this@BuildingNumber2)
+            setCallback(this@Salon2009)
         }
 
         bluetoothBridge = BluetoothWebSocketBridge.getInstance()
 
         // Configurar OnlineServerManager con el listener
         val onlineServerManager = OnlineServerManager.getInstance(this).apply {
-            setListener(this@BuildingNumber2)
+            setListener(this@Salon2009)
         }
 
         serverConnectionManager = ServerConnectionManager(
@@ -157,25 +148,8 @@ class BuildingNumber2 : AppCompatActivity(),
         // Establecer el ID del jugador local
         mapView.playerManager.localPlayerId = playerName
 
-        // Configurar el listener de transición de mapas
-        mapView.setMapTransitionListener(this)
-
         // Inicializar posición inicial
         updatePlayerPosition(gameState.playerPosition)
-    }
-
-    // Implementación de la interfaz MapTransitionListener
-    override fun onMapTransitionRequested(targetMap: String, initialPosition: Pair<Int, Int>) {
-        when (targetMap) {
-            MapMatrixProvider.MAP_MAIN -> {
-                // Transición al mapa principal
-                returnToMainActivity()
-            }
-            // Añadir más casos según sea necesario para otros mapas
-            else -> {
-                Log.d(TAG, "Mapa destino no reconocido: $targetMap")
-            }
-        }
     }
 
     private fun restoreState(savedInstanceState: Bundle) {
@@ -266,6 +240,14 @@ class BuildingNumber2 : AppCompatActivity(),
             btnSouth.setOnTouchListener { _, event -> handleMovement(event, 0, 1); true }
             btnEast.setOnTouchListener { _, event -> handleMovement(event, 1, 0); true }
             btnWest.setOnTouchListener { _, event -> handleMovement(event, -1, 0); true }
+            // Configurar el botón A para verificar la posición
+            buttonA.setOnClickListener {
+                if (canChangeMap) {
+                    startClassroomActivity()
+                } else {
+                    showToast("No hay interacción disponible en esta posición")
+                }
+            }
         }
     }
 
@@ -287,8 +269,8 @@ class BuildingNumber2 : AppCompatActivity(),
         finish()
     }
 
-    private fun startBuildingActivity() {
-        val intent = Intent(this, BuildingNumber2::class.java).apply {
+    private fun startClassroomActivity() {
+        val intent = Intent(this, Salon2009::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_POSITION", Pair(1, 1))
@@ -301,7 +283,7 @@ class BuildingNumber2 : AppCompatActivity(),
     private var canChangeMap = false  // Variable para controlar si se puede cambiar de mapa
 
     private fun checkPositionForMapChange(position: Pair<Int, Int>) {
-        canChangeMap = position.first == 15 && position.second == 10
+        canChangeMap = position.first == 2 && position.second == 2
         if (canChangeMap) {
             runOnUiThread {
                 Toast.makeText(this, "Presiona A para entrar al edificio", Toast.LENGTH_SHORT).show()
@@ -309,13 +291,14 @@ class BuildingNumber2 : AppCompatActivity(),
         }
     }
 
+
     private fun updatePlayerPosition(position: Pair<Int, Int>) {
         runOnUiThread {
             gameState.playerPosition = position
             mapView.updateLocalPlayerPosition(position)
 
             if (gameState.isConnected) {
-                serverConnectionManager.sendUpdateMessage(playerName, position, "escom_building2")
+                serverConnectionManager.sendUpdateMessage(playerName, position, "escom_salon_2009")
             }
 
             checkPositionForMapChange(position)

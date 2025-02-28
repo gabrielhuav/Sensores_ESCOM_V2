@@ -3,6 +3,9 @@ package ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
 import android.util.Log
 import ovh.gabrielhuav.sensores_escom_v2.R
 
@@ -12,18 +15,11 @@ class MapState {
     var offsetY = 0f
     var scaleFactor = 1f
 
-    val mapMatrix = Array(40) { Array(40) { 2 } }.apply {
-        for (i in 0 until 40) {
-            for (j in 0 until 40) {
-                this[i][j] = when {
-                    i == 0 || i == 39 || j == 0 || j == 39 -> 1 // Bordes
-                    i % 5 == 0 && j % 5 == 0 -> 0 // Lugares interactivos
-                    i % 3 == 0 && j % 3 == 0 -> 3 // Zonas inaccesibles
-                    else -> 2 // Camino libre
-                }
-            }
-        }
-    }
+    // Matriz del mapa actual (se inicializa con una matriz vacía)
+    private var currentMapMatrix: MapMatrix? = null
+
+    // Actualizamos para usar la nueva implementación de MapMatrix
+    var mapMatrix: Array<Array<Int>> = Array(MapMatrixProvider.MAP_HEIGHT) { Array(MapMatrixProvider.MAP_WIDTH) { MapMatrixProvider.PATH } }
 
     fun onSizeChanged(w: Int, h: Int, context: Context) {
         try {
@@ -48,7 +44,9 @@ class MapState {
         if (backgroundBitmap == null) return
 
         val maxBitmapSize = 2048 // Tamaño máximo permitido
-        val matrixAspectRatio = mapMatrix[0].size.toFloat() / mapMatrix.size
+        val matrixWidth = MapMatrixProvider.MAP_WIDTH
+        val matrixHeight = MapMatrixProvider.MAP_HEIGHT
+        val matrixAspectRatio = matrixWidth.toFloat() / matrixHeight
         val bitmapAspectRatio = backgroundBitmap!!.width.toFloat() / backgroundBitmap!!.height
 
         val scaledWidth: Int
@@ -80,5 +78,40 @@ class MapState {
 
         offsetX = offsetX.coerceIn(maxOffsetX, 0f)
         offsetY = offsetY.coerceIn(maxOffsetY, 0f)
+    }
+
+    // Método para establecer la matriz del mapa actual
+    fun setMapMatrix(mapMatrix: MapMatrix) {
+        currentMapMatrix = mapMatrix
+    }
+
+    // Método para dibujar la matriz actual
+    fun drawMapMatrix(canvas: Canvas, width: Float, height: Float) {
+        currentMapMatrix?.drawMatrix(canvas, width, height) ?: run {
+            // Si no hay matriz, dibujar una matriz por defecto
+            drawDefaultMatrix(canvas, width, height)
+        }
+    }
+
+    // Matriz por defecto si no hay una matriz específica
+    private fun drawDefaultMatrix(canvas: Canvas, width: Float, height: Float) {
+        val cellWidth = width / MapMatrixProvider.MAP_WIDTH
+        val cellHeight = height / MapMatrixProvider.MAP_HEIGHT
+
+        for (y in 0 until MapMatrixProvider.MAP_HEIGHT) {
+            for (x in 0 until MapMatrixProvider.MAP_WIDTH) {
+                val paint = when {
+                    x == 0 || y == 0 || x == MapMatrixProvider.MAP_WIDTH - 1 || y == MapMatrixProvider.MAP_HEIGHT - 1 -> Paint().apply { color = Color.BLACK }
+                    else -> Paint().apply { color = Color.WHITE }
+                }
+                canvas.drawRect(
+                    x * cellWidth,
+                    y * cellHeight,
+                    (x + 1) * cellWidth,
+                    (y + 1) * cellHeight,
+                    paint
+                )
+            }
+        }
     }
 }

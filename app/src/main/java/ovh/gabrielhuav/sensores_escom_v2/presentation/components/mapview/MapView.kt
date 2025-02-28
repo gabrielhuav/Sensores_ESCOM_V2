@@ -27,7 +27,10 @@ class MapView @JvmOverloads constructor(
     private val gestureHandler = MapGestureHandler(this)
     val playerManager = PlayerManager()
     private val mapState = MapState()
-    val mapMatrixManager = MapMatrixManager()
+
+    // Actualizamos para usar la nueva implementación de MapMatrix
+    private var currentMapId = MapMatrixProvider.MAP_MAIN
+    private var mapMatrix = MapMatrix(currentMapId)
 
     private val MARGIN_FACTOR = 1.1f
     private val OFFSET_MARGIN = 80f
@@ -40,6 +43,12 @@ class MapView @JvmOverloads constructor(
 
     private var isUserInteracting = false
     private var shouldCenterOnPlayer = true
+    private var transitionListener: MapTransitionListener? = null
+
+    // Interfaz para notificar transiciones de mapa
+    interface MapTransitionListener {
+        fun onMapTransitionRequested(targetMap: String, initialPosition: Pair<Int, Int>)
+    }
 
     init {
         isClickable = true
@@ -48,14 +57,39 @@ class MapView @JvmOverloads constructor(
         setupGestureHandler()
     }
 
-    private fun loadMapBitmap() {
+    // Método para establecer el listener de transición
+    fun setMapTransitionListener(listener: MapTransitionListener) {
+        transitionListener = listener
+    }
+
+    // Método para cambiar el mapa actual
+    fun setCurrentMap(mapId: String, resourceId: Int) {
+        if (currentMapId != mapId) {
+            currentMapId = mapId
+            mapMatrix = MapMatrix(mapId)
+            // Cargar el nuevo bitmap del mapa
+            loadMapBitmap(resourceId)
+
+            // Actualizar el mapa actual en el playerManager
+            playerManager.setCurrentMap(mapId)
+
+            // Actualizar el estado visual
+            post {
+                adjustMapToScreen()
+                invalidate()
+            }
+
+            Log.d("MapView", "Mapa cambiado a: $mapId con recurso: $resourceId")
+        }
+    }
+
+    private fun loadMapBitmap(resourceId: Int = mapResourceId) {
         try {
             val options = BitmapFactory.Options().apply {
                 inScaled = false
                 inMutable = true
             }
-            // Usar el mapResourceId en lugar del recurso hardcodeado
-            val bitmap = BitmapFactory.decodeResource(resources, mapResourceId, options)
+            val bitmap = BitmapFactory.decodeResource(resources, resourceId, options)
             mapState.backgroundBitmap = bitmap
             gestureHandler.setBitmap(bitmap)
         } catch (e: Exception) {
@@ -79,8 +113,14 @@ class MapView @JvmOverloads constructor(
                     val maxX = LEFT_MARGIN
                     val maxY = OFFSET_MARGIN
 
-                    mapState.offsetX = (mapState.offsetX + offsetX).coerceIn(minX, maxX)
-                    mapState.offsetY = (mapState.offsetY + offsetY).coerceIn(minY, maxY)
+                    // Asegurarse de que minX <= maxX y minY <= maxY
+                    val safeMinX = minOf(minX, maxX)
+                    val safeMaxX = maxOf(minX, maxX)
+                    val safeMinY = minOf(minY, maxY)
+                    val safeMaxY = maxOf(minY, maxY)
+
+                    mapState.offsetX = (mapState.offsetX + offsetX).coerceIn(safeMinX, safeMaxX)
+                    mapState.offsetY = (mapState.offsetY + offsetY).coerceIn(safeMinY, safeMaxY)
                 }
                 invalidate()
             }
@@ -97,13 +137,23 @@ class MapView @JvmOverloads constructor(
                     val scaledWidth = bitmap.width * mapState.scaleFactor
                     val scaledHeight = bitmap.height * mapState.scaleFactor
 
+                    // Asegurarse de que los rangos sean válidos
+                    val minX = width - scaledWidth - OFFSET_MARGIN
+                    val maxX = LEFT_MARGIN
+                    val minY = height - scaledHeight - OFFSET_MARGIN
+                    val maxY = OFFSET_MARGIN
+
+                    // Asegurarse de que minX <= maxX y minY <= maxY
+                    val safeMinX = minOf(minX, maxX)
+                    val safeMaxX = maxOf(minX, maxX)
+                    val safeMinY = minOf(minY, maxY)
+                    val safeMaxY = maxOf(minY, maxY)
+
                     mapState.offsetX = ((width - scaledWidth) / 2 + LEFT_MARGIN/2).coerceIn(
-                        width - scaledWidth - OFFSET_MARGIN,
-                        LEFT_MARGIN
+                        safeMinX, safeMaxX
                     )
                     mapState.offsetY = ((height - scaledHeight) / 2).coerceIn(
-                        height - scaledHeight - OFFSET_MARGIN,
-                        OFFSET_MARGIN
+                        safeMinY, safeMaxY
                     )
                 }
                 invalidate()
@@ -122,8 +172,8 @@ class MapView @JvmOverloads constructor(
                 val scaledHeight = bitmap.height * mapState.scaleFactor
 
                 // Calculamos el tamaño de cada celda
-                val cellWidth = scaledWidth / 40f
-                val cellHeight = scaledHeight / 40f
+                val cellWidth = scaledWidth / MapMatrixProvider.MAP_WIDTH.toFloat()
+                val cellHeight = scaledHeight / MapMatrixProvider.MAP_HEIGHT.toFloat()
 
                 // Calculamos la posición del jugador en píxeles
                 val playerPosX = playerX * cellWidth + (cellWidth / 2)
@@ -147,16 +197,21 @@ class MapView @JvmOverloads constructor(
                 val maxX = LEFT_MARGIN
                 val maxY = OFFSET_MARGIN
 
+                // Asegurarse de que los rangos sean válidos
+                val safeMinX = minOf(minX, maxX)
+                val safeMaxX = maxOf(minX, maxX)
+                val safeMinY = minOf(minY, maxY)
+                val safeMaxY = maxOf(minY, maxY)
+
                 // Ajustamos los offsets con los límites
-                mapState.offsetX = targetOffsetX.coerceIn(minX, maxX)
-                mapState.offsetY = targetOffsetY.coerceIn(minY, maxY)
+                mapState.offsetX = targetOffsetX.coerceIn(safeMinX, safeMaxX)
+                mapState.offsetY = targetOffsetY.coerceIn(safeMinY, safeMaxY)
 
                 shouldCenterOnPlayer = true
                 invalidate()
             }
         }
     }
-
 
     private fun calculateMinScale(): Float {
         val bitmap = mapState.backgroundBitmap ?: return 1f
@@ -173,10 +228,18 @@ class MapView @JvmOverloads constructor(
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        adjustMapToScreen()
+        // Posponemos el ajuste de la pantalla para asegurarnos de que las dimensiones ya estén actualizadas
+        post {
+            adjustMapToScreen()
+        }
     }
 
     private fun adjustMapToScreen() {
+        if (width <= 0 || height <= 0) {
+            // No hacer nada si la vista aún no tiene dimensiones
+            return
+        }
+
         mapState.backgroundBitmap?.let { bitmap ->
             val minScale = calculateMinScale()
             mapState.scaleFactor = minScale
@@ -184,16 +247,31 @@ class MapView @JvmOverloads constructor(
             val scaledWidth = bitmap.width * mapState.scaleFactor
             val scaledHeight = bitmap.height * mapState.scaleFactor
 
-            mapState.offsetX = ((width - scaledWidth) / 2 + LEFT_MARGIN/2).coerceIn(
-                width - scaledWidth - OFFSET_MARGIN,
-                LEFT_MARGIN
-            )
-            mapState.offsetY = ((height - scaledHeight) / 2).coerceIn(
-                height - scaledHeight - OFFSET_MARGIN,
-                OFFSET_MARGIN
-            )
+            // Calcular los límites
+            val minX = width - scaledWidth - OFFSET_MARGIN
+            val maxX = LEFT_MARGIN
+            val minY = height - scaledHeight - OFFSET_MARGIN
+            val maxY = OFFSET_MARGIN
+
+            // Verificar y corregir rangos inválidos
+            val safeMinX = minOf(minX, maxX)
+            val safeMaxX = maxOf(minX, maxX)
+            val safeMinY = minOf(minY, maxY)
+            val safeMaxY = maxOf(minY, maxY)
+
+            // Calcular offset centrado
+            val offsetX = ((width - scaledWidth) / 2 + LEFT_MARGIN/2)
+            val offsetY = ((height - scaledHeight) / 2)
+
+            // Aplicar límites seguros
+            mapState.offsetX = offsetX.coerceIn(safeMinX, safeMaxX)
+            mapState.offsetY = offsetY.coerceIn(safeMinY, safeMaxY)
 
             invalidate()
+
+            Log.d("MapView", "Ajustando mapa: width=$width, height=$height, " +
+                    "minX=$minX, maxX=$maxX, minY=$minY, maxY=$maxY, " +
+                    "safeMinX=$safeMinX, safeMaxX=$safeMaxX, safeMinY=$safeMinY, safeMaxY=$safeMaxY")
         }
     }
 
@@ -218,11 +296,31 @@ class MapView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+
+        // Usar la matriz del mapa actual para el dibujado
+        mapState.setMapMatrix(mapMatrix)
         renderer.draw(canvas, mapState, playerManager)
+    }
+
+    // Método para verificar si la posición actual del jugador requiere un cambio de mapa
+    fun checkForMapTransition(position: Pair<Int, Int>): Boolean {
+        val targetMap = mapMatrix.isMapTransitionPoint(position.first, position.second)
+        if (targetMap != null) {
+            val initialPosition = MapMatrixProvider.getInitialPositionForMap(targetMap)
+            transitionListener?.onMapTransitionRequested(targetMap, initialPosition)
+            return true
+        }
+        return false
     }
 
     fun updateLocalPlayerPosition(position: Pair<Int, Int>?) {
         playerManager.updateLocalPlayerPosition(position)
+
+        // Verificar si esta posición es un punto de transición entre mapas
+        position?.let {
+            checkForMapTransition(it)
+        }
+
         // Siempre centramos cuando hay un movimiento del jugador local
         if (position != null) {
             centerMapOnPlayer()
@@ -246,16 +344,21 @@ class MapView @JvmOverloads constructor(
     }
 
     fun isValidPosition(x: Int, y: Int): Boolean {
-        return mapMatrixManager.isValidPosition(x, y)
+        return mapMatrix.isValidPosition(x, y)
     }
 
     fun getValueAt(x: Int, y: Int): Int {
-        return mapMatrixManager.getValueAt(x, y)
+        return mapMatrix.getValueAt(x, y)
     }
 
     fun isInteractivePosition(x: Int, y: Int): Boolean {
-        return mapMatrixManager.isInteractivePosition(x, y)
+        return mapMatrix.isInteractivePosition(x, y)
     }
+
+    fun getCurrentMapId(): String {
+        return currentMapId
+    }
+
     private var isBluetoothServer = false
 
     override fun onMessageReceived(message: String) {
@@ -263,7 +366,7 @@ class MapView @JvmOverloads constructor(
         invalidate()
     }
 
-    fun setBluetoothServerMode(b: Boolean) {
-
+    fun setBluetoothServerMode(isServer: Boolean) {
+        isBluetoothServer = isServer
     }
 }

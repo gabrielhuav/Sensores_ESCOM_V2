@@ -1,5 +1,7 @@
 package ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview
 
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.widget.Button
 import android.widget.FrameLayout
@@ -22,6 +24,9 @@ class UIManager(
     val tvBluetoothStatus: TextView = rootView.findViewById(R.id.tvBluetoothStatus)
     val btnOnlineServer: Button = rootView.findViewById(R.id.button_serverOnline)
     val buttonA: Button = rootView.findViewById(R.id.button_a)
+
+    // Handler para asegurar las actualizaciones de UI en el hilo principal
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     fun initializeViews() {
         mapView.setBluetoothServerMode(false)
@@ -61,20 +66,28 @@ class UIManager(
     }
 
     fun configureForServerMode() {
-        btnConnectDevice.visibility = View.GONE
-        btnStartServer.isEnabled = true
+        mainHandler.post {
+            btnConnectDevice.visibility = View.GONE
+            btnStartServer.isEnabled = true
+        }
     }
 
     fun configureForClientMode() {
-        btnConnectDevice.visibility = View.GONE
-        btnStartServer.visibility = View.GONE
+        mainHandler.post {
+            btnConnectDevice.visibility = View.GONE
+            btnStartServer.visibility = View.GONE
+        }
     }
 
     fun showToast(message: String) {
+        // Los Toast ya se manejan internamente en el hilo principal
         Toast.makeText(rootView.context, message, Toast.LENGTH_SHORT).show()
     }
 
     fun updateBluetoothStatus(status: String) {
-        tvBluetoothStatus.text = status
+        // Asegurarse de que esta actualización de UI siempre ocurra en el hilo principal
+        mainHandler.post {
+            tvBluetoothStatus.text = status
+        }
     }
 }
