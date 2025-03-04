@@ -175,11 +175,31 @@ class BuildingNumber2 : AppCompatActivity(),
                 // Transición al salón 2009
                 startSalon2009Activity()
             }
+            MapMatrixProvider.MAP_SALON2010 -> {
+                // Transición al salón 2010
+                startSalon2010Activity()
+            }
             // Añadir más casos según sea necesario para otros mapas
             else -> {
                 Log.d(TAG, "Mapa destino no reconocido: $targetMap")
             }
         }
+    }
+
+    // Método para iniciar la Activity del salón 2010
+    private fun startSalon2010Activity() {
+        val intent = Intent(this, Salon2010::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(20, 20)) // Posición inicial en el salón
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guardar la posición actual para regresar
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+
+        // Limpiar datos antes de cambiar de activity
+        mapView.playerManager.cleanup()
+        startActivity(intent)
+        finish()
     }
 
     // Método para iniciar la Activity del salón 2009
@@ -270,6 +290,36 @@ class BuildingNumber2 : AppCompatActivity(),
         }
     }
 
+    private var canChangeMap = false  // Variable para controlar si se puede cambiar de mapa
+    private var targetMapId: String? = null  // Añadir esta variable para almacenar el mapa destino
+    private var interactivePosition: Pair<Int, Int>? = null  // Coordenadas del punto interactivo
+
+    private fun checkPositionForMapChange(position: Pair<Int, Int>) {
+        // Verificar si estamos en un punto interactivo que puede ser una transición
+        targetMapId = mapView.getMapTransitionPoint(position.first, position.second)
+        interactivePosition = if (targetMapId != null) position else null
+        canChangeMap = targetMapId != null
+
+        if (canChangeMap) {
+            runOnUiThread {
+                when (targetMapId) {
+                    MapMatrixProvider.MAP_MAIN -> {
+                        Toast.makeText(this, "Presiona A para volver al mapa principal", Toast.LENGTH_SHORT).show()
+                    }
+                    MapMatrixProvider.MAP_SALON2009 -> {
+                        Toast.makeText(this, "Presiona A para entrar al salón 2009", Toast.LENGTH_SHORT).show()
+                    }
+                    MapMatrixProvider.MAP_SALON2010 -> {
+                        Toast.makeText(this, "Presiona A para entrar al salón 2010", Toast.LENGTH_SHORT).show()
+                    }
+                    else -> {
+                        Toast.makeText(this, "Presiona A para interactuar", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+    }
+
     private fun setupButtonListeners() {
         uiManager.apply {
             btnStartServer.setOnClickListener {
@@ -286,6 +336,16 @@ class BuildingNumber2 : AppCompatActivity(),
             btnSouth.setOnTouchListener { _, event -> handleMovement(event, 0, 1); true }
             btnEast.setOnTouchListener { _, event -> handleMovement(event, 1, 0); true }
             btnWest.setOnTouchListener { _, event -> handleMovement(event, -1, 0); true }
+
+            // Modificar el botón A para manejar las transiciones de mapa
+            buttonA.setOnClickListener {
+                if (canChangeMap && targetMapId != null) {
+                    // En lugar de hacer la lógica aquí directamente, usa el método en MapView
+                    mapView.initiateMapTransition(targetMapId!!)
+                } else {
+                    showToast("No hay interacción disponible en esta posición")
+                }
+            }
         }
     }
 
@@ -316,17 +376,6 @@ class BuildingNumber2 : AppCompatActivity(),
         }
         startActivity(intent)
         finish()
-    }
-
-    private var canChangeMap = false  // Variable para controlar si se puede cambiar de mapa
-
-    private fun checkPositionForMapChange(position: Pair<Int, Int>) {
-        canChangeMap = position.first == 15 && position.second == 10
-        if (canChangeMap) {
-            runOnUiThread {
-                Toast.makeText(this, "Presiona A para entrar al edificio", Toast.LENGTH_SHORT).show()
-            }
-        }
     }
 
     private fun updatePlayerPosition(position: Pair<Int, Int>) {

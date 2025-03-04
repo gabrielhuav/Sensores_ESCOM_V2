@@ -219,6 +219,7 @@ class GameplayActivity : AppCompatActivity(),
         }
     }
 
+
     private fun setupButtonListeners() {
         uiManager.apply {
             btnStartServer.setOnClickListener {
@@ -231,15 +232,32 @@ class GameplayActivity : AppCompatActivity(),
             btnEast.setOnTouchListener { _, event -> handleMovement(event, 1, 0); true }
             btnWest.setOnTouchListener { _, event -> handleMovement(event, -1, 0); true }
 
-            // Configurar el botón A para verificar la posición
+            // Configurar el botón A para verificar la posición y dirigirse al mapa correspondiente
             buttonA.setOnClickListener {
                 if (canChangeMap) {
-                    startBuildingActivity()
+                    when (targetDestination) {
+                        "edificio2" -> startBuildingActivity()
+                        "cafeteria" -> startCafeteriaActivity()
+                        else -> showToast("No hay interacción disponible en esta posición")
+                    }
                 } else {
                     showToast("No hay interacción disponible en esta posición")
                 }
             }
         }
+    }
+
+
+    private fun startCafeteriaActivity() {
+        val intent = Intent(this, Cafeteria::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(1, 1))
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
     }
 
     private fun startBuildingActivity() {
@@ -255,12 +273,28 @@ class GameplayActivity : AppCompatActivity(),
     }
 
     private var canChangeMap = false  // Variable para controlar si se puede cambiar de mapa
+    private var targetDestination: String? = null  // Variable para almacenar el destino
 
     private fun checkPositionForMapChange(position: Pair<Int, Int>) {
-        canChangeMap = position.first == 15 && position.second == 10
-        if (canChangeMap) {
-            runOnUiThread {
-                Toast.makeText(this, "Presiona A para entrar al edificio", Toast.LENGTH_SHORT).show()
+        // Comprobar múltiples ubicaciones de transición
+        when {
+            position.first == 15 && position.second == 10 -> {
+                canChangeMap = true
+                targetDestination = "edificio2"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para entrar al edificio 2", Toast.LENGTH_SHORT).show()
+                }
+            }
+            position.first == 33 && position.second == 34 -> {
+                canChangeMap = true
+                targetDestination = "cafeteria"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para entrar a la cafetería", Toast.LENGTH_SHORT).show()
+                }
+            }
+            else -> {
+                canChangeMap = false
+                targetDestination = null
             }
         }
     }

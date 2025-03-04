@@ -302,26 +302,22 @@ class MapView @JvmOverloads constructor(
         renderer.draw(canvas, mapState, playerManager)
     }
 
-    // Método para verificar si la posición actual del jugador requiere un cambio de mapa
-    fun checkForMapTransition(position: Pair<Int, Int>): Boolean {
-        val targetMap = mapMatrix.isMapTransitionPoint(position.first, position.second)
-        if (targetMap != null) {
-            val initialPosition = MapMatrixProvider.getInitialPositionForMap(targetMap)
-            transitionListener?.onMapTransitionRequested(targetMap, initialPosition)
-            return true
-        }
-        return false
+    // Este método ahora solo devuelve si hay una transición, no la activa
+    fun checkForMapTransition(position: Pair<Int, Int>): String? {
+        return mapMatrix.isMapTransitionPoint(position.first, position.second)
+    }
+
+    // Llamar a este método solo cuando el usuario presione el botón A
+    fun initiateMapTransition(targetMap: String) {
+        val initialPosition = MapMatrixProvider.getInitialPositionForMap(targetMap)
+        transitionListener?.onMapTransitionRequested(targetMap, initialPosition)
     }
 
     fun updateLocalPlayerPosition(position: Pair<Int, Int>?) {
         playerManager.updateLocalPlayerPosition(position)
 
-        // Verificar si esta posición es un punto de transición entre mapas
-        position?.let {
-            checkForMapTransition(it)
-        }
-
-        // Siempre centramos cuando hay un movimiento del jugador local
+        // Ya no llamamos a checkForMapTransition aquí
+        // Solo centramos el mapa en el jugador
         if (position != null) {
             centerMapOnPlayer()
         }
@@ -353,6 +349,10 @@ class MapView @JvmOverloads constructor(
 
     fun isInteractivePosition(x: Int, y: Int): Boolean {
         return mapMatrix.isInteractivePosition(x, y)
+    }
+
+    fun getMapTransitionPoint(x: Int, y: Int): String? {
+        return mapMatrix.isMapTransitionPoint(x, y)
     }
 
     fun getCurrentMapId(): String {

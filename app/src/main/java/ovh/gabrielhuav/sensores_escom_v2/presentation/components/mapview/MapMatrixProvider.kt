@@ -25,6 +25,8 @@ class MapMatrixProvider {
         const val MAP_MAIN = "escom_main"
         const val MAP_BUILDING2 = "escom_building2"
         const val MAP_SALON2009 = "escom_salon2009"
+        const val MAP_SALON2010 = "escom_salon2010"
+        const val MAP_CAFETERIA = "escom_cafeteria"
 
 
         // Puntos de transición entre mapas
@@ -32,6 +34,14 @@ class MapMatrixProvider {
         val BUILDING2_TO_MAIN_POSITION = Pair(5, 5)  // Posición segura en la esquina superior izquierda
         val BUILDING2_TO_SALON2009_POSITION = Pair(15, 16)  // Punto en el pasillo principal
         val SALON2009_TO_BUILDING2_POSITION = Pair(1, 20)  // Punto en la puerta del salón
+
+        val BUILDING2_TO_SALON2010_POSITION = Pair(20, 20)  // Desde edificio 2
+        val MAIN_TO_SALON2010_POSITION = Pair(25, 25)       // Desde mapa principal
+        val SALON2010_TO_BUILDING2_POSITION = Pair(5, 5)    // Vuelta al edificio 2
+        val SALON2010_TO_MAIN_POSITION = Pair(1, 1)         // Vuelta al mapa principal
+
+        val MAIN_TO_CAFETERIA_POSITION = Pair(2, 2)       // Desde mapa principal
+        val CAFETERIA_TO_MAIN_POSITION = Pair(1, 1)         // Vuelta al mapa principal
 
 
         /**
@@ -42,6 +52,8 @@ class MapMatrixProvider {
                 MAP_MAIN -> createMainMapMatrix()
                 MAP_BUILDING2 -> createBuilding2Matrix()
                 MAP_SALON2009 -> createSalon2009Matrix()  // Nueva matriz para el salón 2009
+                MAP_SALON2010 -> createSalon2010Matrix()  // Nueva matriz para el salón 2010
+                MAP_CAFETERIA -> createCafeESCOMMatrix()
                 else -> createDefaultMatrix() // Por defecto, un mapa básico
             }
         }
@@ -101,42 +113,182 @@ class MapMatrixProvider {
          * |                                                                         |
          * +-------------------------------------------------------------------------+
          */
+        /**
+         * Matrix for Building 2
+         * Based exactly on the ASCII map:
+         * +-------------------------------------------------------------------------+
+         * |                               Edificio 2                                |
+         * |                              Planta Baja                                |
+         * |                                                                         |
+         * |  +--------+--------+--------+-----+--------+--------+--------+----+     |
+         * |  |  2001  |  2002  |  2003  | ⬆️  |  2004  |  2005  |  2006  | 🚾 |     |
+         * |  |🏫 Aula |🏫 Aula |🏫 Aula | 🪜  |🏫 Aula |🏫 Aula |🏫 Aula | WC |     |
+         * |  +🚪------+🚪------+🚪------+ ⬇️  +🚪------+🚪------+🚪------+🚪--+     |
+         * |                                                                         |
+         * |                      [    Pasillo Principal 🚶    ]                     |
+         * |                                                                         |
+         * +-------------------------------------------------------------------------+
+         */
+
+
+        /**
+         * Approach 5: ASCII Art-Based Implementation
+         * Creates the matrix directly from an ASCII representation
+         */
+        /**
+         * Implementación combinada mejorada para el Edificio 2
+         * Combina elementos de los enfoques 1 y 5 con mejoras
+         */
         private fun createBuilding2Matrix(): Array<Array<Int>> {
-            // Crear matriz inicialmente con todo como PATH (transitable)
+            // Crear matriz con PATH (caminable) por defecto
             val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
 
-            // .... (código existente para crear el mapa) ....
+            // Constantes para dimensiones del edificio
+            val roomTop = 8           // Posición superior de las aulas
+            val roomHeight = 8        // Altura de las aulas (más grandes)
+            val roomBottom = roomTop + roomHeight
+            val corridorTop = roomBottom + 1
+            val corridorHeight = 3    // Altura del pasillo principal
+            val corridorBottom = corridorTop + corridorHeight
 
-            // -----------------------------------------
-            // PUNTOS DE TRANSICIÓN - ASEGURARNOS QUE SEAN VISIBLES
-            // -----------------------------------------
+            // Número de aulas + baño
+            val numRooms = 7
+            val roomWidth = (MAP_WIDTH - 2) / numRooms
 
-            // Salida al mapa principal (ubicada en un lugar accesible)
-            matrix[5][5] = INTERACTIVE
+            // Crear bordes del edificio
+            // Borde superior del edificio
+            for (x in 0 until MAP_WIDTH) {
+                matrix[roomTop - 1][x] = WALL
+            }
 
-            // Entrada al Salón 2009 - PUNTO CLARAMENTE MARCADO EN EL PASILLO PRINCIPAL
-            // Colocamos varios puntos interactivos para asegurar que sea fácil de encontrar
+            // Borde inferior del edificio
+            if (corridorBottom + 1 < MAP_HEIGHT) {
+                for (x in 0 until MAP_WIDTH) {
+                    matrix[corridorBottom + 1][x] = WALL
+                }
+            }
 
-            // Hacemos un punto interactivo más grande en el pasillo
-            for (offsetX in -1..1) {
-                for (offsetY in -1..1) {
-                    val x = 15 + offsetX
-                    val y = 16 + offsetY
+            // Bordes laterales del edificio
+            for (y in roomTop - 1..corridorBottom + 1) {
+                if (y < MAP_HEIGHT) {
+                    matrix[y][0] = WALL
+                    if (MAP_WIDTH - 1 < MAP_WIDTH) {
+                        matrix[y][MAP_WIDTH - 1] = WALL
+                    }
+                }
+            }
 
-                    if (x > 0 && x < MAP_WIDTH && y > 0 && y < MAP_HEIGHT) {
-                        if (matrix[y][x] == PATH) {  // Solo convertimos si es un camino
-                            matrix[y][x] = INTERACTIVE
+            // Crear divisiones verticales entre aulas
+            for (i in 0..numRooms) {
+                val x = 1 + (i * roomWidth)
+                if (x < MAP_WIDTH) {
+                    for (y in roomTop until roomBottom) {
+                        matrix[y][x] = WALL
+                    }
+                }
+            }
+
+            // Bordes horizontales de las aulas
+            for (x in 1 until MAP_WIDTH - 1) {
+                // Borde superior de las aulas
+                matrix[roomTop][x] = WALL
+
+                // Borde inferior de las aulas (justo encima del pasillo)
+                matrix[roomBottom][x] = WALL
+            }
+
+            // Crear el área de escaleras (entre las aulas 3 y 4)
+            val stairsIndex = 3
+            val stairsX = 1 + (stairsIndex * roomWidth)
+
+            // Limpiar el área de escaleras
+            for (y in roomTop + 1 until roomBottom) {
+                for (x in stairsX until stairsX + roomWidth) {
+                    if (x < MAP_WIDTH) {
+                        matrix[y][x] = PATH
+                    }
+                }
+            }
+
+            // Hacer las escaleras interactivas
+            val stairsCenterX = stairsX + roomWidth/2
+            val stairsCenterY = roomTop + roomHeight/2
+
+            // Definir área interactiva alrededor del centro
+            for (y in stairsCenterY - 1..stairsCenterY + 1) {
+                for (x in stairsCenterX - 1..stairsCenterX + 1) {
+                    if (x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT) {
+                        matrix[y][x] = INTERACTIVE
+                    }
+                }
+            }
+
+            // Crear puertas para cada aula
+            for (i in 0 until numRooms) {
+                if (i == stairsIndex) continue // Saltar escaleras
+
+                val doorX = 1 + (i * roomWidth) + (roomWidth / 2)
+                if (doorX < MAP_WIDTH) {
+                    matrix[roomBottom][doorX] = PATH
+
+                    // Hacer las puertas más anchas para facilitar el acceso
+                    if (doorX - 1 >= 0) matrix[roomBottom][doorX - 1] = PATH
+                    if (doorX + 1 < MAP_WIDTH) matrix[roomBottom][doorX + 1] = PATH
+                }
+            }
+
+            // Crear pasillo principal - amplio y completamente caminable
+            for (y in corridorTop until corridorTop + corridorHeight) {
+                if (y < MAP_HEIGHT) {
+                    for (x in 1 until MAP_WIDTH - 1) {
+                        matrix[y][x] = PATH
+                    }
+                }
+            }
+
+            // Añadir puntos interactivos para las transiciones
+
+            // Entrada a la sala 2009 (en el pasillo, centrado)
+            val corridorCenterY = corridorTop + corridorHeight/2
+
+            // Múltiples puntos interactivos a lo largo del pasillo
+            val interactivePoints = listOf(
+                (MAP_WIDTH / 2),
+                (MAP_WIDTH / 3),
+                (2 * MAP_WIDTH / 3),
+                stairsCenterX
+            )
+
+            for (x in interactivePoints) {
+                if (x >= 0 && x < MAP_WIDTH && corridorCenterY >= 0 && corridorCenterY < MAP_HEIGHT) {
+                    matrix[corridorCenterY][x] = INTERACTIVE
+                }
+            }
+
+            // Salida al mapa principal (lado izquierdo)
+            if (corridorCenterY < MAP_HEIGHT) {
+                matrix[corridorCenterY][2] = INTERACTIVE
+            }
+
+            // Hacer el interior de las aulas navegable
+            for (i in 0 until numRooms) {
+                if (i == stairsIndex) continue  // Saltar escaleras
+
+                val roomStartX = 1 + (i * roomWidth) + 1
+                val roomEndX = 1 + ((i + 1) * roomWidth) - 1
+
+                for (y in roomTop + 1 until roomBottom) {
+                    for (x in roomStartX until roomEndX + 1) {
+                        if (x < MAP_WIDTH) {
+                            matrix[y][x] = PATH
                         }
                     }
                 }
             }
 
-            // También añadimos puntos interactivos en posiciones alternativas
-            if (20 < MAP_WIDTH && 20 < MAP_HEIGHT) matrix[20][20] = INTERACTIVE
-            if (25 < MAP_WIDTH && 16 < MAP_HEIGHT) matrix[16][25] = INTERACTIVE
-
             return matrix
         }
+
 
         /**
          * Matriz para el salón 2009
@@ -194,6 +346,129 @@ class MapMatrixProvider {
             return matrix
         }
 
+        private fun createSalon2010Matrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Configuración de bordes
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    // Bordes exteriores
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = WALL
+                    }
+                    // Zonas interactivas (edificios, entradas)
+                    else if (i == 10 && j == 15) {
+                        matrix[i][j] = INTERACTIVE // Entrada al edificio 2
+                    }
+                    // Obstáculos (árboles, bancas, etc)
+                    else if (i % 7 == 0 && j % 8 == 0) {
+                        matrix[i][j] = INACCESSIBLE
+                    }
+                    // Caminos especiales
+                    else if ((i % 5 == 0 || j % 5 == 0) && i > 5 && j > 5) {
+                        matrix[i][j] = PATH
+                    }
+                }
+            }
+
+            // Áreas de juego específicas
+            // Zona central despejada
+            for (i in 15..25) {
+                for (j in 15..25) {
+                    matrix[i][j] = PATH
+                }
+            }
+
+            return matrix
+        }
+
+        /**
+         * Matriz para el mapa principal del campus
+         */
+        private fun createCafeESCOMMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Definición de constantes para mejorar legibilidad
+            val PARED = WALL
+            val CAMINO = PATH
+            val BANCA = INACCESSIBLE
+            val INTERACTIVO = INTERACTIVE
+
+            // Bordes exteriores - paredes del restaurante
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    // Bordes exteriores
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = PARED
+                    }
+                }
+            }
+
+            // COCINA (esquina superior izquierda)
+            for (i in 2..8) {
+                for (j in 2..15) {
+                    if (i == 2 || i == 8 || j == 2 || j == 15) {
+                        matrix[i][j] = PARED // Paredes de la cocina
+                    }
+                }
+            }
+            // Mostrador de la cocina
+            for (i in 4..6) {
+                for (j in 4..13) {
+                    matrix[i][j] = BANCA
+                }
+            }
+
+            // MESAS/BANCAS LARGAS (3 filas de 3 mesas cada una)
+            // Primera fila de mesas
+            for (row in 0..2) {
+                for (col in 0..2) {
+                    // Cada mesa es un rectángulo
+                    val baseI = 12 + (row * 8)
+                    val baseJ = 10 + (col * 10)
+
+                    for (i in baseI..baseI+2) {
+                        for (j in baseJ..baseJ+8) {
+                            matrix[i][j] = BANCA
+                        }
+                    }
+                }
+            }
+
+            // CAJA (parte inferior)
+            for (i in 30..33) {
+                for (j in 15..19) {
+                    matrix[i][j] = BANCA
+                }
+            }
+
+            // ENTRADA
+            for (i in 37..38) {
+                for (j in 15..25) {
+                    matrix[i][j] = INTERACTIVO
+                }
+            }
+
+            // Agregar elementos interactivos: Tacos, Burritos, Guacamole y Chile
+            // Tacos (representados como puntos interactivos)
+            matrix[12][8] = INTERACTIVO
+            matrix[12][32] = INTERACTIVO
+            matrix[28][8] = INTERACTIVO
+            matrix[28][32] = INTERACTIVO
+
+            // Burritos
+            matrix[12][33] = INTERACTIVO
+            matrix[28][33] = INTERACTIVO
+
+            // Guacamole
+            matrix[20][8] = INTERACTIVO
+
+            // Chile
+            matrix[20][32] = INTERACTIVO
+
+            return matrix
+        }
+
         /**
          * Matriz predeterminada para cualquier otro mapa
          */
@@ -232,6 +507,10 @@ class MapMatrixProvider {
                     return MAP_SALON2009
                 }
 
+                if (x == 2 && y == 5) {
+                    return MAP_SALON2010
+                }
+
                 // Punto para regresar al mapa principal
                 if (x == 5 && y == 5) {
                     return MAP_MAIN
@@ -243,6 +522,18 @@ class MapMatrixProvider {
                 return MAP_BUILDING2
             }
 
+            if (mapId == MAP_SALON2010) {
+                if (x == 5 && y == 5) {
+                    return MAP_BUILDING2
+                }
+                if (x == 10 && y == 10) {
+                    return MAP_MAIN
+                }
+            }
+
+            if (mapId == MAP_MAIN && x == 33 && y == 34) {
+                return MAP_CAFETERIA
+            }
             // Resto de transiciones...
 
             return null
@@ -257,6 +548,9 @@ class MapMatrixProvider {
                 MAP_MAIN -> Pair(15, 15)  // Posición central en el mapa principal
                 MAP_BUILDING2 -> Pair(20, 16)  // Centro del pasillo principal del edificio 2
                 MAP_SALON2009 -> Pair(20, 20)  // Posición central dentro del salón 2009
+                MAP_SALON2010 -> Pair(20, 20)  // Posición central dentro del salón 2010
+                MAP_CAFETERIA -> Pair(2, 2)  // Posición central dentro de la escomCAFE
+
                 else -> Pair(MAP_WIDTH / 2, MAP_HEIGHT / 2)
             }
         }

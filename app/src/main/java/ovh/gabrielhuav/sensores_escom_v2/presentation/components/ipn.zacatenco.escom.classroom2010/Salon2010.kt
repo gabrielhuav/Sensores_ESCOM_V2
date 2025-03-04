@@ -17,7 +17,7 @@ import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
 
-class Salon2009 : AppCompatActivity(),
+class Salon2010 : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,
     BluetoothGameManager.ConnectionListener,
     OnlineServerManager.WebSocketListener,
@@ -44,13 +44,13 @@ class Salon2009 : AppCompatActivity(),
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_salon2009)
+        setContentView(R.layout.activity_salon2010)
 
         try {
             // Inicializar el mapView
             mapView = MapView(
                 context = this,
-                mapResourceId = R.drawable.escom_salon2009 // Usa la imagen del salón 2009
+                mapResourceId = R.drawable.escom_salon2010 // Usa la imagen del salón 2010
             )
             findViewById<FrameLayout>(R.id.map_container).addView(mapView)
 
@@ -59,21 +59,21 @@ class Salon2009 : AppCompatActivity(),
 
             // Esperar a que el mapView esté listo
             mapView.post {
-                // Configurar el mapa para el salón 2009
-                mapView.setCurrentMap(MapMatrixProvider.MAP_SALON2009, R.drawable.escom_salon2009)
+                // Configurar el mapa para el salón 2010
+                mapView.setCurrentMap(MapMatrixProvider.MAP_SALON2010, R.drawable.escom_salon2010)
 
                 // Configurar el playerManager
                 mapView.playerManager.apply {
-                    setCurrentMap(MapMatrixProvider.MAP_SALON2009)
+                    setCurrentMap(MapMatrixProvider.MAP_SALON2010)
                     localPlayerId = playerName
                     updateLocalPlayerPosition(gameState.playerPosition)
                 }
 
-                Log.d(TAG, "Set map to: " + MapMatrixProvider.MAP_SALON2009)
+                Log.d(TAG, "Set map to: " + MapMatrixProvider.MAP_SALON2010)
 
                 // Importante: Enviar un update inmediato para que otros jugadores sepan dónde estamos
                 if (gameState.isConnected) {
-                    serverConnectionManager.sendUpdateMessage(playerName, gameState.playerPosition, MapMatrixProvider.MAP_SALON2009)
+                    serverConnectionManager.sendUpdateMessage(playerName, gameState.playerPosition, MapMatrixProvider.MAP_SALON2010)
                 }
             }
         } catch (e: Exception) {
@@ -131,13 +131,13 @@ class Salon2009 : AppCompatActivity(),
                     serverConnectionManager.sendUpdateMessage(
                         playerName,
                         gameState.playerPosition,
-                        MapMatrixProvider.MAP_SALON2009
+                        MapMatrixProvider.MAP_SALON2010
                     )
 
                     // Solicitar actualizaciones de posición
                     serverConnectionManager.onlineServerManager.requestPositionsUpdate()
 
-                    updateBluetoothStatus("Conectado al servidor online - Salón 2009")
+                    updateBluetoothStatus("Conectado al servidor online - Salón 2010")
                 } else {
                     updateBluetoothStatus("Error al conectar al servidor online")
                 }
@@ -155,18 +155,18 @@ class Salon2009 : AppCompatActivity(),
         tvBluetoothStatus = findViewById(R.id.tvBluetoothStatus)
 
         // Cambiar el título para indicar dónde estamos
-        tvBluetoothStatus.text = "Salón 2009 - Conectando..."
+        tvBluetoothStatus.text = "Salón 2010 - Conectando..."
     }
 
     private fun initializeManagers() {
         bluetoothManager = BluetoothManager.getInstance(this, tvBluetoothStatus).apply {
-            setCallback(this@Salon2009)
+            setCallback(this@Salon2010)
         }
 
         bluetoothBridge = BluetoothWebSocketBridge.getInstance()
 
         val onlineServerManager = OnlineServerManager.getInstance(this).apply {
-            setListener(this@Salon2009)
+            setListener(this@Salon2010)
         }
 
         serverConnectionManager = ServerConnectionManager(
@@ -233,10 +233,10 @@ class Salon2009 : AppCompatActivity(),
             // Enviar actualización a otros jugadores con el mapa específico
             if (gameState.isConnected) {
                 // Enviar la posición con el nombre del mapa correcto
-                serverConnectionManager.sendUpdateMessage(playerName, position, MapMatrixProvider.MAP_SALON2009)
+                serverConnectionManager.sendUpdateMessage(playerName, position, MapMatrixProvider.MAP_SALON2010)
 
                 // Log de debug para confirmar
-                Log.d(TAG, "Sending update: Player $playerName at $position in map ${MapMatrixProvider.MAP_SALON2009}")
+                Log.d(TAG, "Sending update: Player $playerName at $position in map ${MapMatrixProvider.MAP_SALON2010}")
             }
         }
     }
@@ -297,7 +297,7 @@ class Salon2009 : AppCompatActivity(),
     override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
         runOnUiThread {
             val deviceName = device.name ?: "Unknown"
-            mapView.updateRemotePlayerPosition(deviceName, Pair(x, y), MapMatrixProvider.MAP_SALON2009)
+            mapView.updateRemotePlayerPosition(deviceName, Pair(x, y), MapMatrixProvider.MAP_SALON2010)
             mapView.invalidate()
         }
     }
@@ -326,7 +326,7 @@ class Salon2009 : AppCompatActivity(),
                                         (playerId to BuildingNumber2.GameState.PlayerInfo(position, map))
 
                                 // Solo mostrar jugadores que estén en el mismo mapa
-                                if (map == MapMatrixProvider.MAP_SALON2009) {
+                                if (map == MapMatrixProvider.MAP_SALON2010) {
                                     mapView.updateRemotePlayerPosition(playerId, position, map)
                                     Log.d(TAG, "Updated remote player $playerId position to $position in map $map")
                                 }
@@ -347,7 +347,7 @@ class Salon2009 : AppCompatActivity(),
                                     (playerId to BuildingNumber2.GameState.PlayerInfo(position, map))
 
                             // Solo mostrar jugadores que estén en el mismo mapa
-                            if (map == MapMatrixProvider.MAP_SALON2009) {
+                            if (map == MapMatrixProvider.MAP_SALON2010) {
                                 mapView.updateRemotePlayerPosition(playerId, position, map)
                                 Log.d(TAG, "Updated remote player $playerId position to $position in map $map")
                             }
@@ -361,7 +361,7 @@ class Salon2009 : AppCompatActivity(),
                         serverConnectionManager.sendUpdateMessage(
                             playerName,
                             gameState.playerPosition,
-                            MapMatrixProvider.MAP_SALON2009
+                            MapMatrixProvider.MAP_SALON2010
                         )
                     }
                 }
@@ -407,7 +407,7 @@ class Salon2009 : AppCompatActivity(),
             serverConnectionManager.sendUpdateMessage(
                 playerName,
                 gameState.playerPosition,
-                MapMatrixProvider.MAP_SALON2009
+                MapMatrixProvider.MAP_SALON2010
             )
         }
     }
@@ -422,6 +422,6 @@ class Salon2009 : AppCompatActivity(),
     }
 
     companion object {
-        private const val TAG = "Salon2009"
+        private const val TAG = "Salon2010"
     }
 }
