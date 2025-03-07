@@ -40,9 +40,9 @@ class MapRenderer {
             val alphaPaint = Paint().apply { alpha = 128 }
             canvas.drawBitmap(bitmap, 0f, 0f, alphaPaint)
 
-            // Dibujar jugadores
+            // Dibujar jugadores Y entidades especiales en un solo paso
             playerManager.drawPlayers(canvas, mapState)
-
+            // NO llamar a otro método separado para dibujar entidades especiales
             canvas.restore()
         } ?: run {
             drawErrorState(canvas)

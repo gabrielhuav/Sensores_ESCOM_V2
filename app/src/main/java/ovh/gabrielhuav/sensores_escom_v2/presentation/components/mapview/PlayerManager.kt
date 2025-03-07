@@ -67,39 +67,144 @@ class PlayerManager {
         Log.d("PlayerManager", "Updated player $playerId position: $position in map: $receivedMap")
     }
 
+
+    private fun drawItem(canvas: Canvas, position: Pair<Int, Int>, cellWidth: Float, cellHeight: Float) {
+        // Configurar pinturas
+        val itemPaint = Paint().apply {
+            color = Color.rgb(255, 215, 0)  // Color dorado para ítems
+            style = Paint.Style.FILL
+        }
+
+        val itemTextPaint = Paint().apply {
+            color = Color.BLACK
+            textSize = 20f
+            textAlign = Paint.Align.CENTER
+        }
+
+        // Calcular posición en píxeles
+        val itemX = position.first * cellWidth + cellWidth / 2
+        val itemY = position.second * cellHeight + cellHeight / 2
+
+        // Dibujar el círculo del ítem
+        canvas.drawCircle(itemX, itemY, cellWidth * 0.3f, itemPaint)
+
+        // Dibujar texto "ITEM"
+        canvas.drawText("ITEM", itemX, itemY - cellHeight * 0.5f, itemTextPaint)
+    }
+
+    /**
+     * Dibuja el zombie en el mapa
+     */
+    private fun drawZombie(canvas: Canvas, position: Pair<Int, Int>, cellWidth: Float, cellHeight: Float) {
+        // Configurar pinturas
+        val zombiePaint = Paint().apply {
+            color = Color.rgb(50, 150, 50) // Verde zombie
+            style = Paint.Style.FILL_AND_STROKE
+            strokeWidth = 3f
+        }
+
+        val zombieTextPaint = Paint().apply {
+            color = Color.WHITE
+            textSize = 30f
+            textAlign = Paint.Align.CENTER
+            setShadowLayer(3f, 0f, 0f, Color.BLACK)
+        }
+
+        // Calcular posición en píxeles
+        val zombieX = position.first * cellWidth + cellWidth / 2
+        val zombieY = position.second * cellHeight + cellHeight / 2
+
+        // Dibujar el cuerpo del zombie (más grande que un jugador normal)
+        canvas.drawCircle(zombieX, zombieY, cellWidth * 0.4f, zombiePaint)
+
+        // Dibujar texto "ZOMBIE"
+        canvas.drawText("ZOMBIE", zombieX, zombieY - cellHeight * 0.7f, zombieTextPaint)
+
+        Log.d("PlayerManager", "Zombie dibujado en posición ($zombieX, $zombieY)")
+    }
+
+// Añadir a la clase PlayerManager.kt
+
+    // Mapa para entidades especiales (zombies, ítems, etc.)
+    private val specialEntities = mutableMapOf<String, Pair<Pair<Int, Int>, String>>()
+
+    /**
+     * Actualiza la posición de una entidad especial
+     */
+    fun updateSpecialEntity(entityId: String, position: Pair<Int, Int>, map: String) {
+        specialEntities[entityId] = Pair(position, map)
+    }
+
+    /**
+     * Elimina una entidad especial
+     */
+    fun removeSpecialEntity(entityId: String) {
+        specialEntities.remove(entityId)
+    }
+
+    fun drawPlayers(canvas: Canvas, mapState: MapState) {
+        // Obtener dimensiones de una celda
+        val cellWidth = mapState.backgroundBitmap?.width?.div(MapMatrixProvider.MAP_WIDTH.toFloat()) ?: return
+        val cellHeight = mapState.backgroundBitmap?.height?.div(MapMatrixProvider.MAP_HEIGHT.toFloat()) ?: return
+
+        // Log para depuración
+        Log.d("PlayerManager", "Dibujando jugadores en mapa: $currentMap")
+        Log.d("PlayerManager", "Total jugadores: ${remotePlayerPositions.size}, Entidades especiales: ${specialEntities.size}")
+
+        // PASO 1: Dibujar jugadores regulares
+        val playersToDraw = remotePlayerPositions.entries
+            .filter { it.value.map == currentMap }
+
+        Log.d("PlayerManager", "Jugadores en mapa actual: ${playersToDraw.size}")
+
+        // Dibujar cada jugador
+        playersToDraw.forEach { (id, info) ->
+            val paint = if (id == localPlayerId) paintLocalPlayer else paintRemotePlayer
+            val label = if (id == localPlayerId) "Tú" else id
+            drawPlayer(canvas, info.position, label, paint, cellWidth, cellHeight)  // Descomentar esta línea
+            Log.d("PlayerManager", "Dibujado jugador $id en posición ${info.position}")
+        }
+
+        // PASO 2: Dibujar entidades especiales
+        if (specialEntities.isNotEmpty()) {
+            Log.d("PlayerManager", "Dibujando ${specialEntities.size} entidades especiales")
+
+            // Dibujar entidades especiales que están en el mapa actual
+            specialEntities.forEach { (entityId, info) ->
+                val (position, entityMap) = info
+
+                // Solo dibujar si está en el mapa actual
+                if (entityMap == currentMap) {
+                    Log.d("PlayerManager", "Dibujando entidad $entityId en posición $position")
+
+                    when {
+                        entityId == "zombie" -> drawZombie(canvas, position, cellWidth, cellHeight)
+                        entityId.startsWith("item_") -> drawItem(canvas, position, cellWidth, cellHeight)
+                    }
+                }
+            }
+        } else {
+            Log.d("PlayerManager", "No hay entidades especiales para dibujar")
+        }
+    }
+
     private fun drawPlayer(canvas: Canvas, position: Pair<Int, Int>, playerId: String, paint: Paint, cellWidth: Float, cellHeight: Float) {
         val playerX = position.first * cellWidth + cellWidth / 2
         val playerY = position.second * cellHeight + cellHeight / 2
+
+        // Dibujar el círculo del jugador
         canvas.drawCircle(playerX, playerY, cellWidth / 3f, paint)
+
+        // Dibujar el nombre del jugador
         canvas.drawText(
             playerId,
             playerX,
             playerY - cellHeight / 2,
             paintText
         )
+
+        Log.d("PlayerManager", "Jugador $playerId dibujado en posición ($playerX, $playerY)")
     }
-
-    fun drawPlayers(canvas: Canvas, mapState: MapState) {
-        val cellWidth = mapState.backgroundBitmap?.width?.div(MapMatrixProvider.MAP_WIDTH.toFloat()) ?: return
-        val cellHeight = mapState.backgroundBitmap?.height?.div(MapMatrixProvider.MAP_HEIGHT.toFloat()) ?: return
-
-        Log.d("PlayerManager", "Drawing players in map: $currentMap")
-        Log.d("PlayerManager", "Total remote players: ${remotePlayerPositions.size}")
-
-        // Solo dibujar los jugadores que están en el mapa actual
-        val playersToDraw = remotePlayerPositions.entries
-            .filter { it.value.map == currentMap }
-
-        Log.d("PlayerManager", "Players in current map: ${playersToDraw.size}")
-
-        playersToDraw.forEach { (id, info) ->
-            val paint = if (id == localPlayerId) paintLocalPlayer else paintRemotePlayer
-            val label = if (id == localPlayerId) "Tú" else id
-            drawPlayer(canvas, info.position, label, paint, cellWidth, cellHeight)
-            Log.d("PlayerManager", "Drew player $id at position ${info.position}")
-        }
-    }
-
     // Método para actualizar el mapa actual
     fun setCurrentMap(map: String) {
         if (currentMap != map) {
@@ -164,6 +269,16 @@ class PlayerManager {
             }
         } catch (e: Exception) {
             Log.e("PlayerManager", "Error processing WebSocket message", e)
+        }
+    }
+
+    fun getSpecialEntitiesCount(): Int {
+        return specialEntities.size
+    }
+
+    fun logSpecialEntities() {
+        specialEntities.forEach { (id, info) ->
+            Log.d("PlayerManager", "Entidad especial: $id en posición ${info.first}, mapa ${info.second}")
         }
     }
 }

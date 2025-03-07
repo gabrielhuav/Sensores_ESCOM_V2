@@ -55,4 +55,54 @@ class MovementManager(
             onPositionUpdate(localPlayerPosition)
         }
     }
+    // Método para añadir a la clase MovementManager
+// Agregar estas funciones después de las existentes en MovementManager.kt
+
+    /**
+     * Lista de tareas programadas
+     */
+    private val scheduledTasks = mutableListOf<Pair<Runnable, Long>>()
+
+    /**
+     * Programa una acción para ser ejecutada después de un tiempo
+     *
+     * @param delayMs Tiempo en milisegundos antes de ejecutar la acción
+     * @param action Acción a ejecutar
+     * @return Runnable que puede ser cancelado posteriormente
+     */
+    fun scheduleDelayedAction(delayMs: Long, action: () -> Unit): Runnable {
+        val runnable = Runnable { action() }
+        handler.postDelayed(runnable, delayMs)
+
+        val taskPair = Pair(runnable, System.currentTimeMillis() + delayMs)
+        scheduledTasks.add(taskPair)
+
+        return runnable
+    }
+
+    /**
+     * Cancela una acción programada
+     */
+    fun cancelScheduledAction(runnable: Runnable) {
+        handler.removeCallbacks(runnable)
+        scheduledTasks.removeIf { it.first == runnable }
+    }
+
+    /**
+     * Cancela todas las acciones programadas
+     */
+    fun cancelAllScheduledActions() {
+        scheduledTasks.forEach { (runnable, _) ->
+            handler.removeCallbacks(runnable)
+        }
+        scheduledTasks.clear()
+    }
+
+    /**
+     * Sobrecarga de stopMovement para limpiar también acciones programadas
+     */
+    fun stopMovementAndCancelActions() {
+        stopMovement()
+        cancelAllScheduledActions()
+    }
 }

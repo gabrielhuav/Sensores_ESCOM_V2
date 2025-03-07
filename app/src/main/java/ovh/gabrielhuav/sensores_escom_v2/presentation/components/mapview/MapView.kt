@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.res.Configuration
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
 import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
@@ -368,5 +370,88 @@ class MapView @JvmOverloads constructor(
 
     fun setBluetoothServerMode(isServer: Boolean) {
         isBluetoothServer = isServer
+    }
+// Método para añadir a la clase MapView
+// Agregar estas funciones después de las existentes en MapView.kt
+
+    /**
+     * Mapa para entidades especiales como enemigos, ítems, etc.
+     * Key: ID de la entidad
+     * Value: Pair<Pair<Int, Int>, String> (posición, mapa)
+     */
+    private val specialEntities = mutableMapOf<String, Pair<Pair<Int, Int>, String>>()
+
+    fun updateSpecialEntity(entityId: String, position: Pair<Int, Int>, map: String) {
+        // Actualizar en PlayerManager (esta es la fuente de verdad)
+        playerManager.updateSpecialEntity(entityId, position, map)
+
+        // No necesitamos mantener una copia local aquí
+        // specialEntities[entityId] = Pair(position, map) <- QUITAR ESTA LÍNEA
+
+        Log.d("MapView", "Entidad especial actualizada: $entityId en posición $position, mapa $map")
+        invalidate() // Forzar un redibujado para mostrar el cambio
+    }
+
+    fun removeSpecialEntity(entityId: String) {
+        specialEntities.remove(entityId)
+    }
+
+
+    /**
+     * Método para dibujar entidades especiales
+     * Este método debería ser llamado desde onDraw en PlayerManager
+     */
+    fun drawSpecialEntities(canvas: Canvas, cellWidth: Float, cellHeight: Float) {
+        val currentMapId = playerManager.getCurrentMap()
+
+        // Configurar pinturas para diferentes tipos de entidades
+        val zombiePaint = Paint().apply {
+            color = Color.rgb(0, 100, 0)  // Verde oscuro para zombies
+            style = Paint.Style.FILL
+        }
+
+        val itemPaint = Paint().apply {
+            color = Color.rgb(255, 215, 0)  // Dorado para ítems
+            style = Paint.Style.FILL
+        }
+
+        val textPaint = Paint().apply {
+            color = Color.WHITE
+            textSize = 30f
+            textAlign = Paint.Align.CENTER
+            setShadowLayer(3f, 0f, 0f, Color.BLACK)
+        }
+
+        // Dibujar cada entidad especial que esté en el mapa actual
+        specialEntities.forEach { (entityId, info) ->
+            val (position, entityMap) = info
+
+            // Solo dibujar entidades que estén en el mapa actual
+            if (entityMap == currentMapId) {
+                val entityX = position.first * cellWidth + cellWidth / 2
+                val entityY = position.second * cellHeight + cellHeight / 2
+
+                // Determinar qué tipo de entidad es por su ID
+                when {
+                    entityId == "zombie" -> {
+                        // Dibujar un zombie (círculo verde más grande)
+                        canvas.drawCircle(entityX, entityY, cellWidth * 0.4f, zombiePaint)
+                        canvas.drawText("ZOMBIE", entityX, entityY - cellHeight * 0.7f, textPaint)
+                    }
+                    entityId.startsWith("item_") -> {
+                        // Dibujar un ítem (estrella dorada)
+                        canvas.drawCircle(entityX, entityY, cellWidth * 0.3f, itemPaint)
+                        canvas.drawText("ITEM", entityX, entityY - cellHeight * 0.5f, textPaint)
+                    }
+                    // Añadir más tipos según sea necesario
+                }
+            }
+        }
+    }
+
+    fun debugSpecialEntities() {
+        val specialEntitiesCount = playerManager.getSpecialEntitiesCount()
+        Log.d("MapView", "Entidades especiales registradas: $specialEntitiesCount")
+        playerManager.logSpecialEntities()
     }
 }
