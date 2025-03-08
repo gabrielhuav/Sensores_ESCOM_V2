@@ -62,9 +62,24 @@ class PlayerManager {
     }
 
     fun updateRemotePlayerPosition(playerId: String, position: Pair<Int, Int>, receivedMap: String) {
-        // Usar el mapa recibido
-        remotePlayerPositions[playerId] = PlayerInfo(position, receivedMap)
-        Log.d("PlayerManager", "Updated player $playerId position: $position in map: $receivedMap")
+        // Normalizar el nombre del mapa
+        val normalizedMap = MapMatrixProvider.normalizeMapName(receivedMap)
+
+        // Usar el mapa normalizado
+        remotePlayerPositions[playerId] = PlayerInfo(position, normalizedMap)
+        Log.d("PlayerManager", "Updated player $playerId position: $position in normalized map: $normalizedMap (original: $receivedMap)")
+    }
+
+    private fun normalizeMapId(mapId: String): String {
+        // Casos específicos conocidos
+        return when {
+            mapId.contains("cafeteria") -> MapMatrixProvider.MAP_CAFETERIA
+            mapId.contains("salon2009") -> MapMatrixProvider.MAP_SALON2009
+            mapId.contains("salon2010") -> MapMatrixProvider.MAP_SALON2010
+            mapId.contains("building2") -> MapMatrixProvider.MAP_BUILDING2
+            mapId.contains("main") -> MapMatrixProvider.MAP_MAIN
+            else -> mapId
+        }
     }
 
 
@@ -142,26 +157,40 @@ class PlayerManager {
         specialEntities.remove(entityId)
     }
 
+// Modificación para PlayerManager.kt en el método drawPlayers
+
     fun drawPlayers(canvas: Canvas, mapState: MapState) {
         // Obtener dimensiones de una celda
         val cellWidth = mapState.backgroundBitmap?.width?.div(MapMatrixProvider.MAP_WIDTH.toFloat()) ?: return
         val cellHeight = mapState.backgroundBitmap?.height?.div(MapMatrixProvider.MAP_HEIGHT.toFloat()) ?: return
 
-        // Log para depuración
+        // Log para depuración con información más detallada
         Log.d("PlayerManager", "Dibujando jugadores en mapa: $currentMap")
-        Log.d("PlayerManager", "Total jugadores: ${remotePlayerPositions.size}, Entidades especiales: ${specialEntities.size}")
+        Log.d("PlayerManager", "Total jugadores en memoria: ${remotePlayerPositions.size}")
 
-        // PASO 1: Dibujar jugadores regulares
+        // Filtrar jugadores que están en el mismo mapa
+        val normalizedCurrentMap = MapMatrixProvider.normalizeMapName(currentMap)
+
+        // Listar todos los jugadores para depuración
+        remotePlayerPositions.forEach { (id, info) ->
+            val normalizedPlayerMap = MapMatrixProvider.normalizeMapName(info.map)
+            Log.d("PlayerManager", "Jugador $id está en mapa ${info.map} (normalizado: $normalizedPlayerMap)")
+        }
+
+        // Filtrar jugadores para mostrar solo los que están en este mapa
         val playersToDraw = remotePlayerPositions.entries
-            .filter { it.value.map == currentMap }
+            .filter {
+                val normalizedPlayerMap = MapMatrixProvider.normalizeMapName(it.value.map)
+                normalizedPlayerMap == normalizedCurrentMap
+            }
 
-        Log.d("PlayerManager", "Jugadores en mapa actual: ${playersToDraw.size}")
+        Log.d("PlayerManager", "Jugadores a dibujar: ${playersToDraw.size} en mapa normalizado: $normalizedCurrentMap")
 
-        // Dibujar cada jugador
+        // Dibujar cada jugador filtrado
         playersToDraw.forEach { (id, info) ->
             val paint = if (id == localPlayerId) paintLocalPlayer else paintRemotePlayer
             val label = if (id == localPlayerId) "Tú" else id
-            drawPlayer(canvas, info.position, label, paint, cellWidth, cellHeight)  // Descomentar esta línea
+            drawPlayer(canvas, info.position, label, paint, cellWidth, cellHeight)
             Log.d("PlayerManager", "Dibujado jugador $id en posición ${info.position}")
         }
 
@@ -183,8 +212,6 @@ class PlayerManager {
                     }
                 }
             }
-        } else {
-            Log.d("PlayerManager", "No hay entidades especiales para dibujar")
         }
     }
 
@@ -205,14 +232,16 @@ class PlayerManager {
 
         Log.d("PlayerManager", "Jugador $playerId dibujado en posición ($playerX, $playerY)")
     }
-    // Método para actualizar el mapa actual
+
+    // Actualiza este método para mejorar la depuración
     fun setCurrentMap(map: String) {
         if (currentMap != map) {
-            Log.d("PlayerManager", "Current map changed from $currentMap to $map")
+            Log.d("PlayerManager", "⚠️ Current map changed from $currentMap to $map")
             currentMap = map
             // Actualizar la posición del jugador local en el nuevo mapa
             localPlayerPosition?.let { pos ->
                 remotePlayerPositions[localPlayerId] = PlayerInfo(pos, map)
+                Log.d("PlayerManager", "Actualizando posición del jugador local en nuevo mapa: $pos")
             }
         }
     }
@@ -238,11 +267,21 @@ class PlayerManager {
                         jsonObject.getInt("x"),
                         jsonObject.getInt("y")
                     )
-                    val receivedMap = jsonObject.getString("map")
 
-                    // Actualizar sin importar el mapa
-                    remotePlayerPositions[playerId] = PlayerInfo(position, receivedMap)
-                    Log.d("PlayerManager", "Updated remote player $playerId: pos=$position, map=$receivedMap")
+                    // Obtener el mapa y normalizarlo
+                    val receivedMap = if (jsonObject.has("map")) {
+                        jsonObject.getString("map")
+                    } else if (jsonObject.has("currentmap")) {
+                        jsonObject.getString("currentmap")
+                    } else {
+                        MapMatrixProvider.MAP_MAIN // Valor predeterminado
+                    }
+
+                    val normalizedMap = MapMatrixProvider.normalizeMapName(receivedMap)
+
+                    // Actualizar con el mapa normalizado
+                    remotePlayerPositions[playerId] = PlayerInfo(position, normalizedMap)
+                    Log.d("PlayerManager", "Updated from update: player=$playerId, pos=$position, map=$normalizedMap (original: $receivedMap)")
                 }
                 "positions" -> {
                     val players = jsonObject.getJSONObject("players")
@@ -253,9 +292,20 @@ class PlayerManager {
                                 playerData.getInt("x"),
                                 playerData.getInt("y")
                             )
-                            val playerMap = playerData.getString("map")
-                            remotePlayerPositions[playerId] = PlayerInfo(position, playerMap)
-                            Log.d("PlayerManager", "Updated player $playerId from positions update: map=$playerMap")
+
+                            // Obtener y normalizar el mapa
+                            val receivedMap = if (playerData.has("map")) {
+                                playerData.getString("map")
+                            } else if (playerData.has("currentmap")) {
+                                playerData.getString("currentmap")
+                            } else {
+                                playerData.optString("currentMap", MapMatrixProvider.MAP_MAIN)
+                            }
+
+                            val normalizedMap = MapMatrixProvider.normalizeMapName(receivedMap)
+
+                            remotePlayerPositions[playerId] = PlayerInfo(position, normalizedMap)
+                            Log.d("PlayerManager", "Updated from positions: player=$playerId, map=$normalizedMap (original: $receivedMap)")
                         }
                     }
                 }

@@ -51,6 +51,17 @@ class UIManager(
         }
     }
 
+    // Método para cuando el usuario activa manualmente el Bluetooth después
+    fun onBluetoothEnabled() {
+        mainHandler.post {
+            btnStartServer.text = "B1"
+            btnStartServer.alpha = 1.0f
+            btnStartServer.isEnabled = true
+
+            tvBluetoothStatus.text = "Bluetooth activado - Listo para usar"
+        }
+    }
+
     fun setupInteractionButton(
         playerPosition: () -> Pair<Int, Int>,
         onInteract: (Int, Int) -> Unit
@@ -79,15 +90,40 @@ class UIManager(
         }
     }
 
+    fun configureForOnlineOnlyMode() {
+        mainHandler.post {
+            // Hacer que el botón de servidor indique que se puede activar Bluetooth
+            btnStartServer.text = "BT Off"
+            btnStartServer.alpha = 0.5f
+
+            // Ocultar botón de conectar dispositivo si no es relevante
+            btnConnectDevice.visibility = View.GONE
+
+            // Actualizar el texto de estado
+            tvBluetoothStatus.text = "Modo online - Bluetooth desactivado"
+        }
+    }
+
     fun showToast(message: String) {
         // Los Toast ya se manejan internamente en el hilo principal
         Toast.makeText(rootView.context, message, Toast.LENGTH_SHORT).show()
     }
 
-    fun updateBluetoothStatus(status: String) {
+    fun updateBluetoothStatus(status: String, isBluetoothEnabled: Boolean = true) {
         // Asegurarse de que esta actualización de UI siempre ocurra en el hilo principal
         mainHandler.post {
             tvBluetoothStatus.text = status
+
+            // Actualizar la apariencia del botón de servidor según el estado del Bluetooth
+            if (!isBluetoothEnabled) {
+                btnStartServer.alpha = 0.5f  // Hacer el botón semitransparente si Bluetooth está apagado
+                btnStartServer.isEnabled = false
+                btnStartServer.text = "BT Off"
+            } else {
+                btnStartServer.alpha = 1.0f  // Botón normal si Bluetooth está encendido
+                btnStartServer.isEnabled = true
+                btnStartServer.text = "B1"
+            }
         }
     }
 }

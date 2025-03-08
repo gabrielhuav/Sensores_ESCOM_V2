@@ -11,7 +11,7 @@ class ServerConnectionManager(
     private val context: Context,
     val onlineServerManager: OnlineServerManager
 ) {
-    private val serverUrl = "ws://8.12.0.24:3000"
+    private val serverUrl = "ws://10.3.56.25:3000"
     private var isConnecting = false
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -66,18 +66,20 @@ class ServerConnectionManager(
 
     fun sendUpdateMessage(playerId: String, position: Pair<Int, Int>, map: String) {
         try {
+            // Asegúrate de que 'map' tiene un valor válido
+            val mapToSend = if (map.isBlank()) MapMatrixProvider.MAP_MAIN else map
+
             onlineServerManager.sendUpdateMessage(
                 playerId = playerId,
                 x = position.first,
                 y = position.second,
-                map = map
+                map = mapToSend
             )
-            Log.d(TAG, "Mensaje de actualización enviado: Player=$playerId, Pos=$position")
+            Log.d(TAG, "Mensaje de actualización enviado: Player=$playerId, Pos=$position, Map=$mapToSend")
         } catch (e: Exception) {
             Log.e(TAG, "Error al enviar actualización: ${e.message}")
         }
     }
-
     fun disconnect() {
         onlineServerManager.disconnectFromServer()
     }

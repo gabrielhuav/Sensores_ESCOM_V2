@@ -74,7 +74,8 @@ class Cafeteria : AppCompatActivity(),
             // Esperar a que el mapView esté listo
             mapView.post {
                 // Configurar el mapa para la cafe de la ESCOM
-                mapView.setCurrentMap(MapMatrixProvider.MAP_CAFETERIA, R.drawable.escom_cafeteria)
+                val normalizedMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_BUILDING2)
+                mapView.setCurrentMap(normalizedMap, R.drawable.escom_cafeteria)
 
                 // Configurar el playerManager
                 mapView.playerManager.apply {
@@ -624,44 +625,44 @@ class Cafeteria : AppCompatActivity(),
                 val jsonObject = JSONObject(message)
 
                 when (jsonObject.getString("type")) {
-                    "positions" -> {
-                        // Código existente para manejar posiciones...
-                    }
                     "update" -> {
-                        // Código existente para manejar actualizaciones...
-                    }
-                    "join" -> {
-                        // Código existente para manejar uniones...
-                    }
-                    "zombie_position" -> {
-                        // Manejo de la posición del zombie
-                        val x = jsonObject.getInt("x")
-                        val y = jsonObject.getInt("y")
-                        val zombiePosition = Pair(x, y)
+                        val playerId = jsonObject.getString("id")
+                        if (playerId != playerName) {
+                            val position = Pair(
+                                jsonObject.getInt("x"),
+                                jsonObject.getInt("y")
+                            )
+                            val map = jsonObject.getString("map")
 
-                        Log.d(TAG, "¡Recibida posición de zombie en ($x, $y)!")
+                            // IMPORTANTE: Loggear para depuración
+                            Log.d(TAG, "Jugador remoto $playerId en mapa '$map', mapa actual es '${MapMatrixProvider.MAP_CAFETERIA}'")
 
-                        // Actualizar la posición del zombie en el controlador
-                        if (this::zombieController.isInitialized) {
-                            zombieController.setZombiePosition(zombiePosition)
+                            // Corregir posible inconsistencia en el nombre del mapa
+                            val normalizedMap = normalizeMapId(map)
+
+                            // Actualizar posición usando el ID normalizado
+                            mapView.updateRemotePlayerPosition(playerId, position, normalizedMap)
                         }
-
-                        // IMPORTANTE: Actualizar la entidad especial en el mapa
-                        mapView.updateSpecialEntity("zombie", zombiePosition, MapMatrixProvider.MAP_CAFETERIA)
-                        mapView.invalidate() // Forzar redibujado
                     }
-                    "zombie_game_command" -> {
-                        // Código existente para manejar comandos del juego zombie...
-                    }
-                    // Otros casos...
+                    // Resto del código...
                 }
-                mapView.invalidate()
             } catch (e: Exception) {
                 Log.e(TAG, "Error processing message: ${e.message}")
             }
         }
     }
 
+    private fun normalizeMapId(mapId: String): String {
+        // Casos específicos conocidos
+        return when {
+            mapId.contains("cafeteria") -> MapMatrixProvider.MAP_CAFETERIA
+            mapId.contains("salon2009") -> MapMatrixProvider.MAP_SALON2009
+            mapId.contains("salon2010") -> MapMatrixProvider.MAP_SALON2010
+            mapId.contains("building2") -> MapMatrixProvider.MAP_BUILDING2
+            mapId.contains("main") -> MapMatrixProvider.MAP_MAIN
+            else -> mapId
+        }
+    }
 
 
     private fun updateBluetoothStatus(status: String) {

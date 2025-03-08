@@ -28,6 +28,22 @@ class MapMatrixProvider {
         const val MAP_SALON2010 = "escom_salon2010"
         const val MAP_CAFETERIA = "escom_cafeteria"
 
+        fun normalizeMapName(mapName: String?): String {
+            if (mapName.isNullOrBlank()) return MAP_MAIN
+
+            val lowerMap = mapName.toLowerCase()
+
+            return when {
+                lowerMap == "main" -> MAP_MAIN
+                lowerMap == "map_main" -> MAP_MAIN
+                lowerMap.contains("main") && !lowerMap.contains("building") -> MAP_MAIN
+                lowerMap.contains("cafe") -> MAP_CAFETERIA
+                lowerMap.contains("building2") || lowerMap.contains("edificio2") -> MAP_BUILDING2
+                lowerMap.contains("2009") -> MAP_SALON2009
+                lowerMap.contains("2010") -> MAP_SALON2010
+                else -> mapName
+            }
+        }
 
         // Puntos de transición entre mapas
         val MAIN_TO_BUILDING2_POSITION = Pair(15, 10)

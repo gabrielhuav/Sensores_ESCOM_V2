@@ -58,13 +58,21 @@ class BluetoothManager private constructor(
         this.callback = callback
     }
 
-    fun checkBluetoothSupport(enableBluetoothLauncher: ActivityResultLauncher<Intent>) {
+    // Actualizar método checkBluetoothSupport para ser consistente
+    fun checkBluetoothSupport(enableBluetoothLauncher: ActivityResultLauncher<Intent>?, forceEnable: Boolean = true) {
         if (bluetoothAdapter == null) {
             showToast("Bluetooth no está disponible en este dispositivo.")
             return
         }
+
         if (!bluetoothAdapter!!.isEnabled) {
-            requestEnableBluetooth(enableBluetoothLauncher)
+            if (forceEnable && enableBluetoothLauncher != null) {
+                // Solo solicitamos activar el Bluetooth si se requiere forzosamente
+                requestEnableBluetooth(enableBluetoothLauncher)
+            } else {
+                // Si no es obligatorio, solo mostramos un mensaje informativo
+                updateStatus("Bluetooth está desactivado. Algunas funciones no estarán disponibles.")
+            }
         } else {
             checkPermissions()
         }
@@ -76,6 +84,12 @@ class BluetoothManager private constructor(
     }
 
     fun startServer() {
+        if (!bluetoothAdapter?.isEnabled!!) {
+            showToast("El Bluetooth está desactivado. Por favor actívelo para iniciar el servidor.")
+            updateStatus("Bluetooth desactivado. No se puede iniciar el servidor.")
+            return
+        }
+
         if (!hasRequiredPermissions()) {
             showToast("Se requieren permisos de Bluetooth")
             return
@@ -97,6 +111,12 @@ class BluetoothManager private constructor(
     }
 
     fun connectToDevice(device: BluetoothDevice) {
+        if (!bluetoothAdapter?.isEnabled!!) {
+            showToast("El Bluetooth está desactivado. Por favor actívelo para conectarse.")
+            updateStatus("Bluetooth desactivado. No se puede conectar al dispositivo.")
+            return
+        }
+
         if (!hasRequiredPermissions()) {
             showToast("Se requieren permisos de Bluetooth")
             return
@@ -120,6 +140,11 @@ class BluetoothManager private constructor(
             Log.e(TAG, "Error connecting to device: ${e.message}")
             handleError("Error al conectar: ${e.message}")
         }
+    }
+
+    // Añadir un método para verificar si Bluetooth está activado
+    fun isBluetoothEnabled(): Boolean {
+        return bluetoothAdapter?.isEnabled == true
     }
 
     private fun createConnectionListener(): BluetoothGameManager.ConnectionListener {

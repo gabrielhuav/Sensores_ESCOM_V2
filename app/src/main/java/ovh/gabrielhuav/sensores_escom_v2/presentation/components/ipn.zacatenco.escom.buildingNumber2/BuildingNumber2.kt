@@ -78,16 +78,17 @@ class BuildingNumber2 : AppCompatActivity(),
             // Esperar a que el mapView esté listo
             mapView.post {
                 // Configurar el mapa
-                mapView.setCurrentMap(MapMatrixProvider.MAP_BUILDING2, R.drawable.escom_edificio2)
+                val normalizedMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_BUILDING2)
+                mapView.setCurrentMap(normalizedMap, R.drawable.escom_edificio2)
 
                 // Después configurar el playerManager
                 mapView.playerManager.apply {
-                    setCurrentMap(MapMatrixProvider.MAP_BUILDING2)
+                    setCurrentMap(normalizedMap)
                     localPlayerId = playerName
                     updateLocalPlayerPosition(gameState.playerPosition)
                 }
 
-                Log.d("BuildingNumber2", "Set map to: " + MapMatrixProvider.MAP_BUILDING2)
+                Log.d("BuildingNumber2", "Set map to: $normalizedMap")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error en onCreate: ${e.message}")
@@ -253,14 +254,16 @@ class BuildingNumber2 : AppCompatActivity(),
     private fun setupInitialConfiguration() {
         setupRole()
         setupButtonListeners()
-        bluetoothManager.checkBluetoothSupport(enableBluetoothLauncher)
+
+        // Usamos checkBluetoothSupport con false para no forzar activación
+        bluetoothManager.checkBluetoothSupport(enableBluetoothLauncher, false)
     }
 
     private fun setupRole() {
         if (gameState.isServer) {
             setupServerFlow()
         } else {
-            setupClientFlow()
+            setupClientFlow(false) // Pasamos false para indicar que no forzamos Bluetooth
         }
     }
 
@@ -274,19 +277,24 @@ class BuildingNumber2 : AppCompatActivity(),
                     // Solicitar posiciones actuales
                     requestPositionsUpdate()
                 }
-                uiManager.updateBluetoothStatus("Conectado al servidor online. Puede iniciar servidor Bluetooth.")
-                uiManager.btnStartServer.isEnabled = true
+                uiManager.updateBluetoothStatus("Conectado al servidor online. Puede iniciar servidor Bluetooth si lo desea.")
+                uiManager.btnStartServer.isEnabled = bluetoothManager.isBluetoothEnabled()
             } else {
                 uiManager.updateBluetoothStatus("Error al conectar al servidor online.")
             }
         }
     }
 
-    private fun setupClientFlow() {
+    private fun setupClientFlow(forceBluetooth: Boolean = true) {
         val selectedDevice = intent.getParcelableExtra<BluetoothDevice>("SELECTED_DEVICE")
         selectedDevice?.let { device ->
-            bluetoothManager.connectToDevice(device)
-            mapView.setBluetoothServerMode(false)
+            if (bluetoothManager.isBluetoothEnabled() || forceBluetooth) {
+                bluetoothManager.connectToDevice(device)
+                mapView.setBluetoothServerMode(false)
+            } else {
+                // Si Bluetooth está desactivado y no forzamos, solo informamos
+                uiManager.updateBluetoothStatus("Bluetooth desactivado. Las funciones Bluetooth no estarán disponibles.")
+            }
         }
     }
 

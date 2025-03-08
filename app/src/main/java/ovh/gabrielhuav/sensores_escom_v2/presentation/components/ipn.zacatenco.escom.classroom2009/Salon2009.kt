@@ -60,7 +60,8 @@ class Salon2009 : AppCompatActivity(),
             // Esperar a que el mapView esté listo
             mapView.post {
                 // Configurar el mapa para el salón 2009
-                mapView.setCurrentMap(MapMatrixProvider.MAP_SALON2009, R.drawable.escom_salon2009)
+                val normalizedMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_SALON2009)
+                mapView.setCurrentMap(normalizedMap, R.drawable.escom_salon2009)
 
                 // Configurar el playerManager
                 mapView.playerManager.apply {
