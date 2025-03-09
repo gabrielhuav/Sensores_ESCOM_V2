@@ -216,3 +216,334 @@ process.on('uncaughtException', (error) => {
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
+
+// Estado del zombie
+const zombieState = {
+    position: { x: 30, y: 30 },
+    target: null,
+    isActive: false,
+    updateInterval: 1000,
+    currentMap: "escom_cafeteria",
+    difficulty: 1
+};
+
+function initializeZombieState() {
+    zombieState.position = { x: 30, y: 30 };
+    zombieState.isActive = false;
+    zombieState.updateInterval = 1000;
+    zombieState.currentMap = "escom_cafeteria";
+    zombieState.difficulty = 1;
+    zombieState.target = null;
+    console.log("Estado del zombie inicializado:", zombieState);
+}
+
+// Intervalo de actualización del zombie
+let zombieUpdateInterval = null;
+
+// Función para iniciar el minijuego del zombie
+function startZombieGame(difficulty = 1) {
+    zombieState.isActive = true;
+    zombieState.difficulty = difficulty;
+    zombieState.position = { x: 30, y: 30 };
+    
+    // Ajustar velocidad según dificultad
+    zombieState.updateInterval = difficulty === 1 ? 1200 : (difficulty === 2 ? 800 : 500);
+    
+    // Notificar a todos los clientes que el juego ha iniciado
+    broadcast({
+        type: "zombie_game_command",
+        command: "start",
+        difficulty: difficulty
+    });
+    
+    // AÑADIR: Enviar posición inicial del zombie a todos los clientes
+    broadcast({
+        type: "zombie_position",
+        x: zombieState.position.x,
+        y: zombieState.position.y,
+        map: zombieState.currentMap
+    });
+    
+    // Iniciar la actualización periódica del zombie
+    startZombieUpdates();
+    
+    console.log(`Minijuego zombie iniciado con dificultad ${difficulty}`);
+    console.log(`Posición inicial del zombie: (${zombieState.position.x}, ${zombieState.position.y})`);
+}
+
+
+// Función para detener el minijuego del zombie
+function stopZombieGame() {
+    zombieState.isActive = false;
+    
+    // Detener la actualización periódica
+    if (zombieUpdateInterval) {
+        clearInterval(zombieUpdateInterval);
+        zombieUpdateInterval = null;
+    }
+    
+    // Notificar a todos los clientes que el juego ha terminado
+    broadcast({
+        type: "zombie_game_command",
+        command: "stop"
+    });
+    
+    console.log("Minijuego zombie detenido");
+}
+
+// Función para iniciar las actualizaciones periódicas del zombie
+function startZombieUpdates() {
+    // Detener intervalo existente si hay
+    if (zombieUpdateInterval) {
+        clearInterval(zombieUpdateInterval);
+    }
+    
+    // Crear nuevo intervalo
+    zombieUpdateInterval = setInterval(() => {
+        if (zombieState.isActive) {
+            updateZombiePosition();
+        } else {
+            clearInterval(zombieUpdateInterval);
+            zombieUpdateInterval = null;
+        }
+    }, zombieState.updateInterval);
+}
+
+// Función para actualizar la posición del zombie
+function updateZombiePosition() {
+    if (!zombieState.isActive) return;
+    
+    // Buscar jugadores en la cafetería para perseguir
+    const playersInCafeteria = Object.entries(players).filter(([id, data]) => {
+        return data.currentMap === "escom_cafeteria";
+    });
+    
+    console.log(`Zombie update - Players in cafeteria: ${playersInCafeteria.length}`);
+    
+    if (playersInCafeteria.length > 0) {
+        // Seleccionar un jugador aleatorio como objetivo si no hay uno definido
+        if (!zombieState.target || Math.random() < 0.1) { // 10% de probabilidad de cambiar de objetivo
+            const randomIndex = Math.floor(Math.random() * playersInCafeteria.length);
+            zombieState.target = playersInCafeteria[randomIndex][0];
+        }
+        
+        // Obtener posición del jugador objetivo
+        const targetPlayer = players[zombieState.target];
+        if (targetPlayer) {
+            // Mover hacia el jugador
+            const currentX = zombieState.position.x;
+            const currentY = zombieState.position.y;
+            const targetX = targetPlayer.x;
+            const targetY = targetPlayer.y;
+            
+            // Calcular dirección
+            const moveX = currentX < targetX ? 1 : (currentX > targetX ? -1 : 0);
+            const moveY = currentY < targetY ? 1 : (currentY > targetY ? -1 : 0);
+            
+            // En dificultades más altas, el zombie puede moverse en diagonal
+            if (zombieState.difficulty >= 2 && Math.random() > 0.3) {
+                // Movimiento en ambas direcciones (diagonal)
+                zombieState.position.x += moveX;
+                zombieState.position.y += moveY;
+            } else {
+                // Movimiento en una sola dirección (horizontal o vertical)
+                if (Math.random() > 0.5 && moveX !== 0) {
+                    zombieState.position.x += moveX;
+                } else if (moveY !== 0) {
+                    zombieState.position.y += moveY;
+                }
+            }
+
+            // Asegurarse que el mensaje se está enviando correctamente
+            const zombieUpdateMessage = {
+                type: "zombie_position",
+                x: zombieState.position.x,
+                y: zombieState.position.y,
+                map: zombieState.currentMap
+            };
+            
+            console.log("Enviando mensaje zombie:", JSON.stringify(zombieUpdateMessage));
+            broadcast(zombieUpdateMessage);
+            
+            // Limitar a los límites del mapa
+            zombieState.position.x = Math.max(0, Math.min(39, zombieState.position.x));
+            zombieState.position.y = Math.max(0, Math.min(39, zombieState.position.y));
+            
+            // Enviar actualización a todos los clientes
+            broadcast({
+                type: "zombie_position",
+                x: zombieState.position.x,
+                y: zombieState.position.y,
+                map: zombieState.currentMap
+            });
+            
+            // Verificar si el zombie ha atrapado a algún jugador
+            checkZombieCollisions();
+        }
+    }
+}
+
+const caughtPlayers = new Set();
+
+
+// Verificar si el zombie ha atrapado a algún jugador
+function checkZombieCollisions() {
+    const catchDistance = 2; // Distancia para considerar que ha atrapado a un jugador
+    
+    Object.entries(players).forEach(([playerId, playerData]) => {
+        if (playerData.currentMap === "escom_cafeteria" && !caughtPlayers.has(playerId)) {
+            const distanceX = Math.abs(zombieState.position.x - playerData.x);
+            const distanceY = Math.abs(zombieState.position.y - playerData.y);
+            
+            if (distanceX <= catchDistance && distanceY <= catchDistance) {
+                // Añadir a la lista de atrapados para evitar mensajes duplicados
+                caughtPlayers.add(playerId);
+                
+                // Enviar mensaje al jugador que ha sido atrapado
+                broadcast({
+                    type: "zombie_game_command",
+                    command: "caught",
+                    player: playerId
+                });
+                
+                console.log(`Zombie atrapó al jugador ${playerId} en posición (${playerData.x}, ${playerData.y})`);
+                
+                // Limpiar después de un tiempo para permitir que el jugador sea atrapado de nuevo
+                setTimeout(() => {
+                    caughtPlayers.delete(playerId);
+                }, 5000);
+            }
+        }
+    });
+}
+// Procesar mensajes relacionados con el minijuego del zombie
+function processZombieGameMessages(message) {
+    if (message.type === "zombie_game_update") {
+        const action = message.action;
+        
+        switch (action) {
+            case "start":
+                if (!zombieState.isActive) {
+                    startZombieGame(1); // Dificultad inicial por defecto
+                }
+                break;
+                
+            case "stop":
+                if (zombieState.isActive) {
+                    stopZombieGame();
+                }
+                break;
+                
+            case "complete":
+                // Un jugador ha completado el minijuego
+                if (zombieState.isActive) {
+                    // Notificar a todos los clientes
+                    broadcast({
+                        type: "zombie_game_update",
+                        action: "player_result",
+                        player: message.player,
+                        survived: message.survived,
+                        time: message.time,
+                        score: message.score
+                    });
+                    
+                    console.log(`Jugador ${message.player} completó el minijuego: ${message.survived ? 'Sobrevivió' : 'Atrapado'}, Puntuación: ${message.score}`);
+                }
+                break;
+        }
+    } else if (message.type === "zombie_game_food") {
+        // Un jugador ha recogido comida
+        broadcast({
+            type: "zombie_game_food",
+            player: message.player,
+            score: message.score,
+            x: message.x,
+            y: message.y
+        });
+        
+        // Reducir velocidad del zombie temporalmente
+        const oldInterval = zombieState.updateInterval;
+        zombieState.updateInterval += 300; // Hacer que sea más lento
+        
+        // Notificar ralentización
+        broadcast({
+            type: "zombie_game_command",
+            command: "zombie_slowed",
+            player: message.player
+        });
+        
+        // Restaurar velocidad después de 3 segundos
+        setTimeout(() => {
+            zombieState.updateInterval = oldInterval;
+            
+            // Notificar a los clientes
+            broadcast({
+                type: "zombie_game_command",
+                command: "zombie_speed_normal"
+            });
+        }, 3000);
+    }
+}
+
+// Añadir procesamiento de mensajes para el minijuego zombie en la sección existente
+// Buscar la sección donde se manejan los mensajes en el switch y añadir:
+
+// En el evento "message" del WebSocket:
+wss.on("connection", (ws) => {
+    // [código existente]
+    initializeZombieState();
+    ws.on("message", (message) => {
+        try {
+            const data = JSON.parse(message);
+            // [código existente]
+            
+            // Añadir esta parte al switch para procesar mensajes del minijuego
+            switch (data.type) {
+                // [casos existentes]
+                
+                case "zombie_game_update":
+                case "zombie_game_food":
+                    processZombieGameMessages(data);
+                    break;
+            }
+            
+        } catch (error) {
+            // [código existente]
+        }
+    });
+    
+    // [código existente]
+});
+
+// Comandos administrativos para controlar el minijuego
+// Puedes agregar un endpoint REST para controlar el juego desde fuera
+
+app.post("/admin/zombie/start", (req, res) => {
+    const difficulty = req.body.difficulty || 1;
+    startZombieGame(difficulty);
+    res.json({ message: "Minijuego zombie iniciado", state: zombieState });
+});
+
+app.post("/admin/zombie/stop", (req, res) => {
+    stopZombieGame();
+    res.json({ message: "Minijuego zombie detenido", state: zombieState });
+});
+
+app.get("/admin/zombie/state", (req, res) => {
+    res.json(zombieState);
+});
+
+app.get("/admin/zombie/start-test", (req, res) => {
+    startZombieGame(1);
+    res.json({ message: "Minijuego zombie iniciado para pruebas", state: zombieState });
+});
+
+app.get("/admin/zombie/force-update", (req, res) => {
+    if (zombieState.isActive) {
+        // Forzar una actualización inmediata
+        updateZombiePosition();
+        res.json({ message: "Actualización del zombie forzada", position: zombieState.position });
+    } else {
+        res.json({ message: "El zombie no está activo actualmente" });
+    }
+});

@@ -13,39 +13,56 @@ class MapRenderer {
     private val paintBackground = Paint().apply { color = Color.WHITE }
 
     fun draw(canvas: Canvas, mapState: MapState, playerManager: PlayerManager) {
-        // Dibujar fondo blanco
-        canvas.drawColor(Color.WHITE)
+        try {
+            // Dibujar fondo blanco
+            canvas.drawColor(Color.WHITE)
 
-        mapState.backgroundBitmap?.let { bitmap ->
-            canvas.save()
+            mapState.backgroundBitmap?.let { bitmap ->
+                canvas.save()
 
-            // Aplicar transformaciones para centrado
-            val viewWidth = canvas.width.toFloat()
-            val viewHeight = canvas.height.toFloat()
-            val bitmapWidth = bitmap.width.toFloat()
-            val bitmapHeight = bitmap.height.toFloat()
+                // Paso 1: Aplicar transformaciones al canvas
+                canvas.translate(mapState.offsetX, mapState.offsetY)
+                canvas.scale(mapState.scaleFactor, mapState.scaleFactor)
 
-            // Calcular offset para centrado
-            val centerOffsetX = (viewWidth - bitmapWidth * mapState.scaleFactor) / 2
-            val centerOffsetY = (viewHeight - bitmapHeight * mapState.scaleFactor) / 2
+                // Paso 2: Dibujar la matriz del mapa PRIMERO
+                // Esto asegura que se vea debajo del bitmap
+                mapState.drawMapMatrix(canvas, bitmap.width.toFloat(), bitmap.height.toFloat())
 
-            // Aplicar transformaciones
-            canvas.translate(centerOffsetX + mapState.offsetX, centerOffsetY + mapState.offsetY)
-            canvas.scale(mapState.scaleFactor, mapState.scaleFactor)
+                // Paso 3: Dibujar el bitmap del mapa con cierta transparencia
+                // Usar transparencia para que se vea la matriz debajo
+                val alphaPaint = Paint().apply { alpha = 180 }  // 70% opaco
+                canvas.drawBitmap(bitmap, 0f, 0f, alphaPaint)
 
-            // Dibujar matriz del mapa
-            mapState.drawMapMatrix(canvas, bitmap.width.toFloat(), bitmap.height.toFloat())
+                canvas.restore()
 
-            // Dibujar el bitmap del mapa con cierta transparencia
-            val alphaPaint = Paint().apply { alpha = 128 }
-            canvas.drawBitmap(bitmap, 0f, 0f, alphaPaint)
+                // Paso 4: Dibujar jugadores (con transformaciones aplicadas nuevamente)
+                canvas.save()
+                canvas.translate(mapState.offsetX, mapState.offsetY)
+                canvas.scale(mapState.scaleFactor, mapState.scaleFactor)
 
-            // Dibujar jugadores
-            playerManager.drawPlayers(canvas, mapState)
+                // Dibujar jugadores
+                playerManager.drawPlayers(canvas, mapState)
 
-            canvas.restore()
-        } ?: run {
+                canvas.restore()
+
+                Log.d("MapRenderer", "Mapa dibujado con éxito: offset=(${mapState.offsetX},${mapState.offsetY}), scale=${mapState.scaleFactor}")
+            } ?: run {
+                drawErrorState(canvas)
+            }
+        } catch (e: Exception) {
+            Log.e("MapRenderer", "Error dibujando mapa: ${e.message}")
             drawErrorState(canvas)
+        }
+    }
+
+    // Métodos auxiliares para el dibujado de la matriz
+    fun getPaintForCellType(cellType: Int): Paint {
+        return when (cellType) {
+            MapMatrixProvider.INTERACTIVE -> paintInteractive
+            MapMatrixProvider.WALL -> paintWall
+            MapMatrixProvider.PATH -> paintPath
+            MapMatrixProvider.INACCESSIBLE -> paintInaccessible
+            else -> paintPath
         }
     }
 

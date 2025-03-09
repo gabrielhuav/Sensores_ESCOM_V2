@@ -60,7 +60,8 @@ class Salon2010 : AppCompatActivity(),
             // Esperar a que el mapView esté listo
             mapView.post {
                 // Configurar el mapa para el salón 2010
-                mapView.setCurrentMap(MapMatrixProvider.MAP_SALON2010, R.drawable.escom_salon2010)
+                val normalizedMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_SALON2010)
+                mapView.setCurrentMap(normalizedMap, R.drawable.escom_salon2010)
 
                 // Configurar el playerManager
                 mapView.playerManager.apply {
@@ -228,15 +229,15 @@ class Salon2010 : AppCompatActivity(),
     private fun updatePlayerPosition(position: Pair<Int, Int>) {
         runOnUiThread {
             gameState.playerPosition = position
+
+            // Actualizar posición del jugador y forzar centrado
             mapView.updateLocalPlayerPosition(position)
+            mapView.forceRecenterOnPlayer() // Forzar explícitamente el centrado
 
             // Enviar actualización a otros jugadores con el mapa específico
             if (gameState.isConnected) {
                 // Enviar la posición con el nombre del mapa correcto
                 serverConnectionManager.sendUpdateMessage(playerName, position, MapMatrixProvider.MAP_SALON2010)
-
-                // Log de debug para confirmar
-                Log.d(TAG, "Sending update: Player $playerName at $position in map ${MapMatrixProvider.MAP_SALON2010}")
             }
         }
     }

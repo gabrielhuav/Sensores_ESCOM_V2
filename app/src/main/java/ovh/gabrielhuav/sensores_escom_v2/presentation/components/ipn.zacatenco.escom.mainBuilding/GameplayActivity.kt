@@ -6,6 +6,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.MotionEvent
 import android.widget.FrameLayout
@@ -182,14 +184,29 @@ class GameplayActivity : AppCompatActivity(),
     private fun setupInitialConfiguration() {
         setupRole()
         setupButtonListeners()
-        bluetoothManager.checkBluetoothSupport(enableBluetoothLauncher)
+
+        // Reemplazamos la comprobación forzosa de Bluetooth por una más flexible
+        // Solo comprobamos si el usuario ha elegido ser servidor o conectarse explícitamente
+        if (gameState.isServer) {
+            // Solo verificamos Bluetooth si somos servidor
+            bluetoothManager.checkBluetoothSupport(enableBluetoothLauncher, false) // Pasamos false para no forzar
+        }
     }
 
     private fun setupRole() {
         if (gameState.isServer) {
             setupServerFlow()
         } else {
-            setupClientFlow()
+            // Comprobar si tiene un dispositivo seleccionado para conectarse
+            val selectedDevice = intent.getParcelableExtra<BluetoothDevice>("SELECTED_DEVICE")
+            if (selectedDevice != null) {
+                // Solo en este caso iniciamos la conexión Bluetooth
+                bluetoothManager.connectToDevice(selectedDevice)
+                mapView.setBluetoothServerMode(false)
+            } else {
+                // Si no hay dispositivo seleccionado, solo conectamos al servidor online
+                setupServerFlow()
+            }
         }
     }
 
@@ -203,14 +220,13 @@ class GameplayActivity : AppCompatActivity(),
                     // Solicitar posiciones actuales
                     requestPositionsUpdate()
                 }
-                uiManager.updateBluetoothStatus("Conectado al servidor online. Puede iniciar servidor Bluetooth.")
+                uiManager.updateBluetoothStatus("Conectado al servidor online. Puede iniciar servidor Bluetooth si lo desea.")
                 uiManager.btnStartServer.isEnabled = true
             } else {
-                uiManager.updateBluetoothStatus("Error al conectar al servidor online.")
+                uiManager.updateBluetoothStatus("Error al conectar al servidor online. El juego funcionará solo en modo local.")
             }
         }
     }
-
     private fun setupClientFlow() {
         val selectedDevice = intent.getParcelableExtra<BluetoothDevice>("SELECTED_DEVICE")
         selectedDevice?.let { device ->
@@ -301,14 +317,20 @@ class GameplayActivity : AppCompatActivity(),
 
     private fun updatePlayerPosition(position: Pair<Int, Int>) {
         runOnUiThread {
-            gameState.playerPosition = position
-            mapView.updateLocalPlayerPosition(position)
+            try {
+                gameState.playerPosition = position
 
-            if (gameState.isConnected) {
-                serverConnectionManager.sendUpdateMessage(playerName, position, "main")
+                // Actualizar posición y forzar centrado
+                mapView.updateLocalPlayerPosition(position, forceCenter = true)
+
+                if (gameState.isConnected) {
+                    serverConnectionManager.sendUpdateMessage(playerName, position, "main")
+                }
+
+                checkPositionForMapChange(position)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error en updatePlayerPosition: ${e.message}")
             }
-
-            checkPositionForMapChange(position)
         }
     }
 
@@ -349,6 +371,8 @@ class GameplayActivity : AppCompatActivity(),
         gameState.remotePlayerName = device.name
     }
 
+// Modificación para GameplayActivity.kt en el método onMessageReceived
+
     override fun onMessageReceived(message: String) {
         runOnUiThread {
             try {
@@ -365,8 +389,18 @@ class GameplayActivity : AppCompatActivity(),
                                     playerData.getInt("x"),
                                     playerData.getInt("y")
                                 )
-                                val map = playerData.getString("map")
+
+                                // Obtener el mapa del jugador, con 'main' como valor predeterminado
+                                val map = playerData.optString("map", MapMatrixProvider.MAP_MAIN)
+
+                                // Actualizar el estado del juego
+                                gameState.remotePlayerPositions = gameState.remotePlayerPositions +
+                                        (playerId to GameState.PlayerInfo(position, map))
+
+                                // Siempre actualizar la posición, permitiendo que PlayerManager
+                                // determine si debe mostrarse o no
                                 mapView.updateRemotePlayerPosition(playerId, position, map)
+                                Log.d(TAG, "Updated from positions: player=$playerId, pos=$position, map=$map")
                             }
                         }
                     }
@@ -377,8 +411,41 @@ class GameplayActivity : AppCompatActivity(),
                                 jsonObject.getInt("x"),
                                 jsonObject.getInt("y")
                             )
-                            val map = jsonObject.getString("map")
+
+                            // Obtener el mapa, primero intentando 'map', luego 'currentmap', con 'main' como valor predeterminado
+                            val map = if (jsonObject.has("map")) {
+                                jsonObject.getString("map")
+                            } else if (jsonObject.has("currentmap")) {
+                                jsonObject.getString("currentmap")
+                            } else {
+                                MapMatrixProvider.MAP_MAIN // Valor predeterminado
+                            }
+
+                            // Actualizar el estado del juego
+                            gameState.remotePlayerPositions = gameState.remotePlayerPositions +
+                                    (playerId to GameState.PlayerInfo(position, map))
+
+                            // Siempre actualizar la posición en el mapa
                             mapView.updateRemotePlayerPosition(playerId, position, map)
+                            Log.d(TAG, "Updated from update: player=$playerId, pos=$position, map=$map")
+                        }
+                    }
+                    "join" -> {
+                        // Un jugador se unió, solicitar actualización de posiciones
+                        val newPlayerId = jsonObject.getString("id")
+                        Log.d(TAG, "Player joined: $newPlayerId")
+                        serverConnectionManager.onlineServerManager.requestPositionsUpdate()
+
+                        // También enviamos nuestra posición actual
+                        serverConnectionManager.sendUpdateMessage(playerName, gameState.playerPosition, "main")
+                    }
+                    "disconnect" -> {
+                        // Manejar desconexión de jugador
+                        val disconnectedId = jsonObject.getString("id")
+                        if (disconnectedId != playerName) {
+                            gameState.remotePlayerPositions = gameState.remotePlayerPositions - disconnectedId
+                            mapView.removeRemotePlayer(disconnectedId)
+                            Log.d(TAG, "Player disconnected: $disconnectedId")
                         }
                     }
                 }
@@ -388,7 +455,6 @@ class GameplayActivity : AppCompatActivity(),
             }
         }
     }
-
 
     // Actualiza handlePositionsMessage
     private fun handlePositionsMessage(jsonObject: JSONObject) {
@@ -487,9 +553,27 @@ class GameplayActivity : AppCompatActivity(),
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        // Mantener el estado actual
-        updateRemotePlayersOnMap()
-        movementManager.setPosition(gameState.playerPosition)
+
+        try {
+            // Evitamos llamar directamente a las funciones que podrían causar problemas
+            // En su lugar, programamos una tarea para cuando la UI esté lista
+            Handler(Looper.getMainLooper()).postDelayed({
+                try {
+                    // Recuperar el estado actual
+                    movementManager.setPosition(gameState.playerPosition)
+
+                    // Actualizar el estado del mapa para la nueva orientación
+                    mapView.forceRecenterOnPlayer()
+
+                    // Actualizar jugadores remotos
+                    updateRemotePlayersOnMap()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error al actualizar después de cambio de orientación: ${e.message}")
+                }
+            }, 300) // Pequeño retraso para asegurar que la vista se ha actualizado
+        } catch (e: Exception) {
+            Log.e(TAG, "Error en onConfigurationChanged: ${e.message}")
+        }
     }
 
     private fun showToast(message: String) {

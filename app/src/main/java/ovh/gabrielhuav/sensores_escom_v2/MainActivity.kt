@@ -1,6 +1,7 @@
 package ovh.gabrielhuav.sensores_escom_v2
 
 import android.Manifest
+import android.bluetooth.BluetoothAdapter
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -32,14 +33,12 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    // Modificamos el método onCreate
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main_menu)
 
-        // Obtener instancia de BluetoothGameManager
-        val bluetoothManager = BluetoothGameManager.getInstance(applicationContext)
-
-        // Verificar permisos
+        // Verificar permisos, pero no forzar Bluetooth
         if (!hasPermissions()) {
             requestPermissions()
         }
@@ -57,6 +56,8 @@ class MainActivity : AppCompatActivity() {
                 val intent = Intent(this, GameplayActivity::class.java).apply {
                     putExtra("PLAYER_NAME", playerName)
                     putExtra("IS_SERVER", true) // Especifica que actuará como servidor
+                    // Podríamos añadir un flag opcional para indicar que no queremos forzar Bluetooth
+                    putExtra("FORCE_BLUETOOTH", false)
                 }
                 startActivity(intent)
             } else {
@@ -65,14 +66,29 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Botón para conectarse a un dispositivo Bluetooth
+        // Este botón SÍ requerirá Bluetooth, ya que es explícito
         btnBluetoothConnect.setOnClickListener {
             val playerName = etPlayerName.text.toString()
             if (playerName.isNotEmpty()) {
-                // Abre la lista de dispositivos Bluetooth
-                val intent = Intent(this, DeviceListActivity::class.java).apply {
-                    putExtra("PLAYER_NAME", playerName) // Envía el nombre del jugador
+                // Verificar si Bluetooth está disponible
+                val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+                if (bluetoothAdapter == null) {
+                    Toast.makeText(this, "Este dispositivo no soporta Bluetooth.", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
                 }
-                startActivity(intent)
+
+                // Verificar si Bluetooth está activado
+                if (!bluetoothAdapter.isEnabled) {
+                    // Intento de activar Bluetooth
+                    val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+                    startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
+                } else {
+                    // Abrir la lista de dispositivos Bluetooth
+                    val intent = Intent(this, DeviceListActivity::class.java).apply {
+                        putExtra("PLAYER_NAME", playerName) // Envía el nombre del jugador
+                    }
+                    startActivity(intent)
+                }
             } else {
                 Toast.makeText(this, "Por favor, ingrese su nombre antes de conectarse por Bluetooth.", Toast.LENGTH_SHORT).show()
             }
@@ -112,7 +128,29 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Constante para el request code
     companion object {
         private const val REQUEST_PERMISSIONS_CODE = 101
+        private const val REQUEST_ENABLE_BT = 102
     }
+
+    // Manejar el resultado de la solicitud de activación Bluetooth
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_ENABLE_BT) {
+            if (resultCode == RESULT_OK) {
+                // Bluetooth activado, abrir la lista de dispositivos
+                val playerName = findViewById<EditText>(R.id.etPlayerName).text.toString()
+                val intent = Intent(this, DeviceListActivity::class.java).apply {
+                    putExtra("PLAYER_NAME", playerName)
+                }
+                startActivity(intent)
+            } else {
+                // El usuario no activó Bluetooth
+                Toast.makeText(this, "Se requiere Bluetooth para conectarse a otros dispositivos.",
+                    Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
 }
