@@ -2,6 +2,7 @@ package ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview
 
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.MotionEvent
 
 class MovementManager(
@@ -46,13 +47,24 @@ class MovementManager(
     }
 
     private fun movePlayer(deltaX: Int, deltaY: Int) {
-        val newX = (localPlayerPosition.first + deltaX).coerceIn(0, MapMatrixProvider.MAP_WIDTH - 1)
-        val newY = (localPlayerPosition.second + deltaY).coerceIn(0, MapMatrixProvider.MAP_HEIGHT - 1)
+        try {
+            val newX = (localPlayerPosition.first + deltaX).coerceIn(0, MapMatrixProvider.MAP_WIDTH - 1)
+            val newY = (localPlayerPosition.second + deltaY).coerceIn(0, MapMatrixProvider.MAP_HEIGHT - 1)
 
-        if (mapView.isValidPosition(newX, newY)) {
-            localPlayerPosition = Pair(newX, newY)
-            mapView.updateLocalPlayerPosition(localPlayerPosition)
-            onPositionUpdate(localPlayerPosition)
+            if (mapView.isValidPosition(newX, newY)) {
+                // Solo actualizamos si la posición es diferente (para evitar actualizaciones innecesarias)
+                if (localPlayerPosition.first != newX || localPlayerPosition.second != newY) {
+                    localPlayerPosition = Pair(newX, newY)
+
+                    // Actualizar la posición y forzar centrado
+                    mapView.updateLocalPlayerPosition(localPlayerPosition, forceCenter = true)
+
+                    // Notificar a la actividad
+                    onPositionUpdate(localPlayerPosition)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("MovementManager", "Error en movePlayer: ${e.message}")
         }
     }
     // Método para añadir a la clase MovementManager

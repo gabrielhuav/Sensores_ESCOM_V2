@@ -74,8 +74,7 @@ class Cafeteria : AppCompatActivity(),
             // Esperar a que el mapView esté listo
             mapView.post {
                 // Configurar el mapa para la cafe de la ESCOM
-                val normalizedMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_BUILDING2)
-                mapView.setCurrentMap(normalizedMap, R.drawable.escom_cafeteria)
+                mapView.setCurrentMap(MapMatrixProvider.MAP_CAFETERIA, R.drawable.escom_cafeteria)
 
                 // Configurar el playerManager
                 mapView.playerManager.apply {
@@ -458,15 +457,15 @@ class Cafeteria : AppCompatActivity(),
     private fun updatePlayerPosition(position: Pair<Int, Int>) {
         runOnUiThread {
             gameState.playerPosition = position
+
+            // Actualizar posición del jugador y forzar centrado
             mapView.updateLocalPlayerPosition(position)
+            mapView.forceRecenterOnPlayer() // Forzar explícitamente el centrado aquí
 
             // Enviar actualización a otros jugadores con el mapa específico
             if (gameState.isConnected) {
                 // Enviar la posición con el nombre del mapa correcto
                 serverConnectionManager.sendUpdateMessage(playerName, position, MapMatrixProvider.MAP_CAFETERIA)
-
-                // Log de debug para confirmar
-                Log.d(TAG, "Sending update: Player $playerName at $position in map ${MapMatrixProvider.MAP_CAFETERIA}")
             }
 
             // Si el minijuego está activo, actualizar la posición del jugador para el zombie
@@ -614,9 +613,6 @@ class Cafeteria : AppCompatActivity(),
             }
         }
     }
-    // Implementación WebSocketListener
-// En tu método onMessageReceived de Cafeteria.kt, asegúrate de que tenga un caso
-// para manejar mensajes de tipo "zombie_position"
 
     override fun onMessageReceived(message: String) {
         runOnUiThread {
@@ -625,6 +621,35 @@ class Cafeteria : AppCompatActivity(),
                 val jsonObject = JSONObject(message)
 
                 when (jsonObject.getString("type")) {
+                    "positions" -> {
+                        val players = jsonObject.getJSONObject("players")
+                        players.keys().forEach { playerId ->
+                            if (playerId != playerName) {
+                                val playerData = players.getJSONObject(playerId.toString())
+                                val position = Pair(
+                                    playerData.getInt("x"),
+                                    playerData.getInt("y")
+                                )
+
+                                // Obtener el mapa y normalizarlo
+                                val mapStr = playerData.optString("map", playerData.optString("currentMap", "main"))
+                                val normalizedMap = MapMatrixProvider.normalizeMapName(mapStr)
+
+                                // Guardar en el estado del juego
+                                gameState.remotePlayerPositions = gameState.remotePlayerPositions +
+                                        (playerId to BuildingNumber2.GameState.PlayerInfo(position, normalizedMap))
+
+                                // Obtener el mapa actual normalizado para comparar
+                                val currentMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_CAFETERIA)
+
+                                // Solo mostrar jugadores en el mismo mapa
+                                if (normalizedMap == currentMap) {
+                                    mapView.updateRemotePlayerPosition(playerId, position, normalizedMap)
+                                    Log.d(TAG, "Updated remote player $playerId in map $normalizedMap (original: $mapStr)")
+                                }
+                            }
+                        }
+                    }
                     "update" -> {
                         val playerId = jsonObject.getString("id")
                         if (playerId != playerName) {
@@ -632,26 +657,94 @@ class Cafeteria : AppCompatActivity(),
                                 jsonObject.getInt("x"),
                                 jsonObject.getInt("y")
                             )
-                            val map = jsonObject.getString("map")
+
+                            // Obtener y normalizar el mapa
+                            val mapStr = jsonObject.optString("map", jsonObject.optString("currentmap", "main"))
+                            val normalizedMap = MapMatrixProvider.normalizeMapName(mapStr)
+
+                            // Guardar en el estado
+                            gameState.remotePlayerPositions = gameState.remotePlayerPositions +
+                                    (playerId to BuildingNumber2.GameState.PlayerInfo(position, normalizedMap))
+
+                            // Obtener el mapa actual normalizado para comparar
+                            val currentMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_CAFETERIA)
 
                             // IMPORTANTE: Loggear para depuración
-                            Log.d(TAG, "Jugador remoto $playerId en mapa '$map', mapa actual es '${MapMatrixProvider.MAP_CAFETERIA}'")
+                            Log.d(TAG, "Jugador remoto $playerId en mapa '$normalizedMap', mapa actual es '$currentMap'")
 
-                            // Corregir posible inconsistencia en el nombre del mapa
-                            val normalizedMap = normalizeMapId(map)
-
-                            // Actualizar posición usando el ID normalizado
-                            mapView.updateRemotePlayerPosition(playerId, position, normalizedMap)
+                            // Solo mostrar jugadores en el mismo mapa
+                            if (normalizedMap == currentMap) {
+                                mapView.updateRemotePlayerPosition(playerId, position, normalizedMap)
+                                Log.d(TAG, "Updated remote player $playerId in map $normalizedMap")
+                            }
                         }
                     }
-                    // Resto del código...
+                    "zombie_position" -> {
+                        // Manejo de la posición del zombie
+                        val x = jsonObject.getInt("x")
+                        val y = jsonObject.getInt("y")
+                        val zombiePosition = Pair(x, y)
+
+                        Log.d(TAG, "¡Recibida posición de zombie en ($x, $y)!")
+
+                        // Actualizar la posición del zombie en el controlador
+                        if (this::zombieController.isInitialized) {
+                            zombieController.setZombiePosition(zombiePosition)
+                        }
+
+                        // IMPORTANTE: Actualizar la entidad especial en el mapa
+                        mapView.updateSpecialEntity("zombie", zombiePosition, MapMatrixProvider.MAP_CAFETERIA)
+                        mapView.invalidate() // Forzar redibujado
+                    }
+                    "zombie_game_command" -> {
+                        // Procesar comandos del juego del zombie
+                        when (jsonObject.optString("command")) {
+                            "start" -> {
+                                if (!zombieGameActive) {
+                                    val difficulty = jsonObject.optInt("difficulty", 1)
+                                    startZombieGame()
+                                }
+                            }
+                            "stop" -> {
+                                if (zombieGameActive) {
+                                    stopZombieGame()
+                                }
+                            }
+                            "caught" -> {
+                                val caughtPlayer = jsonObject.optString("player")
+                                if (caughtPlayer == playerName && zombieGameActive) {
+                                    completeZombieGame(false)
+                                }
+                            }
+                        }
+                    }
+                    "join" -> {
+                        // Un jugador se unió, solicitar actualización de posiciones
+                        serverConnectionManager.onlineServerManager.requestPositionsUpdate()
+
+                        // Enviar nuestra posición actual para que el nuevo jugador nos vea
+                        serverConnectionManager.sendUpdateMessage(
+                            playerName,
+                            gameState.playerPosition,
+                            MapMatrixProvider.MAP_CAFETERIA
+                        )
+                    }
+                    "disconnect" -> {
+                        // Manejar desconexión de jugador
+                        val disconnectedId = jsonObject.getString("id")
+                        if (disconnectedId != playerName) {
+                            gameState.remotePlayerPositions = gameState.remotePlayerPositions - disconnectedId
+                            mapView.removeRemotePlayer(disconnectedId)
+                            Log.d(TAG, "Player disconnected: $disconnectedId")
+                        }
+                    }
                 }
+                mapView.invalidate()
             } catch (e: Exception) {
                 Log.e(TAG, "Error processing message: ${e.message}")
             }
         }
     }
-
     private fun normalizeMapId(mapId: String): String {
         // Casos específicos conocidos
         return when {

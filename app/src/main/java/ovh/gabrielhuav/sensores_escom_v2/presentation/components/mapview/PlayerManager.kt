@@ -157,61 +157,127 @@ class PlayerManager {
         specialEntities.remove(entityId)
     }
 
-// Modificación para PlayerManager.kt en el método drawPlayers
-
     fun drawPlayers(canvas: Canvas, mapState: MapState) {
-        // Obtener dimensiones de una celda
-        val cellWidth = mapState.backgroundBitmap?.width?.div(MapMatrixProvider.MAP_WIDTH.toFloat()) ?: return
-        val cellHeight = mapState.backgroundBitmap?.height?.div(MapMatrixProvider.MAP_HEIGHT.toFloat()) ?: return
+        try {
+            // Dimensiones reales del bitmap y células
+            // Nota: No usamos mapState.scaleFactor aquí porque canvas ya tiene la escala aplicada
+            val bitmapWidth = mapState.backgroundBitmap?.width?.toFloat() ?: return
+            val bitmapHeight = mapState.backgroundBitmap?.height?.toFloat() ?: return
 
-        // Log para depuración con información más detallada
-        Log.d("PlayerManager", "Dibujando jugadores en mapa: $currentMap")
-        Log.d("PlayerManager", "Total jugadores en memoria: ${remotePlayerPositions.size}")
+            val cellWidth = bitmapWidth / MapMatrixProvider.MAP_WIDTH
+            val cellHeight = bitmapHeight / MapMatrixProvider.MAP_HEIGHT
 
-        // Filtrar jugadores que están en el mismo mapa
-        val normalizedCurrentMap = MapMatrixProvider.normalizeMapName(currentMap)
+            // Logs para depuración
+            Log.d("PlayerManager", "Dibujando jugadores en mapa: $currentMap")
+            Log.d("PlayerManager", "Total jugadores: ${remotePlayerPositions.size}")
 
-        // Listar todos los jugadores para depuración
-        remotePlayerPositions.forEach { (id, info) ->
-            val normalizedPlayerMap = MapMatrixProvider.normalizeMapName(info.map)
-            Log.d("PlayerManager", "Jugador $id está en mapa ${info.map} (normalizado: $normalizedPlayerMap)")
-        }
+            // Filtrar jugadores que están en el mismo mapa
+            val normalizedCurrentMap = MapMatrixProvider.normalizeMapName(currentMap)
 
-        // Filtrar jugadores para mostrar solo los que están en este mapa
-        val playersToDraw = remotePlayerPositions.entries
-            .filter {
-                val normalizedPlayerMap = MapMatrixProvider.normalizeMapName(it.value.map)
-                normalizedPlayerMap == normalizedCurrentMap
+            // Filtrar jugadores para mostrar
+            val playersToDraw = remotePlayerPositions.entries
+                .filter {
+                    val normalizedPlayerMap = MapMatrixProvider.normalizeMapName(it.value.map)
+                    normalizedPlayerMap == normalizedCurrentMap
+                }
+
+            Log.d("PlayerManager", "Jugadores a dibujar: ${playersToDraw.size} en mapa $normalizedCurrentMap")
+
+            // Dibujar cada jugador
+            playersToDraw.forEach { (id, info) ->
+                val paint = if (id == localPlayerId) paintLocalPlayer else paintRemotePlayer
+                val label = if (id == localPlayerId) "Tú" else id
+
+                // Posición en píxeles (centrada en la celda)
+                val x = info.position.first * cellWidth + (cellWidth / 2)
+                val y = info.position.second * cellHeight + (cellHeight / 2)
+
+                // Dibujar el jugador
+                canvas.drawCircle(x, y, cellWidth / 3, paint)
+
+                // Dibujar nombre del jugador
+                canvas.drawText(
+                    label,
+                    x,
+                    y - cellHeight / 2,
+                    paintText
+                )
+
+                Log.d("PlayerManager", "Dibujado jugador $id en ($x, $y)")
             }
 
-        Log.d("PlayerManager", "Jugadores a dibujar: ${playersToDraw.size} en mapa normalizado: $normalizedCurrentMap")
-
-        // Dibujar cada jugador filtrado
-        playersToDraw.forEach { (id, info) ->
-            val paint = if (id == localPlayerId) paintLocalPlayer else paintRemotePlayer
-            val label = if (id == localPlayerId) "Tú" else id
-            drawPlayer(canvas, info.position, label, paint, cellWidth, cellHeight)
-            Log.d("PlayerManager", "Dibujado jugador $id en posición ${info.position}")
+            // Dibujar entidades especiales (zombie, etc.)
+            drawSpecialEntities(canvas, cellWidth, cellHeight)
+        } catch (e: Exception) {
+            Log.e("PlayerManager", "Error en drawPlayers: ${e.message}")
         }
+    }
 
-        // PASO 2: Dibujar entidades especiales
-        if (specialEntities.isNotEmpty()) {
-            Log.d("PlayerManager", "Dibujando ${specialEntities.size} entidades especiales")
+    // Método para dibujar entidades especiales
+    private fun drawSpecialEntities(canvas: Canvas, cellWidth: Float, cellHeight: Float) {
+        try {
+            // Solo dibujar entidades que estén en el mapa actual
+            val normalizedCurrentMap = MapMatrixProvider.normalizeMapName(currentMap)
 
-            // Dibujar entidades especiales que están en el mapa actual
             specialEntities.forEach { (entityId, info) ->
                 val (position, entityMap) = info
+                val normalizedEntityMap = MapMatrixProvider.normalizeMapName(entityMap)
 
-                // Solo dibujar si está en el mapa actual
-                if (entityMap == currentMap) {
-                    Log.d("PlayerManager", "Dibujando entidad $entityId en posición $position")
+                if (normalizedEntityMap == normalizedCurrentMap) {
+                    val x = position.first * cellWidth + (cellWidth / 2)
+                    val y = position.second * cellHeight + (cellHeight / 2)
 
                     when {
-                        entityId == "zombie" -> drawZombie(canvas, position, cellWidth, cellHeight)
-                        entityId.startsWith("item_") -> drawItem(canvas, position, cellWidth, cellHeight)
+                        entityId == "zombie" -> {
+                            // Dibujar zombie (más grande que un jugador normal)
+                            canvas.drawCircle(x, y, cellWidth * 0.4f, zombiePaint)
+                            canvas.drawText("ZOMBIE", x, y - cellHeight * 0.7f, zombieTextPaint)
+                        }
+                        entityId.startsWith("item_") -> {
+                            // Dibujar ítem
+                            canvas.drawCircle(x, y, cellWidth * 0.3f, itemPaint)
+                            canvas.drawText("ITEM", x, y - cellHeight * 0.5f, itemTextPaint)
+                        }
                     }
+
+                    Log.d("PlayerManager", "Dibujada entidad $entityId en ($x, $y)")
                 }
             }
+        } catch (e: Exception) {
+            Log.e("PlayerManager", "Error en drawSpecialEntities: ${e.message}")
+        }
+    }
+
+    // Añadir pinturas para entidades especiales si no existen
+    private val zombiePaint by lazy {
+        Paint().apply {
+            color = Color.rgb(50, 150, 50) // Verde zombie
+            style = Paint.Style.FILL_AND_STROKE
+            strokeWidth = 3f
+        }
+    }
+
+    private val zombieTextPaint by lazy {
+        Paint().apply {
+            color = Color.WHITE
+            textSize = 30f
+            textAlign = Paint.Align.CENTER
+            setShadowLayer(3f, 0f, 0f, Color.BLACK)
+        }
+    }
+
+    private val itemPaint by lazy {
+        Paint().apply {
+            color = Color.rgb(255, 215, 0)  // Dorado
+            style = Paint.Style.FILL
+        }
+    }
+
+    private val itemTextPaint by lazy {
+        Paint().apply {
+            color = Color.BLACK
+            textSize = 20f
+            textAlign = Paint.Align.CENTER
         }
     }
 

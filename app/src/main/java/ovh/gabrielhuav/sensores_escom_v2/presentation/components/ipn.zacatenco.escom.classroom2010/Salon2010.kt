@@ -229,15 +229,15 @@ class Salon2010 : AppCompatActivity(),
     private fun updatePlayerPosition(position: Pair<Int, Int>) {
         runOnUiThread {
             gameState.playerPosition = position
+
+            // Actualizar posición del jugador y forzar centrado
             mapView.updateLocalPlayerPosition(position)
+            mapView.forceRecenterOnPlayer() // Forzar explícitamente el centrado
 
             // Enviar actualización a otros jugadores con el mapa específico
             if (gameState.isConnected) {
                 // Enviar la posición con el nombre del mapa correcto
                 serverConnectionManager.sendUpdateMessage(playerName, position, MapMatrixProvider.MAP_SALON2010)
-
-                // Log de debug para confirmar
-                Log.d(TAG, "Sending update: Player $playerName at $position in map ${MapMatrixProvider.MAP_SALON2010}")
             }
         }
     }

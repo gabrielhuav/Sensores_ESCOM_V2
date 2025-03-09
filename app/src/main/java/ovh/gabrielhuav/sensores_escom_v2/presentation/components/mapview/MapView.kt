@@ -6,6 +6,8 @@ import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.os.Handler
+import android.os.Looper
 import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
@@ -29,6 +31,9 @@ class MapView @JvmOverloads constructor(
     private val gestureHandler = MapGestureHandler(this)
     val playerManager = PlayerManager()
     private val mapState = MapState()
+
+    // Inicializar el handler inmediatamente en la declaración para evitar nulos
+    private val handler = Handler(Looper.getMainLooper())
 
     // Actualizamos para usar la nueva implementación de MapMatrix
     private var currentMapId = MapMatrixProvider.MAP_MAIN
@@ -55,8 +60,23 @@ class MapView @JvmOverloads constructor(
     init {
         isClickable = true
         isFocusable = true
-        loadMapBitmap()
+
+        // Inicializar el handler
         setupGestureHandler()
+
+        // Cargar el mapa con postDelayed para asegurar que la vista esté lista
+        post {
+            try {
+                loadMapBitmap()
+                // Una vez cargado el mapa, ajustamos la vista
+                postDelayed({
+                    adjustMapToScreen()
+                    invalidate()
+                }, 100)
+            } catch (e: Exception) {
+                Log.e("MapView", "Error en init: ${e.message}")
+            }
+        }
     }
 
     // Método para establecer el listener de transición
@@ -65,37 +85,62 @@ class MapView @JvmOverloads constructor(
     }
 
     // Método para cambiar el mapa actual
+// Método para cambiar el mapa actual
     fun setCurrentMap(mapId: String, resourceId: Int) {
-        if (currentMapId != mapId) {
-            currentMapId = mapId
-            mapMatrix = MapMatrix(mapId)
-            // Cargar el nuevo bitmap del mapa
-            loadMapBitmap(resourceId)
+        try {
+            if (currentMapId != mapId) {
+                currentMapId = mapId
+                mapMatrix = MapMatrix(mapId)
 
-            // Actualizar el mapa actual en el playerManager
-            playerManager.setCurrentMap(mapId)
+                // Cargar el bitmap y actualizar
+                post {
+                    try {
+                        loadMapBitmap(resourceId)
 
-            // Actualizar el estado visual
-            post {
-                adjustMapToScreen()
-                invalidate()
+                        // Usar postDelayed para asegurar que el bitmap esté cargado
+                        postDelayed({
+                            adjustMapToScreen()
+
+                            // Actualizar el playerManager después de configurar el mapa
+                            playerManager.setCurrentMap(mapId)
+
+                            // Centrar en la posición del jugador si ya existe
+                            playerManager.getLocalPlayerPosition()?.let {
+                                centerMapOnPlayer()
+                            }
+
+                            invalidate()
+
+                            Log.d("MapView", "Mapa cambiado a: $mapId")
+                        }, 100)
+                    } catch (e: Exception) {
+                        Log.e("MapView", "Error en setCurrentMap: ${e.message}")
+                    }
+                }
             }
-
-            Log.d("MapView", "Mapa cambiado a: $mapId con recurso: $resourceId")
+        } catch (e: Exception) {
+            Log.e("MapView", "Error cambiando mapa: ${e.message}")
         }
     }
+
 
     private fun loadMapBitmap(resourceId: Int = mapResourceId) {
         try {
             val options = BitmapFactory.Options().apply {
-                inScaled = false
-                inMutable = true
+                inScaled = false  // Evitar escalado automático
+                inMutable = true  // Permitir modificaciones
             }
+
             val bitmap = BitmapFactory.decodeResource(resources, resourceId, options)
-            mapState.backgroundBitmap = bitmap
-            gestureHandler.setBitmap(bitmap)
+            if (bitmap != null) {
+                Log.d("MapView", "Mapa cargado con éxito: ${bitmap.width}x${bitmap.height}")
+                mapState.backgroundBitmap = bitmap
+                gestureHandler.setBitmap(bitmap)
+            } else {
+                Log.e("MapView", "Error: No se pudo cargar el bitmap del mapa")
+            }
         } catch (e: Exception) {
-            Log.e("MapView", "Error loading map: ${e.message}")
+            Log.e("MapView", "Error cargando mapa: ${e.message}")
         }
     }
 
@@ -103,117 +148,138 @@ class MapView @JvmOverloads constructor(
         gestureHandler.initializeDetectors(context)
         gestureHandler.setCallback(object : MapGestureHandler.GestureCallback {
             override fun onOffsetChanged(offsetX: Float, offsetY: Float) {
-                isUserInteracting = true
-                shouldCenterOnPlayer = false
+                try {
+                    isUserInteracting = true
+                    shouldCenterOnPlayer = false
 
-                mapState.backgroundBitmap?.let { bitmap ->
-                    val scaledWidth = bitmap.width * mapState.scaleFactor
-                    val scaledHeight = bitmap.height * mapState.scaleFactor
-
-                    val minX = width - scaledWidth - OFFSET_MARGIN
-                    val minY = height - scaledHeight - OFFSET_MARGIN
-                    val maxX = LEFT_MARGIN
-                    val maxY = OFFSET_MARGIN
-
-                    // Asegurarse de que minX <= maxX y minY <= maxY
-                    val safeMinX = minOf(minX, maxX)
-                    val safeMaxX = maxOf(minX, maxX)
-                    val safeMinY = minOf(minY, maxY)
-                    val safeMaxY = maxOf(minY, maxY)
-
-                    mapState.offsetX = (mapState.offsetX + offsetX).coerceIn(safeMinX, safeMaxX)
-                    mapState.offsetY = (mapState.offsetY + offsetY).coerceIn(safeMinY, safeMaxY)
+                    mapState.offsetX += offsetX
+                    mapState.offsetY += offsetY
+                } catch (e: Exception) {
+                    Log.e("MapView", "Error en onOffsetChanged: ${e.message}")
                 }
-                invalidate()
             }
 
             override fun onScaleChanged(scaleFactor: Float) {
-                isUserInteracting = true
-                shouldCenterOnPlayer = false
+                try {
+                    isUserInteracting = true
+                    shouldCenterOnPlayer = false
 
-                val prevScale = mapState.scaleFactor
-                val minScale = calculateMinScale()
-                mapState.scaleFactor = (prevScale * scaleFactor).coerceIn(minScale, minScale * 3)
-
-                mapState.backgroundBitmap?.let { bitmap ->
-                    val scaledWidth = bitmap.width * mapState.scaleFactor
-                    val scaledHeight = bitmap.height * mapState.scaleFactor
-
-                    // Asegurarse de que los rangos sean válidos
-                    val minX = width - scaledWidth - OFFSET_MARGIN
-                    val maxX = LEFT_MARGIN
-                    val minY = height - scaledHeight - OFFSET_MARGIN
-                    val maxY = OFFSET_MARGIN
-
-                    // Asegurarse de que minX <= maxX y minY <= maxY
-                    val safeMinX = minOf(minX, maxX)
-                    val safeMaxX = maxOf(minX, maxX)
-                    val safeMinY = minOf(minY, maxY)
-                    val safeMaxY = maxOf(minY, maxY)
-
-                    mapState.offsetX = ((width - scaledWidth) / 2 + LEFT_MARGIN/2).coerceIn(
-                        safeMinX, safeMaxX
-                    )
-                    mapState.offsetY = ((height - scaledHeight) / 2).coerceIn(
-                        safeMinY, safeMaxY
-                    )
+                    mapState.scaleFactor = scaleFactor
+                } catch (e: Exception) {
+                    Log.e("MapView", "Error en onScaleChanged: ${e.message}")
                 }
-                invalidate()
             }
 
             override fun invalidateView() {
                 invalidate()
             }
+
+            // Implementar el nuevo método constrainOffset
+            override fun constrainOffset() {
+                try {
+                    // Llamar al método de la clase
+                    constrainMapOffset()
+                } catch (e: Exception) {
+                    Log.e("MapView", "Error en callback.constrainOffset: ${e.message}")
+                }
+            }
         })
     }
 
+
+    // Método centerMapOnPlayer revisado
     private fun centerMapOnPlayer() {
-        playerManager.getLocalPlayerPosition()?.let { (playerX, playerY) ->
+        try {
+            playerManager.getLocalPlayerPosition()?.let { (playerX, playerY) ->
+                mapState.backgroundBitmap?.let { bitmap ->
+                    // Obtener dimensiones
+                    val scaledWidth = bitmap.width * mapState.scaleFactor
+                    val scaledHeight = bitmap.height * mapState.scaleFactor
+
+                    // Tamaño de cada celda
+                    val cellWidth = scaledWidth / MapMatrixProvider.MAP_WIDTH.toFloat()
+                    val cellHeight = scaledHeight / MapMatrixProvider.MAP_HEIGHT.toFloat()
+
+                    // Posición en píxeles del jugador
+                    val playerPosX = playerX * cellWidth + (cellWidth / 2)
+                    val playerPosY = playerY * cellHeight + (cellHeight / 2)
+
+                    // Centro de la pantalla
+                    val screenCenterX = width / 2f
+                    val screenCenterY = height / 2f
+
+                    // Offset para centrar al jugador
+                    val targetOffsetX = screenCenterX - playerPosX
+                    val targetOffsetY = screenCenterY - playerPosY
+
+                    // Aplicar offset con restricciones para que el mapa no se salga de pantalla
+                    // Si el mapa es más pequeño que la pantalla, lo centramos
+                    // Si es más grande, nos aseguramos que no se vea fuera de los bordes
+                    val minOffsetX = width - scaledWidth
+                    val minOffsetY = height - scaledHeight
+
+                    if (scaledWidth <= width) {
+                        // Si el mapa es más estrecho que la pantalla, centrarlo
+                        mapState.offsetX = (width - scaledWidth) / 2f
+                    } else {
+                        // Si el mapa es más ancho, asegurar que no muestre espacio en blanco
+                        mapState.offsetX = targetOffsetX.coerceIn(minOffsetX, 0f)
+                    }
+
+                    if (scaledHeight <= height) {
+                        // Si el mapa es más corto que la pantalla, centrarlo
+                        mapState.offsetY = (height - scaledHeight) / 2f
+                    } else {
+                        // Si el mapa es más alto, asegurar que no muestre espacio en blanco
+                        mapState.offsetY = targetOffsetY.coerceIn(minOffsetY, 0f)
+                    }
+
+                    Log.d("MapView", "Centrado en jugador: ($playerX,$playerY), offset=(${mapState.offsetX},${mapState.offsetY})")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("MapView", "Error en centerMapOnPlayer: ${e.message}")
+        }
+    }
+
+    fun forceRecenterOnPlayer() {
+        try {
+            // No llamamos a handler.post directamente
+            centerMapOnPlayer()
+            invalidate()
+        } catch (e: Exception) {
+            Log.e("MapView", "Error al recentrar: ${e.message}")
+        }
+    }
+
+
+    private fun constrainMapOffset() {
+        try {
             mapState.backgroundBitmap?.let { bitmap ->
                 val scaledWidth = bitmap.width * mapState.scaleFactor
                 val scaledHeight = bitmap.height * mapState.scaleFactor
 
-                // Calculamos el tamaño de cada celda
-                val cellWidth = scaledWidth / MapMatrixProvider.MAP_WIDTH.toFloat()
-                val cellHeight = scaledHeight / MapMatrixProvider.MAP_HEIGHT.toFloat()
+                // Si el mapa es más pequeño que la vista, centrarlo
+                if (scaledWidth <= width) {
+                    mapState.offsetX = (width - scaledWidth) / 2f
+                } else {
+                    // Si es más grande, restringir para que no se vea fuera
+                    val minOffsetX = width - scaledWidth
+                    mapState.offsetX = mapState.offsetX.coerceIn(minOffsetX, 0f)
+                }
 
-                // Calculamos la posición del jugador en píxeles
-                val playerPosX = playerX * cellWidth + (cellWidth / 2)
-                val playerPosY = playerY * cellHeight + (cellHeight / 2)
-
-                // Ajustamos los offsets considerando los márgenes
-                val effectiveWidth = width
-                val effectiveHeight = height - (2 * OFFSET_MARGIN)
-
-                // Calculamos el centro efectivo de la pantalla considerando los márgenes
-                val centerX = LEFT_MARGIN + (effectiveWidth / 2)
-                val centerY = OFFSET_MARGIN + (effectiveHeight / 2)
-
-                // Calculamos el offset necesario para centrar al jugador
-                val targetOffsetX = centerX - playerPosX
-                val targetOffsetY = centerY - playerPosY
-
-                // Aplicar límites considerando los márgenes
-                val minX = width - scaledWidth - OFFSET_MARGIN
-                val minY = height - scaledHeight - OFFSET_MARGIN
-                val maxX = LEFT_MARGIN
-                val maxY = OFFSET_MARGIN
-
-                // Asegurarse de que los rangos sean válidos
-                val safeMinX = minOf(minX, maxX)
-                val safeMaxX = maxOf(minX, maxX)
-                val safeMinY = minOf(minY, maxY)
-                val safeMaxY = maxOf(minY, maxY)
-
-                // Ajustamos los offsets con los límites
-                mapState.offsetX = targetOffsetX.coerceIn(safeMinX, safeMaxX)
-                mapState.offsetY = targetOffsetY.coerceIn(safeMinY, safeMaxY)
-
-                shouldCenterOnPlayer = true
-                invalidate()
+                if (scaledHeight <= height) {
+                    mapState.offsetY = (height - scaledHeight) / 2f
+                } else {
+                    val minOffsetY = height - scaledHeight
+                    mapState.offsetY = mapState.offsetY.coerceIn(minOffsetY, 0f)
+                }
             }
+        } catch (e: Exception) {
+            Log.e("MapView", "Error en constrainMapOffset: ${e.message}")
         }
     }
+
 
     private fun calculateMinScale(): Float {
         val bitmap = mapState.backgroundBitmap ?: return 1f
@@ -230,57 +296,87 @@ class MapView @JvmOverloads constructor(
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        // Posponemos el ajuste de la pantalla para asegurarnos de que las dimensiones ya estén actualizadas
-        post {
-            adjustMapToScreen()
+
+        try {
+            Log.d("MapView", "onSizeChanged: $oldw x $oldh -> $w x $h")
+
+            // Usar postDelayed para asegurarnos que las nuevas dimensiones ya están aplicadas
+            Handler(Looper.getMainLooper()).postDelayed({
+                try {
+                    adjustMapToScreen()
+                    centerMapOnPlayer()
+                    invalidate()
+                } catch (e: Exception) {
+                    Log.e("MapView", "Error al ajustar mapa después de cambio de tamaño: ${e.message}")
+                }
+            }, 200)
+        } catch (e: Exception) {
+            Log.e("MapView", "Error en onSizeChanged: ${e.message}")
         }
     }
 
     private fun adjustMapToScreen() {
-        if (width <= 0 || height <= 0) {
-            // No hacer nada si la vista aún no tiene dimensiones
-            return
-        }
+        try {
+            if (width <= 0 || height <= 0) {
+                Log.d("MapView", "Vista sin dimensiones válidas: width=$width, height=$height")
+                return
+            }
 
-        mapState.backgroundBitmap?.let { bitmap ->
-            val minScale = calculateMinScale()
-            mapState.scaleFactor = minScale
+            mapState.backgroundBitmap?.let { bitmap ->
+                // Primero, determinar los factores de escala para ancho y alto
+                val scaleX = width.toFloat() / bitmap.width
+                val scaleY = height.toFloat() / bitmap.height
 
-            val scaledWidth = bitmap.width * mapState.scaleFactor
-            val scaledHeight = bitmap.height * mapState.scaleFactor
+                // Para asegurar que todo el mapa sea visible, usamos la menor escala
+                // Esto garantiza que el mapa ocupe la mayor cantidad de espacio posible
+                // sin salirse de los límites de la pantalla
+                val baseScale = Math.min(scaleX, scaleY)
 
-            // Calcular los límites
-            val minX = width - scaledWidth - OFFSET_MARGIN
-            val maxX = LEFT_MARGIN
-            val minY = height - scaledHeight - OFFSET_MARGIN
-            val maxY = OFFSET_MARGIN
+                // Ajustamos con un factor para estar seguros de ocupar toda la pantalla
+                val finalScale = baseScale * 0.98f  // 98% para dejar un pequeño margen
 
-            // Verificar y corregir rangos inválidos
-            val safeMinX = minOf(minX, maxX)
-            val safeMaxX = maxOf(minX, maxX)
-            val safeMinY = minOf(minY, maxY)
-            val safeMaxY = maxOf(minY, maxY)
+                // Establecer la escala
+                mapState.scaleFactor = finalScale
 
-            // Calcular offset centrado
-            val offsetX = ((width - scaledWidth) / 2 + LEFT_MARGIN/2)
-            val offsetY = ((height - scaledHeight) / 2)
+                // Calcular dimensiones escaladas del mapa
+                val scaledWidth = bitmap.width * finalScale
+                val scaledHeight = bitmap.height * finalScale
 
-            // Aplicar límites seguros
-            mapState.offsetX = offsetX.coerceIn(safeMinX, safeMaxX)
-            mapState.offsetY = offsetY.coerceIn(safeMinY, safeMaxY)
+                // Centrar el mapa en la pantalla
+                mapState.offsetX = (width - scaledWidth) / 2f
+                mapState.offsetY = (height - scaledHeight) / 2f
 
-            invalidate()
-
-            Log.d("MapView", "Ajustando mapa: width=$width, height=$height, " +
-                    "minX=$minX, maxX=$maxX, minY=$minY, maxY=$maxY, " +
-                    "safeMinX=$safeMinX, safeMaxX=$safeMaxX, safeMinY=$safeMinY, safeMaxY=$safeMaxY")
+                Log.d("MapView", "Mapa ajustado: scale=$finalScale, offset=(${mapState.offsetX},${mapState.offsetY}), " +
+                        "screenSize=($width,$height), scaledMapSize=(${scaledWidth},${scaledHeight})")
+            } ?: run {
+                Log.e("MapView", "No hay bitmap para ajustar")
+            }
+        } catch (e: Exception) {
+            Log.e("MapView", "Error en adjustMapToScreen: ${e.message}")
         }
     }
 
+    // En MapView.kt, también debemos modificar onConfigurationChanged
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        post { adjustMapToScreen() }
+
+        try {
+            // Usar postDelayed para dar tiempo a que la vista se reconfigure
+            Handler(Looper.getMainLooper()).postDelayed({
+                try {
+                    // Ajustar el mapa y centrar la cámara
+                    adjustMapToScreen()
+                    centerMapOnPlayer()
+                    invalidate()
+                } catch (e: Exception) {
+                    Log.e("MapView", "Error en actualización de configuración: ${e.message}")
+                }
+            }, 300)
+        } catch (e: Exception) {
+            Log.e("MapView", "Error en onConfigurationChanged: ${e.message}")
+        }
     }
+
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.action) {
@@ -288,12 +384,20 @@ class MapView @JvmOverloads constructor(
                 isUserInteracting = true
                 shouldCenterOnPlayer = false
             }
-            MotionEvent.ACTION_UP -> {
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 isUserInteracting = false
+                // Asegurar que estamos dentro de los límites al soltar
+                constrainMapOffset()
             }
         }
         parent.requestDisallowInterceptTouchEvent(true)
-        return gestureHandler.onTouchEvent(event)
+        val handled = gestureHandler.onTouchEvent(event)
+
+        // Después de cada evento, asegurar que no nos salimos de los límites
+        constrainMapOffset()
+        invalidate()
+
+        return handled
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -315,16 +419,31 @@ class MapView @JvmOverloads constructor(
         transitionListener?.onMapTransitionRequested(targetMap, initialPosition)
     }
 
-    fun updateLocalPlayerPosition(position: Pair<Int, Int>?) {
-        playerManager.updateLocalPlayerPosition(position)
 
-        // Ya no llamamos a checkForMapTransition aquí
-        // Solo centramos el mapa en el jugador
-        if (position != null) {
-            centerMapOnPlayer()
+    // Añadir parámetro a MapView.kt - método updateLocalPlayerPosition
+    fun updateLocalPlayerPosition(position: Pair<Int, Int>?, forceCenter: Boolean = false) {
+        try {
+            val prevPosition = playerManager.getLocalPlayerPosition()
+            playerManager.updateLocalPlayerPosition(position)
+
+            if (position != null && (forceCenter || (!isUserInteracting &&
+                        (prevPosition == null || prevPosition != position)))) {
+                centerMapOnPlayer()
+            }
+
+            invalidate()
+        } catch (e: Exception) {
+            Log.e("MapView", "Error en updateLocalPlayerPosition: ${e.message}")
         }
+    }
+
+    fun resetCameraTracking() {
+        shouldCenterOnPlayer = true
+        isUserInteracting = false
+        centerMapOnPlayer()
         invalidate()
     }
+
 
     fun updateRemotePlayerPosition(playerId: String, position: Pair<Int, Int>, map: String) {
         playerManager.updateRemotePlayerPosition(playerId, position, map)

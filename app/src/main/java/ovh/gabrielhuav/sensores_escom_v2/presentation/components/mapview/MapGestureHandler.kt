@@ -2,6 +2,7 @@ package ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
@@ -15,8 +16,8 @@ class MapGestureHandler(private val view: View) {
     private var bitmap: Bitmap? = null
     private var callback: GestureCallback? = null
 
-    private val MIN_SCALE = 0.5f
-    private val MAX_SCALE = 3.0f
+    private val MIN_SCALE = 0.8f    // Mínima escala permitida (80%)
+    private val MAX_SCALE = 2.0f    // Máxima escala permitida (200%)
     private var currentScale = 1.0f
     private var lastFocusX = 0f
     private var lastFocusY = 0f
@@ -26,6 +27,7 @@ class MapGestureHandler(private val view: View) {
         fun onOffsetChanged(offsetX: Float, offsetY: Float)
         fun onScaleChanged(scaleFactor: Float)
         fun invalidateView()
+        fun constrainOffset() // Nuevo método para restringir offset
     }
 
     fun initializeDetectors(context: Context) {
@@ -40,6 +42,8 @@ class MapGestureHandler(private val view: View) {
                     callback?.let { cb ->
                         // Invertir las distancias para un movimiento natural
                         cb.onOffsetChanged(-distanceX, -distanceY)
+                        // Asegurar que no nos salimos de los límites
+                        cb.constrainOffset()
                         cb.invalidateView()
                     }
                 }
@@ -51,7 +55,11 @@ class MapGestureHandler(private val view: View) {
             }
 
             override fun onDoubleTap(e: MotionEvent): Boolean {
-                // Implementar zoom con doble tap si lo deseas
+                // Doble toque para resetear la escala y centrar en el jugador
+                currentScale = 1.0f
+                callback?.onScaleChanged(1.0f)
+                callback?.constrainOffset()
+                callback?.invalidateView()
                 return true
             }
         })
@@ -67,7 +75,6 @@ class MapGestureHandler(private val view: View) {
 
                 override fun onScale(detector: ScaleGestureDetector): Boolean {
                     val scaleFactor = detector.scaleFactor
-                    val prevScale = currentScale
                     currentScale *= scaleFactor
                     currentScale = currentScale.coerceIn(MIN_SCALE, MAX_SCALE)
 
@@ -92,6 +99,8 @@ class MapGestureHandler(private val view: View) {
                             cb.onOffsetChanged(focusShiftX, focusShiftY)
                         }
 
+                        // Asegurar que no nos salimos de los límites
+                        cb.constrainOffset()
                         cb.invalidateView()
                     }
                     return true
@@ -99,21 +108,31 @@ class MapGestureHandler(private val view: View) {
 
                 override fun onScaleEnd(detector: ScaleGestureDetector) {
                     isScaling = false
+                    callback?.constrainOffset() // Restringir al finalizar el zoom
                 }
             })
     }
 
-    fun onTouchEvent(event: MotionEvent): Boolean {
-        // Manejar el final del gesto
-        if (event.action == MotionEvent.ACTION_UP) {
-            isScaling = false
-        }
 
-        var handled = scaleGestureDetector.onTouchEvent(event)
-        if (!scaleGestureDetector.isInProgress) {
-            handled = gestureDetector.onTouchEvent(event) || handled
+
+    fun onTouchEvent(event: MotionEvent): Boolean {
+        try {
+            // Manejar el final del gesto
+            if (event.action == MotionEvent.ACTION_UP || event.action == MotionEvent.ACTION_CANCEL) {
+                isScaling = false
+                callback?.constrainOffset() // Restringir al soltar
+            }
+
+            var handled = scaleGestureDetector.onTouchEvent(event)
+            if (!scaleGestureDetector.isInProgress) {
+                handled = gestureDetector.onTouchEvent(event) || handled
+            }
+
+            return handled
+        } catch (e: Exception) {
+            Log.e("MapGestureHandler", "Error en onTouchEvent: ${e.message}")
+            return false
         }
-        return handled
     }
 
     fun setBitmap(bitmap: Bitmap?) {

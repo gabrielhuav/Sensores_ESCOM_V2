@@ -31,16 +31,25 @@ class MapMatrixProvider {
         fun normalizeMapName(mapName: String?): String {
             if (mapName.isNullOrBlank()) return MAP_MAIN
 
-            val lowerMap = mapName.toLowerCase()
+            val lowerMap = mapName.lowercase()
 
             return when {
+                // Mapa principal
                 lowerMap == "main" -> MAP_MAIN
                 lowerMap == "map_main" -> MAP_MAIN
                 lowerMap.contains("main") && !lowerMap.contains("building") -> MAP_MAIN
-                lowerMap.contains("cafe") -> MAP_CAFETERIA
+
+                // Edificio 2
                 lowerMap.contains("building2") || lowerMap.contains("edificio2") -> MAP_BUILDING2
-                lowerMap.contains("2009") -> MAP_SALON2009
-                lowerMap.contains("2010") -> MAP_SALON2010
+
+                // Salones
+                lowerMap.contains("2009") || lowerMap.contains("salon2009") -> MAP_SALON2009
+                lowerMap.contains("2010") || lowerMap.contains("salon2010") -> MAP_SALON2010
+
+                // Cafetería
+                lowerMap.contains("cafe") || lowerMap.contains("cafeteria") -> MAP_CAFETERIA
+
+                // Si no coincide con ninguno de los anteriores, devolver el original
                 else -> mapName
             }
         }
@@ -128,33 +137,7 @@ class MapMatrixProvider {
          * |                      [    Pasillo Principal 🚶    ]                     |
          * |                                                                         |
          * +-------------------------------------------------------------------------+
-         */
-        /**
-         * Matrix for Building 2
-         * Based exactly on the ASCII map:
-         * +-------------------------------------------------------------------------+
-         * |                               Edificio 2                                |
-         * |                              Planta Baja                                |
-         * |                                                                         |
-         * |  +--------+--------+--------+-----+--------+--------+--------+----+     |
-         * |  |  2001  |  2002  |  2003  | ⬆️  |  2004  |  2005  |  2006  | 🚾 |     |
-         * |  |🏫 Aula |🏫 Aula |🏫 Aula | 🪜  |🏫 Aula |🏫 Aula |🏫 Aula | WC |     |
-         * |  +🚪------+🚪------+🚪------+ ⬇️  +🚪------+🚪------+🚪------+🚪--+     |
-         * |                                                                         |
-         * |                      [    Pasillo Principal 🚶    ]                     |
-         * |                                                                         |
-         * +-------------------------------------------------------------------------+
-         */
-
-
-        /**
-         * Approach 5: ASCII Art-Based Implementation
-         * Creates the matrix directly from an ASCII representation
-         */
-        /**
-         * Implementación combinada mejorada para el Edificio 2
-         * Combina elementos de los enfoques 1 y 5 con mejoras
-         */
+         */y
         private fun createBuilding2Matrix(): Array<Array<Int>> {
             // Crear matriz con PATH (caminable) por defecto
             val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
@@ -581,18 +564,16 @@ class MapMatrix(private val mapId: String) {
 
     private val paints = mapOf(
         MapMatrixProvider.INTERACTIVE to Paint().apply {
-            color = Color.rgb(0, 255, 255)  // Cian brillante para puntos interactivos
-            alpha = 200
+            color = Color.argb(100, 0, 255, 255)  // Cian semi-transparente para puntos interactivos
         },
         MapMatrixProvider.WALL to Paint().apply {
-            color = Color.rgb(139, 69, 19)  // Marrón (simular madera) para paredes
+            color = Color.argb(150, 139, 69, 19)  // Marrón semi-transparente para paredes
         },
         MapMatrixProvider.PATH to Paint().apply {
-            color = Color.rgb(220, 220, 255)  // Gris azulado claro para caminos
+            color = Color.argb(30, 220, 220, 255)  // Gris azulado muy transparente para caminos
         },
         MapMatrixProvider.INACCESSIBLE to Paint().apply {
-            color = Color.rgb(178, 34, 34)  // Rojo ladrillo para objetos inamovibles
-            alpha = 180
+            color = Color.argb(120, 178, 34, 34)  // Rojo ladrillo semi-transparente para objetos
         }
     )
 
@@ -622,20 +603,36 @@ class MapMatrix(private val mapId: String) {
     }
 
     fun drawMatrix(canvas: Canvas, width: Float, height: Float) {
-        val cellWidth = width / MapMatrixProvider.MAP_WIDTH
-        val cellHeight = height / MapMatrixProvider.MAP_HEIGHT
+        try {
+            val cellWidth = width / MapMatrixProvider.MAP_WIDTH
+            val cellHeight = height / MapMatrixProvider.MAP_HEIGHT
 
-        for (y in 0 until MapMatrixProvider.MAP_HEIGHT) {
-            for (x in 0 until MapMatrixProvider.MAP_WIDTH) {
-                val paint = paints[matrix[y][x]] ?: paints[MapMatrixProvider.PATH]!!
-                canvas.drawRect(
-                    x * cellWidth,    // left
-                    y * cellHeight,   // top
-                    (x + 1) * cellWidth,  // right
-                    (y + 1) * cellHeight, // bottom
-                    paint
-                )
+            // Usar distintas opacidades para que el mapa se vea bien
+            for (y in 0 until MapMatrixProvider.MAP_HEIGHT) {
+                for (x in 0 until MapMatrixProvider.MAP_WIDTH) {
+                    val cellType = matrix[y][x]
+                    val paint = paints[cellType] ?: paints[MapMatrixProvider.PATH]!!
+
+                    // Calcular posición exacta de la celda
+                    val left = x * cellWidth
+                    val top = y * cellHeight
+                    val right = left + cellWidth
+                    val bottom = top + cellHeight
+
+                    // Dibujar la celda
+                    canvas.drawRect(left, top, right, bottom, paint)
+                }
             }
+
+            // Opcional: Dibujar un borde alrededor de todo el mapa para delimitarlo
+            val borderPaint = Paint().apply {
+                color = Color.BLACK
+                style = Paint.Style.STROKE
+                strokeWidth = 2f
+            }
+            canvas.drawRect(0f, 0f, width, height, borderPaint)
+        } catch (e: Exception) {
+            Log.e("MapMatrix", "Error dibujando matriz: ${e.message}")
         }
     }
 }

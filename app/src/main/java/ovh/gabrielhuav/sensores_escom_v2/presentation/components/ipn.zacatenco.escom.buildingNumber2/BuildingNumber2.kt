@@ -6,6 +6,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.MotionEvent
 import android.widget.FrameLayout
@@ -388,14 +390,20 @@ class BuildingNumber2 : AppCompatActivity(),
 
     private fun updatePlayerPosition(position: Pair<Int, Int>) {
         runOnUiThread {
-            gameState.playerPosition = position
-            mapView.updateLocalPlayerPosition(position)
+            try {
+                gameState.playerPosition = position
 
-            if (gameState.isConnected) {
-                serverConnectionManager.sendUpdateMessage(playerName, position, "escom_building2")
+                // Actualizar posición y forzar centrado
+                mapView.updateLocalPlayerPosition(position, forceCenter = true)
+
+                if (gameState.isConnected) {
+                    serverConnectionManager.sendUpdateMessage(playerName, position, "escom_building2")
+                }
+
+                checkPositionForMapChange(position)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error en updatePlayerPosition: ${e.message}")
             }
-
-            checkPositionForMapChange(position)
         }
     }
 
@@ -573,13 +581,31 @@ class BuildingNumber2 : AppCompatActivity(),
         movementManager.stopMovement()
     }
 
+
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        // Mantener el estado actual
-        updateRemotePlayersOnMap()
-        movementManager.setPosition(gameState.playerPosition)
-    }
 
+        try {
+            // Evitamos llamar directamente a las funciones que podrían causar problemas
+            // En su lugar, programamos una tarea para cuando la UI esté lista
+            Handler(Looper.getMainLooper()).postDelayed({
+                try {
+                    // Recuperar el estado actual
+                    movementManager.setPosition(gameState.playerPosition)
+
+                    // Actualizar el estado del mapa para la nueva orientación
+                    mapView.forceRecenterOnPlayer()
+
+                    // Actualizar jugadores remotos
+                    updateRemotePlayersOnMap()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error al actualizar después de cambio de orientación: ${e.message}")
+                }
+            }, 300) // Pequeño retraso para asegurar que la vista se ha actualizado
+        } catch (e: Exception) {
+            Log.e(TAG, "Error en onConfigurationChanged: ${e.message}")
+        }
+    }
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }

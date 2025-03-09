@@ -87,9 +87,13 @@ class MapState {
 
     // Método para dibujar la matriz actual
     fun drawMapMatrix(canvas: Canvas, width: Float, height: Float) {
-        currentMapMatrix?.drawMatrix(canvas, width, height) ?: run {
-            // Si no hay matriz, dibujar una matriz por defecto
-            drawDefaultMatrix(canvas, width, height)
+        try {
+            currentMapMatrix?.drawMatrix(canvas, width, height) ?: run {
+                // Si no hay matriz, dibujar una matriz por defecto
+                drawDefaultMatrix(canvas, width, height)
+            }
+        } catch (e: Exception) {
+            Log.e("MapState", "Error dibujando matriz: ${e.message}")
         }
     }
 
