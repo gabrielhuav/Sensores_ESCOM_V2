@@ -27,6 +27,7 @@ class MapMatrixProvider {
         const val MAP_SALON2009 = "escom_salon2009"
         const val MAP_SALON2010 = "escom_salon2010"
         const val MAP_CAFETERIA = "escom_cafeteria"
+        const val MAP_ESTACIONAMIENTO = "escom_estacionamiento"
 
         fun normalizeMapName(mapName: String?): String {
             if (mapName.isNullOrBlank()) return MAP_MAIN
@@ -68,6 +69,9 @@ class MapMatrixProvider {
         val MAIN_TO_CAFETERIA_POSITION = Pair(2, 2)       // Desde mapa principal
         val CAFETERIA_TO_MAIN_POSITION = Pair(1, 1)         // Vuelta al mapa principal
 
+        val MAIN_TO_ESTACIONAMIENTO_POSITION = Pair(11, 1)       // Desde mapa principal
+        val ESTACIONAMIENTO_TO_MAIN_POSITION = Pair(1, 1)         // Vuelta al mapa principal
+
 
         /**
          * Obtiene la matriz para el mapa especificado
@@ -79,6 +83,7 @@ class MapMatrixProvider {
                 MAP_SALON2009 -> createSalon2009Matrix()  // Nueva matriz para el salón 2009
                 MAP_SALON2010 -> createSalon2010Matrix()  // Nueva matriz para el salón 2010
                 MAP_CAFETERIA -> createCafeESCOMMatrix()
+                MAP_ESTACIONAMIENTO -> createEstacionamientoESCOMMatrix()
                 else -> createDefaultMatrix() // Por defecto, un mapa básico
             }
         }
@@ -137,7 +142,7 @@ class MapMatrixProvider {
          * |                      [    Pasillo Principal 🚶    ]                     |
          * |                                                                         |
          * +-------------------------------------------------------------------------+
-         */y
+         */
         private fun createBuilding2Matrix(): Array<Array<Int>> {
             // Crear matriz con PATH (caminable) por defecto
             val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
@@ -468,6 +473,51 @@ class MapMatrixProvider {
             return matrix
         }
 
+        private fun createEstacionamientoESCOMMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+            matrix[0] = intArrayOf(2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 2, 1, 0, 3, 2, 1, 0, 2, 3, 1, 0, 2, 3, 1, 0, 3, 2, 1, 0, 2, 3, 1, 0, 2, 3).toTypedArray()
+            matrix[1] = intArrayOf(2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 0, 3, 1, 2, 0, 3, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 0, 3, 1, 2, 0, 3, 1, 2).toTypedArray()
+            matrix[2] = intArrayOf(1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1, 0, 2, 3, 1, 0, 2, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1).toTypedArray()
+            matrix[3] = intArrayOf(1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 0, 3, 1, 2, 0, 3, 1, 2, 0, 3, 2, 1, 0, 3, 2, 1, 0, 3, 1, 2, 0, 3, 1, 2, 0, 3).toTypedArray()
+            matrix[4] = intArrayOf(1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 0, 2, 3, 0, 1, 2, 3, 0, 1, 2, 1, 3, 0, 2, 1, 3, 0, 2, 3, 0, 1, 2, 3, 0, 1, 2).toTypedArray()
+            matrix[5] = intArrayOf(1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3, 1, 0, 2, 3, 1, 0, 2, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1, 0, 2, 3, 1, 0, 2, 3, 1).toTypedArray()
+            matrix[6] = intArrayOf(1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 3, 1, 0, 2, 3, 1, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2).toTypedArray()
+            matrix[7] = intArrayOf(1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1, 0, 2, 3, 1, 0, 2, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1).toTypedArray()
+            matrix[8] = intArrayOf(1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 0, 3, 1, 2, 0, 3, 1, 2, 0, 3, 2, 1, 0, 3, 2, 1, 0, 3, 1, 2, 0, 3, 1, 2, 0, 3).toTypedArray()
+            matrix[9] = intArrayOf(1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 0, 3, 1, 2, 0, 3, 1, 2, 0, 3, 2, 1, 0, 3, 2, 1, 0, 3, 1, 2, 0, 3, 1, 2, 0, 3).toTypedArray()
+            matrix[10] = intArrayOf(1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 0, 1, 3, 0, 2, 1, 0, 3, 2, 1, 0, 2, 3, 1, 0, 2, 3, 1, 0, 3, 2, 1, 0, 2, 3, 1, 0, 2, 3).toTypedArray()
+            matrix[11] = intArrayOf(1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2, 3, 0, 1, 2, 0, 3, 1, 2, 0, 3, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 0, 3, 1, 2, 0, 3, 1, 2).toTypedArray()
+            matrix[12] = intArrayOf(1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 1, 0, 2, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1, 0, 2, 3, 1, 0, 2, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1).toTypedArray()
+            matrix[13] = intArrayOf(1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 0, 3, 2, 1, 0, 3, 1, 2, 0, 3, 1, 2, 0, 3, 2, 1, 0, 3, 2, 1, 0, 3, 1, 2, 0, 3, 1, 2, 0, 3).toTypedArray()
+            matrix[14] = intArrayOf(1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 0, 2, 1, 3, 0, 2, 3, 0, 1, 2, 3, 0, 1, 2, 1, 3, 0, 2, 1, 3, 0, 2, 3, 0, 1, 2, 3, 0, 1, 2).toTypedArray()
+            matrix[15] = intArrayOf(0, 2, 3, 1, 0, 2, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1, 0, 2, 3, 1, 0, 2, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1, 0, 2, 3, 1, 0, 2, 3, 1).toTypedArray()
+            matrix[16] = intArrayOf(1, 3, 0, 2, 1, 3, 0, 2, 3, 1, 0, 2, 3, 1, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 3, 1, 0, 2, 3, 1, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2).toTypedArray()
+            matrix[17] = intArrayOf(2, 0, 3, 1, 2, 0, 3, 1, 0, 2, 3, 1, 0, 2, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1, 0, 2, 3, 1, 0, 2, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1).toTypedArray()
+            matrix[18] = intArrayOf(1, 2, 0, 3, 1, 2, 0, 3, 2, 1, 0, 3, 2, 1, 0, 3, 1, 2, 0, 3, 1, 2, 0, 3, 2, 1, 0, 3, 2, 1, 0, 3, 1, 2, 0, 3, 1, 2, 0, 3).toTypedArray()
+            matrix[19] = intArrayOf(1, 2, 0, 3, 1, 2, 0, 3, 2, 1, 0, 3, 2, 1, 0, 3, 1, 2, 0, 3, 1, 2, 0, 3, 2, 1, 0, 3, 2, 1, 0, 3, 1, 2, 0, 3, 1, 2, 0, 3).toTypedArray()
+            matrix[20] = intArrayOf(3, 1, 0, 2, 3, 0, 1, 2, 1, 3, 2, 0, 1, 3, 0, 2, 1, 0, 3, 2, 1, 0, 2, 3, 1, 0, 2, 3, 1, 0, 3, 2, 1, 0, 2, 3, 1, 0, 2, 3).toTypedArray()
+            matrix[21] = intArrayOf(0, 3, 1, 2, 0, 3, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 0, 3, 1, 2, 0, 3, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 0, 3, 1, 2, 0, 3, 1, 2).toTypedArray()
+            matrix[22] = intArrayOf(2, 0, 3, 1, 2, 0, 3, 1, 0, 2, 3, 1, 0, 2, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1, 0, 2, 3, 1, 0, 2, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1).toTypedArray()
+            matrix[23] = intArrayOf(1, 2, 0, 3, 1, 2, 0, 3, 2, 1, 0, 3, 2, 1, 0, 3, 1, 2, 0, 3, 1, 2, 0, 3, 2, 1, 0, 3, 2, 1, 0, 3, 1, 2, 0, 3, 1, 2, 0, 3).toTypedArray()
+            matrix[24] = intArrayOf(3, 0, 1, 2, 3, 0, 1, 2, 1, 3, 0, 2, 1, 3, 0, 2, 3, 0, 1, 2, 3, 0, 1, 2, 1, 3, 0, 2, 1, 3, 0, 2, 3, 0, 1, 2, 3, 0, 1, 2).toTypedArray()
+            matrix[25] = intArrayOf(0, 2, 3, 1, 0, 2, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1, 0, 2, 3, 1, 0, 2, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1, 0, 2, 3, 1, 0, 2, 3, 1).toTypedArray()
+            matrix[26] = intArrayOf(1, 3, 0, 2, 1, 3, 0, 2, 3, 1, 0, 2, 3, 1, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 3, 1, 0, 2, 3, 1, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2).toTypedArray()
+            matrix[27] = intArrayOf(2, 0, 3, 1, 2, 0, 3, 1, 0, 2, 3, 1, 0, 2, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1, 0, 2, 3, 1, 0, 2, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1).toTypedArray()
+            matrix[28] = intArrayOf(1, 2, 0, 3, 1, 2, 0, 3, 2, 1, 0, 3, 2, 1, 0, 3, 1, 2, 0, 3, 1, 2, 0, 3, 2, 1, 0, 3, 2, 1, 0, 3, 1, 2, 0, 3, 1, 2, 0, 3).toTypedArray()
+            matrix[29] = intArrayOf(1, 2, 0, 3, 1, 2, 0, 3, 2, 1, 0, 3, 2, 1, 0, 3, 1, 2, 0, 3, 1, 2, 0, 3, 2, 1, 0, 3, 2, 1, 0, 3, 1, 2, 0, 3, 1, 2, 0, 3).toTypedArray()
+            matrix[30] = intArrayOf(3, 1, 0, 2, 3, 0, 1, 2, 1, 3, 2, 0, 1, 3, 0, 2, 1, 0, 3, 2, 1, 0, 2, 3, 1, 0, 2, 3, 1, 0, 3, 2, 1, 0, 2, 3, 1, 0, 2, 3).toTypedArray()
+            matrix[31] = intArrayOf(0, 3, 1, 2, 0, 3, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 0, 3, 1, 2, 0, 3, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 0, 3, 1, 2, 0, 3, 1, 2).toTypedArray()
+            matrix[32] = intArrayOf(2, 0, 3, 1, 2, 0, 3, 1, 0, 2, 3, 1, 0, 2, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1, 0, 2, 3, 1, 0, 2, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1).toTypedArray()
+            matrix[33] = intArrayOf(1, 2, 0, 3, 1, 2, 0, 3, 2, 1, 0, 3, 2, 1, 0, 3, 1, 2, 0, 3, 1, 2, 0, 3, 2, 1, 0, 3, 2, 1, 0, 3, 1, 2, 0, 3, 1, 2, 0, 3).toTypedArray()
+            matrix[34] = intArrayOf(3, 0, 1, 2, 3, 0, 1, 2, 1, 3, 0, 2, 1, 3, 0, 2, 3, 0, 1, 2, 3, 0, 1, 2, 1, 3, 0, 2, 1, 3, 0, 2, 3, 0, 1, 2, 3, 0, 1, 2).toTypedArray()
+            matrix[35] = intArrayOf(0, 2, 3, 1, 0, 2, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1, 0, 2, 3, 1, 0, 2, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1, 0, 2, 3, 1, 0, 2, 3, 1).toTypedArray()
+            matrix[36] = intArrayOf(1, 3, 0, 2, 1, 3, 0, 2, 3, 1, 0, 2, 3, 1, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 3, 1, 0, 2, 3, 1, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2).toTypedArray()
+            matrix[37] = intArrayOf(2, 0, 3, 1, 2, 0, 3, 1, 0, 2, 3, 1, 0, 2, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1, 0, 2, 3, 1, 0, 2, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1).toTypedArray()
+            matrix[38] = intArrayOf(1, 2, 0, 3, 1, 2, 0, 3, 2, 1, 0, 3, 2, 1, 0, 3, 1, 2, 0, 3, 1, 2, 0, 3, 2, 1, 0, 3, 2, 1, 0, 3, 1, 2, 0, 3, 1, 2, 0, 3).toTypedArray()
+            matrix[39] = intArrayOf(1, 2, 0, 3, 1, 2, 0, 3, 2, 1, 0, 3, 2, 1, 0, 3, 1, 2, 0, 3, 1, 2, 0, 3, 2, 1, 0, 3, 2, 1, 0, 3, 1, 2, 0, 3, 1, 2, 0, 3).toTypedArray()
+            return matrix
+        }
+
         /**
          * Matriz predeterminada para cualquier otro mapa
          */
@@ -530,8 +580,13 @@ class MapMatrixProvider {
                 }
             }
 
-            if (mapId == MAP_MAIN && x == 33 && y == 34) {
-                return MAP_CAFETERIA
+            if (mapId == MAP_MAIN) {
+                if (x == 33 && y == 34){
+                    return MAP_CAFETERIA
+                }
+                if (x == 11 && y == 1) {
+                    return MAP_ESTACIONAMIENTO
+                }
             }
             // Resto de transiciones...
 
@@ -548,7 +603,8 @@ class MapMatrixProvider {
                 MAP_BUILDING2 -> Pair(20, 16)  // Centro del pasillo principal del edificio 2
                 MAP_SALON2009 -> Pair(20, 20)  // Posición central dentro del salón 2009
                 MAP_SALON2010 -> Pair(20, 20)  // Posición central dentro del salón 2010
-                MAP_CAFETERIA -> Pair(2, 2)  // Posición central dentro de la escomCAFE
+                MAP_CAFETERIA -> Pair(2, 2)  // Posición central dentro de la
+                MAP_ESTACIONAMIENTO -> Pair(11, 38)  // Posición inicial del estacionamineto
 
                 else -> Pair(MAP_WIDTH / 2, MAP_HEIGHT / 2)
             }

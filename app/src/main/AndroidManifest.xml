@@ -65,6 +65,10 @@
             android:name=".presentation.components.Cafeteria"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
+        <activity
+            android:name=".presentation.components.Estacionamiento"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+
         <!-- DeviceList Activity -->
         <activity
             android:name=".presentation.components.DeviceListActivity"
