@@ -28,6 +28,7 @@ class MapMatrixProvider {
         const val MAP_SALON2010 = "escom_salon2010"
         const val MAP_CAFETERIA = "escom_cafeteria"
         const val MAP_ESTACIONAMIENTO = "escom_estacionamiento"
+        const val MAP_AVENIDA = "avenida"
 
         fun normalizeMapName(mapName: String?): String {
             if (mapName.isNullOrBlank()) return MAP_MAIN
@@ -70,7 +71,10 @@ class MapMatrixProvider {
         val CAFETERIA_TO_MAIN_POSITION = Pair(1, 1)         // Vuelta al mapa principal
 
         val MAIN_TO_ESTACIONAMIENTO_POSITION = Pair(11, 1)       // Desde mapa principal
-        val ESTACIONAMIENTO_TO_MAIN_POSITION = Pair(1, 1)         // Vuelta al mapa principal
+        val ESTACIONAMIENTO_TO_MAIN_POSITION = Pair(0, 31)         // Vuelta al mapa principal
+
+        val ESTACIONAMIENTO_TO_AVENIDA_POSITION = Pair(39, 26)       // Desde estacionamiento
+        val AVENIDA_TO_ESTACIONAMIENTO_POSITION = Pair(0, 31)         // Vuelta a estacionamiento
 
 
         /**
@@ -84,6 +88,7 @@ class MapMatrixProvider {
                 MAP_SALON2010 -> createSalon2010Matrix()  // Nueva matriz para el salón 2010
                 MAP_CAFETERIA -> createCafeESCOMMatrix()
                 MAP_ESTACIONAMIENTO -> createEstacionamientoESCOMMatrix()
+                MAP_AVENIDA -> createAvenidaMatrix()
                 else -> createDefaultMatrix() // Por defecto, un mapa básico
             }
         }
@@ -474,47 +479,167 @@ class MapMatrixProvider {
         }
 
         private fun createEstacionamientoESCOMMatrix(): Array<Array<Int>> {
-            //const val INTERACTIVE = 0
-            //const val WALL = 1
-            //const val PATH = 2
-            //const val INACCESSIBLE = 3
             val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { 2 } }
-            for (y in 1 until 14) {
-                for (x in 0 until 9) {
+
+            for (x in 0 until 22){
+                matrix[3][x] = 1
+            }
+            matrix[3][7] = 2
+            matrix[3][15] = 2
+
+            for (y in 4 until 9) {
+                for (x in 0 until 3) {
                     matrix[y][x] = 1
                 }
             }
 
-            for (y in 0 until 6) {
-                for (x in 12 until 30) {
+            for (y in 5 until 13) {
+                for (x in 4 until 7) {
                     matrix[y][x] = 1
                 }
             }
 
-            for (y in 0 until 32) {
-                for (x in 33 until 40) {
+            for (y in 5 until 13) {    //Cajones estacionamiento
+                for (x in 4 until 7) {
+                    matrix[y][x] = 1
+                }
+                for (x in 8 until 11) {
+                    matrix[y][x] = 1
+                }
+                for (x in 12 until 15) {
+                    matrix[y][x] = 1
+                }
+                for (x in 16 until 19) {
+                    matrix[y][x] = 1
+                }
+            } //Fin cajones
+
+            for (y in 4 until 14) {
+                for (x in 20 until 22) {
                     matrix[y][x] = 1
                 }
             }
+            //Inicic ESCOM
+            for (y in 14 until 17) {
+                for (x in 0 until 13) {
+                    matrix[y][x] = 1
+                }
+            }
+
+            for (y in 17 until 28) {
+                for (x in 0 until 22) {
+                    matrix[y][x] = 1
+                }
+            }
+
+            for (y in 28 until 40) {
+                for (x in 0 until 40) {
+                    matrix[y][x] = 1
+                }
+            }
+            //FIN ESCOM
+
+            //INICIO CIC
+            for (y in 0 until 25) {
+                for (x in 25 until 40) {
+                    matrix[y][x] = 1
+                }
+            }
+            //FIN CIC
+
+            //PUNTOS INTERACTUABLES
+            matrix[1][0] = 0 //SALIDA 1
+            matrix[14][7] = 0 //ENTRADA ESCOM
+            matrix[9][25] = 0 //ENTRADA CIC
+            matrix[26][39] = 0 //SALIDA METRO
+
 
             return matrix
         }
 
+        private fun createAvenidaMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { 2 } }
+
+            for (x in 0 until 22){
+                matrix[3][x] = 1
+            }
+            matrix[3][7] = 2
+            matrix[3][15] = 2
+
+            for (y in 4 until 9) {
+                for (x in 0 until 3) {
+                    matrix[y][x] = 1
+                }
+            }
+
+            for (y in 5 until 13) {
+                for (x in 4 until 7) {
+                    matrix[y][x] = 1
+                }
+            }
+
+            for (y in 5 until 13) {    //Cajones estacionamiento
+                for (x in 4 until 7) {
+                    matrix[y][x] = 1
+                }
+                for (x in 8 until 11) {
+                    matrix[y][x] = 1
+                }
+                for (x in 12 until 15) {
+                    matrix[y][x] = 1
+                }
+                for (x in 16 until 19) {
+                    matrix[y][x] = 1
+                }
+            } //Fin cajones
+
+            for (y in 4 until 14) {
+                for (x in 20 until 22) {
+                    matrix[y][x] = 1
+                }
+            }
+            //Inicic ESCOM
+            for (y in 14 until 17) {
+                for (x in 0 until 13) {
+                    matrix[y][x] = 1
+                }
+            }
+
+            for (y in 17 until 28) {
+                for (x in 0 until 22) {
+                    matrix[y][x] = 1
+                }
+            }
+
+            for (y in 28 until 40) {
+                for (x in 0 until 40) {
+                    matrix[y][x] = 1
+                }
+            }
+            //FIN ESCOM
+
+            //INICIO CIC
+            for (y in 0 until 25) {
+                for (x in 25 until 40) {
+                    matrix[y][x] = 1
+                }
+            }
+            //FIN CIC
+
+            //PUNTOS INTERACTUABLES
+            matrix[1][0] = 0 //SALIDA 1
+            matrix[14][7] = 0 //ENTRADA ESCOM
+            matrix[9][25] = 0 //ENTRADA CIC
+            matrix[26][39] = 0 //SALIDA METRO
+
+
+            return matrix
+        }
         /**
          * Matriz predeterminada para cualquier otro mapa
          */
         private fun createDefaultMatrix(): Array<Array<Int>> {
             val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
-
-            // Borde simple
-            for (i in 0 until MAP_HEIGHT) {
-                for (j in 0 until MAP_WIDTH) {
-                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
-                        matrix[i][j] = WALL
-                    }
-                }
-            }
-
             return matrix
         }
 
@@ -568,6 +693,12 @@ class MapMatrixProvider {
                 }
                 if (x == 11 && y == 1) {
                     return MAP_ESTACIONAMIENTO
+                }
+            }
+
+            if (mapId == MAP_ESTACIONAMIENTO) {
+                if (x == 39 && y == 26) {
+                    return MAP_AVENIDA
                 }
             }
             // Resto de transiciones...

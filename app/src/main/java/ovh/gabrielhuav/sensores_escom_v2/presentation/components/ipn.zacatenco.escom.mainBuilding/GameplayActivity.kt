@@ -255,6 +255,7 @@ class GameplayActivity : AppCompatActivity(),
                         "edificio2" -> startBuildingActivity()
                         "cafeteria" -> startCafeteriaActivity()
                         "estacionamiento" -> startEstacionamientoActivity()
+                        "avenida" -> starAvenidaActivity()
                         else -> showToast("No hay interacción disponible en esta posición")
                     }
                 } else {
@@ -279,6 +280,18 @@ class GameplayActivity : AppCompatActivity(),
 
     private fun startEstacionamientoActivity() {
         val intent = Intent(this, Estacionamiento::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(1, 1))
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
+
+    private fun starAvenidaActivity() {
+        val intent = Intent(this, Avenida::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_POSITION", Pair(1, 1))
@@ -327,6 +340,14 @@ class GameplayActivity : AppCompatActivity(),
                 targetDestination = "estacionamiento"
                 runOnUiThread {
                     Toast.makeText(this, "Presiona A para entrar al estacionamiento", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            position.first ==39 && position.second == 26 -> {
+                canChangeMap = true
+                targetDestination = "avenida"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para entrar a la avenida", Toast.LENGTH_SHORT).show()
                 }
             }
             else -> {
