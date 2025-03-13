@@ -52,7 +52,6 @@
             android:name=".presentation.components.BuildingNumber2"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
-
         <activity
             android:name=".presentation.components.Salon2009"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
@@ -65,6 +64,13 @@
             android:name=".presentation.components.Cafeteria"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
+        <activity
+            android:name=".presentation.components.EdificioNuevo"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+
+        <activity
+            android:name=".presentation.components.SalidaMetro"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
         <!-- DeviceList Activity -->
         <activity
             android:name=".presentation.components.DeviceListActivity"
