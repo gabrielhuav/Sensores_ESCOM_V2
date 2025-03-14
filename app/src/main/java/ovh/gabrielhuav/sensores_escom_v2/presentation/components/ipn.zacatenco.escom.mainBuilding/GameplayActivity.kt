@@ -254,6 +254,8 @@ class GameplayActivity : AppCompatActivity(),
                     when (targetDestination) {
                         "edificio2" -> startBuildingActivity()
                         "cafeteria" -> startCafeteriaActivity()
+                        "estacionamiento" -> startEstacionamientoActivity()
+                        "palapas" -> startEstacionamientoActivity()
                         else -> showToast("No hay interacción disponible en esta posición")
                     }
                 } else {
@@ -263,6 +265,29 @@ class GameplayActivity : AppCompatActivity(),
         }
     }
 
+    private fun startPalapasActivity() {
+        val intent = Intent(this, Palapas::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(1, 1))
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
+
+    private fun startEstacionamientoActivity() {
+        val intent = Intent(this, Estacionamiento::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(1, 1))
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
 
     private fun startCafeteriaActivity() {
         val intent = Intent(this, Cafeteria::class.java).apply {
@@ -306,6 +331,21 @@ class GameplayActivity : AppCompatActivity(),
                 targetDestination = "cafeteria"
                 runOnUiThread {
                     Toast.makeText(this, "Presiona A para entrar a la cafetería", Toast.LENGTH_SHORT).show()
+                }
+            }
+            position.first == 9 && position.second == 5 -> {
+                canChangeMap = true
+                targetDestination = "estacionamiento"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para entrar al estacionamiento", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            position.first == 31 && position.second == 11 -> {
+                canChangeMap = true
+                targetDestination = "palapas"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para entrar a palapas de IA", Toast.LENGTH_SHORT).show()
                 }
             }
             else -> {
