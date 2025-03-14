@@ -1,4 +1,4 @@
-package ovh.gabrielhuav.sensores_escom_v2.presentation.components
+package ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms
 
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
@@ -15,6 +15,7 @@ import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.BuildingNumber4
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
 
 class Salon2010 : AppCompatActivity(),
@@ -40,7 +41,7 @@ class Salon2010 : AppCompatActivity(),
     private lateinit var bluetoothBridge: BluetoothWebSocketBridge
 
     // Reutilizamos la misma estructura de GameState que BuildingNumber2
-    private var gameState = BuildingNumber2.GameState()
+    private var gameState = BuildingNumber4.GameState()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -208,7 +209,7 @@ class Salon2010 : AppCompatActivity(),
             ?: Pair(15, 16) // Por defecto, volver al pasillo principal
 
         // Crear intent para volver al Edificio 2
-        val intent = Intent(this, BuildingNumber2::class.java).apply {
+        val intent = Intent(this, BuildingNumber4::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("IS_CONNECTED", gameState.isConnected) // Pasar el estado de conexión
@@ -250,7 +251,7 @@ class Salon2010 : AppCompatActivity(),
                 ?: Pair(20, 20)
             @Suppress("UNCHECKED_CAST")
             remotePlayerPositions = (savedInstanceState.getSerializable("REMOTE_PLAYER_POSITIONS")
-                    as? HashMap<String, BuildingNumber2.GameState.PlayerInfo>)?.toMap() ?: emptyMap()
+                    as? HashMap<String, BuildingNumber4.GameState.PlayerInfo>)?.toMap() ?: emptyMap()
             remotePlayerName = savedInstanceState.getString("REMOTE_PLAYER_NAME")
         }
 
@@ -324,7 +325,10 @@ class Salon2010 : AppCompatActivity(),
 
                                 // Actualizar la posición del jugador en el mapa
                                 gameState.remotePlayerPositions = gameState.remotePlayerPositions +
-                                        (playerId to BuildingNumber2.GameState.PlayerInfo(position, map))
+                                        (playerId to BuildingNumber4.GameState.PlayerInfo(
+                                            position,
+                                            map
+                                        ))
 
                                 // Solo mostrar jugadores que estén en el mismo mapa
                                 if (map == MapMatrixProvider.MAP_SALON2010) {
@@ -345,7 +349,10 @@ class Salon2010 : AppCompatActivity(),
 
                             // Actualizar el estado del jugador
                             gameState.remotePlayerPositions = gameState.remotePlayerPositions +
-                                    (playerId to BuildingNumber2.GameState.PlayerInfo(position, map))
+                                    (playerId to BuildingNumber4.GameState.PlayerInfo(
+                                        position,
+                                        map
+                                    ))
 
                             // Solo mostrar jugadores que estén en el mismo mapa
                             if (map == MapMatrixProvider.MAP_SALON2010) {

@@ -1,9 +1,7 @@
 package ovh.gabrielhuav.sensores_escom_v2.presentation.components
 
-import android.Manifest
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Bundle
 import android.os.Handler
@@ -14,7 +12,6 @@ import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import org.json.JSONObject
 import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
@@ -252,8 +249,10 @@ class GameplayActivity : AppCompatActivity(),
             buttonA.setOnClickListener {
                 if (canChangeMap) {
                     when (targetDestination) {
-                        "edificio2" -> startBuildingActivity()
+                        "edificio2" -> startBuilding2Activity()
+                        "edificio4" -> startBuilding4Activity()
                         "cafeteria" -> startCafeteriaActivity()
+                        "salon1212" -> startSalonPacmanActivity()
                         else -> showToast("No hay interacción disponible en esta posición")
                     }
                 } else {
@@ -276,8 +275,20 @@ class GameplayActivity : AppCompatActivity(),
         finish()
     }
 
-    private fun startBuildingActivity() {
+    private fun startBuilding2Activity() {
         val intent = Intent(this, BuildingNumber2::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(1, 1))
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
+
+    private fun startBuilding4Activity() {
+        val intent = Intent(this, BuildingNumber4::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_POSITION", Pair(1, 1))
@@ -308,11 +319,32 @@ class GameplayActivity : AppCompatActivity(),
                     Toast.makeText(this, "Presiona A para entrar a la cafetería", Toast.LENGTH_SHORT).show()
                 }
             }
+            position.first == 22 && position.second == 23 -> {
+               canChangeMap = true
+               targetDestination = "salon1212"
+               runOnUiThread {
+                   Toast.makeText(this, "Presiona A para entrar al salón 1212", Toast.LENGTH_SHORT).show()
+               }
+            }
             else -> {
                 canChangeMap = false
                 targetDestination = null
             }
+
         }
+    }
+
+
+    private fun startSalonPacmanActivity() {
+        val intent = Intent(this, SalonPacman::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(20, 20)) // Starting position in salon
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Store current position for return
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
     }
 
     private fun updatePlayerPosition(position: Pair<Int, Int>) {

@@ -47,18 +47,28 @@
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
 
-        <!-- Building Activity -->
+        <!-- Building2 Activity -->
         <activity
             android:name=".presentation.components.BuildingNumber2"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
+        <!-- Building4 Activity -->
+        <activity
+            android:name=".presentation.components.BuildingNumber4"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+
+
 
         <activity
-            android:name=".presentation.components.Salon2009"
+            android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2009"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
-            android:name=".presentation.components.Salon2010"
+            android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2010"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+
+        <activity
+            android:name=".presentation.components.SalonPacman"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity

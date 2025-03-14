@@ -21,7 +21,7 @@ import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.e
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2010
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
 
-class BuildingNumber2 : AppCompatActivity(),
+class BuildingNumber4 : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,
     BluetoothGameManager.ConnectionListener,
     OnlineServerManager.WebSocketListener,
@@ -69,7 +69,7 @@ class BuildingNumber2 : AppCompatActivity(),
             // Primero inicializamos el mapView
             mapView = MapView(
                 context = this,
-                mapResourceId = R.drawable.escom_edificio_2_planta_baja
+                mapResourceId = R.drawable.escom_edificio_4_piso_2
             )
             findViewById<FrameLayout>(R.id.map_container).addView(mapView)
 
@@ -80,7 +80,7 @@ class BuildingNumber2 : AppCompatActivity(),
             mapView.post {
                 // Configurar el mapa
                 val normalizedMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_BUILDING2)
-                mapView.setCurrentMap(normalizedMap, R.drawable.escom_edificio_2_planta_baja)
+                mapView.setCurrentMap(normalizedMap, R.drawable.escom_edificio_4_piso_2)
 
                 // Después configurar el playerManager
                 mapView.playerManager.apply {
@@ -137,14 +137,14 @@ class BuildingNumber2 : AppCompatActivity(),
 
     private fun initializeManagers() {
         bluetoothManager = BluetoothManager.getInstance(this, uiManager.tvBluetoothStatus).apply {
-            setCallback(this@BuildingNumber2)
+            setCallback(this@BuildingNumber4)
         }
 
         bluetoothBridge = BluetoothWebSocketBridge.getInstance()
 
         // Configurar OnlineServerManager con el listener
         val onlineServerManager = OnlineServerManager.getInstance(this).apply {
-            setListener(this@BuildingNumber2)
+            setListener(this@BuildingNumber4)
         }
 
         serverConnectionManager = ServerConnectionManager(
@@ -171,15 +171,15 @@ class BuildingNumber2 : AppCompatActivity(),
         when (targetMap) {
             MapMatrixProvider.MAP_MAIN -> {
                 // Transición al mapa principal
-                //returnToMainActivity()
+                returnToMainActivity()
             }
             MapMatrixProvider.MAP_SALON2009 -> {
                 // Transición al salón 2009
-                //startSalon2009Activity()
+                startSalon2009Activity()
             }
             MapMatrixProvider.MAP_SALON2010 -> {
                 // Transición al salón 2010
-                //startSalon2010Activity()
+                startSalon2010Activity()
             }
             // Añadir más casos según sea necesario para otros mapas
             else -> {
@@ -376,6 +376,17 @@ class BuildingNumber2 : AppCompatActivity(),
         finish()
     }
 
+    private fun startBuildingActivity() {
+        val intent = Intent(this, BuildingNumber4::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(1, 1))
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
+
     private fun updatePlayerPosition(position: Pair<Int, Int>) {
         runOnUiThread {
             try {
@@ -385,7 +396,7 @@ class BuildingNumber2 : AppCompatActivity(),
                 mapView.updateLocalPlayerPosition(position, forceCenter = true)
 
                 if (gameState.isConnected) {
-                    serverConnectionManager.sendUpdateMessage(playerName, position, "escom_building2")
+                    serverConnectionManager.sendUpdateMessage(playerName, position, "escom_building4_floor_2")
                 }
 
                 checkPositionForMapChange(position)
