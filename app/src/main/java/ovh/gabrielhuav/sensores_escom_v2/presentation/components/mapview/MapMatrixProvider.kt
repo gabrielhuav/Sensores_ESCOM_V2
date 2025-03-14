@@ -25,6 +25,7 @@ class MapMatrixProvider {
         const val MAP_MAIN = "escom_main"
         const val MAP_BUILDING2 = "escom_building2"
         const val MAP_SALON2009 = "escom_salon2009"
+        const val MAP_WAYQUESO = "way_queso"
 
 
         // Puntos de transición entre mapas
@@ -42,6 +43,7 @@ class MapMatrixProvider {
                 MAP_MAIN -> createMainMapMatrix()
                 MAP_BUILDING2 -> createBuilding2Matrix()
                 MAP_SALON2009 -> createSalon2009Matrix()  // Nueva matriz para el salón 2009
+                MAP_WAYQUESO -> createWayQuesoMatrix()
                 else -> createDefaultMatrix() // Por defecto, un mapa básico
             }
         }
@@ -60,13 +62,49 @@ class MapMatrixProvider {
                         matrix[i][j] = WALL
                     }
                     // Zonas interactivas (edificios, entradas)
-                    else if (i == 10 && j == 15) {
+                    else if (i == 10 && j == 15 || i == 4 && j == 10) {
                         matrix[i][j] = INTERACTIVE // Entrada al edificio 2
                     }
                     // Obstáculos (árboles, bancas, etc)
                     else if (i % 7 == 0 && j % 8 == 0) {
                         matrix[i][j] = INACCESSIBLE
                     }
+                    // Caminos especiales
+                    else if ((i % 5 == 0 || j % 5 == 0) && i > 5 && j > 5) {
+                        matrix[i][j] = PATH
+                    }
+                }
+            }
+
+            // Áreas de juego específicas
+            // Zona central despejada
+            for (i in 15..25) {
+                for (j in 15..25) {
+                    matrix[i][j] = PATH
+                }
+            }
+
+            return matrix
+        }
+
+        private fun createWayQuesoMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Configuración de bordes
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    // Bordes exteriores
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = WALL
+                    }
+                    // Zonas interactivas (para de trole y queso)
+                    else if ((i == 12 && j == 9 )|| (i == 31 && j == 27) || (i == 30 && j == 21)) {
+                        matrix[i][j] = INTERACTIVE // Entrada al edificio 2
+                    }
+//                    // Obstáculos (árboles, bancas, etc)
+//                    else if (i % 7 == 0 && j % 8 == 0) {
+//                        matrix[i][j] = INACCESSIBLE
+//                    }
                     // Caminos especiales
                     else if ((i % 5 == 0 || j % 5 == 0) && i > 5 && j > 5) {
                         matrix[i][j] = PATH

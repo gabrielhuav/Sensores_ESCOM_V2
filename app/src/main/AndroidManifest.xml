@@ -1,67 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
-
+        xmlns:tools="http://schemas.android.com/tools">
     <!-- Permisos requeridos -->
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission
-        android:name="android.permission.BLUETOOTH_CONNECT"
-        tools:targetApi="31" />
+            android:name="android.permission.BLUETOOTH_CONNECT"
+            tools:targetApi="31" />
     <uses-permission
-        android:name="android.permission.BLUETOOTH_SCAN"
-        tools:targetApi="31" />
+            android:name="android.permission.BLUETOOTH_SCAN"
+            tools:targetApi="31" />
     <uses-permission
-        android:name="android.permission.BLUETOOTH_ADVERTISE"
-        tools:targetApi="31" />
+            android:name="android.permission.BLUETOOTH_ADVERTISE"
+            tools:targetApi="31" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
-        android:allowBackup="true"
-        android:dataExtractionRules="@xml/data_extraction_rules"
-        android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsRtl="true"
-        android:usesCleartextTraffic="true"
-        android:theme="@style/Theme.Sensores_ESCOM_V2">
-
-        <!-- Actividad principal -->
+            android:allowBackup="true"
+            android:dataExtractionRules="@xml/data_extraction_rules"
+            android:fullBackupContent="@xml/backup_rules"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_launcher_round"
+            android:supportsRtl="true"
+            android:theme="@style/Theme.Sensores_ESCOM_V2"
+            android:usesCleartextTraffic="true">
         <activity
-            android:name=".MainActivity"
-            android:exported="true">
+                android:name=".presentation.components.ipn.zacatenco.EscomPlaces"
+                android:exported="false" />
+        <activity
+                android:name=".presentation.components.ipn.zacatenco.ZacatencoActivity"
+                android:exported="false" /> <!-- Actividad principal -->
+        <activity
+                android:name=".MainActivity"
+                android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-
-        <!-- Gameplay Activity -->
+        </activity> <!-- Gameplay Activity -->
         <activity
-            android:name=".presentation.components.GameplayActivity"
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
-
-
-        <!-- Building Activity -->
+                android:name=".presentation.components.GameplayActivity"
+                android:configChanges="orientation|screenSize|keyboardHidden" /> <!-- Building Activity -->
         <activity
-            android:name=".presentation.components.BuildingNumber2"
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
-
-
+                android:name=".presentation.components.BuildingNumber2"
+                android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
-            android:name=".presentation.components.Salon2009"
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
-
-        <!-- DeviceList Activity -->
+                android:name=".presentation.components.Salon2009"
+                android:configChanges="orientation|screenSize|keyboardHidden" /> <!-- DeviceList Activity -->
         <activity
-            android:name=".presentation.components.DeviceListActivity"
-            android:exported="true"
-            android:theme="@style/Theme.Sensores_ESCOM_V2" />
+                android:name=".presentation.components.DeviceListActivity"
+                android:exported="true"
+                android:theme="@style/Theme.Sensores_ESCOM_V2" />
     </application>
 
 </manifest>

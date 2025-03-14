@@ -18,6 +18,7 @@ import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.ZacatencoActivity
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
 
 class GameplayActivity : AppCompatActivity(),
@@ -90,8 +91,9 @@ class GameplayActivity : AppCompatActivity(),
         if (savedInstanceState == null) {
             gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
             // Usar la posición inicial proporcionada
-            gameState.playerPosition = intent.getSerializableExtra("INITIAL_POSITION") as? Pair<Int, Int>
-                ?: Pair(1, 1)
+            gameState.playerPosition =
+                intent.getSerializableExtra("INITIAL_POSITION") as? Pair<Int, Int>
+                    ?: Pair(1, 1)
         } else {
             restoreState(savedInstanceState)
         }
@@ -151,8 +153,9 @@ class GameplayActivity : AppCompatActivity(),
         gameState.apply {
             isServer = savedInstanceState.getBoolean("IS_SERVER", false)
             isConnected = savedInstanceState.getBoolean("IS_CONNECTED", false)
-            playerPosition = savedInstanceState.getSerializable("PLAYER_POSITION") as? Pair<Int, Int>
-                ?: Pair(1, 1)
+            playerPosition =
+                savedInstanceState.getSerializable("PLAYER_POSITION") as? Pair<Int, Int>
+                    ?: Pair(1, 1)
             @Suppress("UNCHECKED_CAST")
             remotePlayerPositions = (savedInstanceState.getSerializable("REMOTE_PLAYER_POSITIONS")
                     as? HashMap<String, GameState.PlayerInfo>)?.toMap() ?: emptyMap()
@@ -235,7 +238,11 @@ class GameplayActivity : AppCompatActivity(),
             buttonA.setOnClickListener {
                 if (canChangeMap) {
                     startBuildingActivity()
-                } else {
+                }
+                else if (canExitEscom){
+                    startZacatencoActivity()
+                }
+                else {
                     showToast("No hay interacción disponible en esta posición")
                 }
             }
@@ -254,7 +261,20 @@ class GameplayActivity : AppCompatActivity(),
         finish()
     }
 
+    private fun startZacatencoActivity() {
+        val intent = Intent(this, ZacatencoActivity::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(1, 1))
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
+
     private var canChangeMap = false  // Variable para controlar si se puede cambiar de mapa
+    private var canExitEscom = false  // Variable para controlar si se puede cambiar de mapa
 
     private fun checkPositionForMapChange(position: Pair<Int, Int>) {
         canChangeMap = position.first == 15 && position.second == 10
@@ -264,6 +284,14 @@ class GameplayActivity : AppCompatActivity(),
             }
         }
     }
+    private fun checkPositionForExitSchool(position: Pair<Int, Int>) {
+        canExitEscom = position.first == 10 && position.second == 4
+            if (canExitEscom) {
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para salir de ESCOM", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
 
     private fun updatePlayerPosition(position: Pair<Int, Int>) {
         runOnUiThread {
@@ -275,6 +303,7 @@ class GameplayActivity : AppCompatActivity(),
             }
 
             checkPositionForMapChange(position)
+            checkPositionForExitSchool(position)
         }
     }
 

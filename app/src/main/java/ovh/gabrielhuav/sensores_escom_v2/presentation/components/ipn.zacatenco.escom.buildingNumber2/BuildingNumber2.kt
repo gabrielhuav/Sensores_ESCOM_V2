@@ -164,7 +164,7 @@ class BuildingNumber2 : AppCompatActivity(),
         updatePlayerPosition(gameState.playerPosition)
     }
 
-    // Actualiza el método onMapTransitionRequested para manejar la transición al salón 2009
+    // Actualiza el metodo onMapTransitionRequested para manejar la transición al salón 2009
     override fun onMapTransitionRequested(targetMap: String, initialPosition: Pair<Int, Int>) {
         when (targetMap) {
             MapMatrixProvider.MAP_MAIN -> {
@@ -182,7 +182,7 @@ class BuildingNumber2 : AppCompatActivity(),
         }
     }
 
-    // Método para iniciar la Activity del salón 2009
+    // Motodo para iniciar la Activity del salón 2009
     private fun startSalon2009Activity() {
         val intent = Intent(this, Salon2009::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
@@ -303,17 +303,6 @@ class BuildingNumber2 : AppCompatActivity(),
 
         // Limpiar datos antes de cambiar de activity
         mapView.playerManager.cleanup()
-        startActivity(intent)
-        finish()
-    }
-
-    private fun startBuildingActivity() {
-        val intent = Intent(this, BuildingNumber2::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(1, 1))
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
         startActivity(intent)
         finish()
     }
