@@ -68,7 +68,7 @@
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
-            android:name=".presentation.components.SalonPacman"
+            android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber3.SalonPacman"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
@@ -77,7 +77,7 @@
 
         <!-- DeviceList Activity -->
         <activity
-            android:name=".presentation.components.DeviceListActivity"
+            android:name=".data.map.Bluetooth.DeviceListActivity"
             android:exported="true"
             android:theme="@style/Theme.Sensores_ESCOM_V2" />
     </application>

@@ -1,4 +1,4 @@
-package ovh.gabrielhuav.sensores_escom_v2.presentation.components
+package ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber3
 
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
@@ -16,11 +16,12 @@ import androidx.appcompat.app.AppCompatActivity
 import org.json.JSONObject
 import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
-import ovh.gabrielhuav.sensores_escom_v2.data.map.BluetoothWebSocketBridge
+import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.BuildingNumber4
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.pacman.PacmanController
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.pacman.PacmanGameStatus
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber3.pacman.PacmanController
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber3.pacman.PacmanGameStatus
 
 class SalonPacman : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,
@@ -629,7 +630,10 @@ class SalonPacman : AppCompatActivity(),
 
                                 // Guardar en el estado del juego
                                 gameState.remotePlayerPositions = gameState.remotePlayerPositions +
-                                        (playerId to BuildingNumber4.GameState.PlayerInfo(position, normalizedMap))
+                                        (playerId to BuildingNumber4.GameState.PlayerInfo(
+                                            position,
+                                            normalizedMap
+                                        ))
 
                                 // Obtener el mapa actual normalizado para comparar
                                 val currentMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_SALON1212)
@@ -655,7 +659,10 @@ class SalonPacman : AppCompatActivity(),
 
                             // Guardar en el estado
                             gameState.remotePlayerPositions = gameState.remotePlayerPositions +
-                                    (playerId to BuildingNumber4.GameState.PlayerInfo(position, normalizedMap))
+                                    (playerId to BuildingNumber4.GameState.PlayerInfo(
+                                        position,
+                                        normalizedMap
+                                    ))
 
                             // Obtener el mapa actual normalizado para comparar
                             val currentMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_SALON1212)

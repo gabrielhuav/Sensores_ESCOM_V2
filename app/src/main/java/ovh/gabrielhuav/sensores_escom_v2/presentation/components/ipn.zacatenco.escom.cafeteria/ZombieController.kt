@@ -1,265 +1,382 @@
 package ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.cafeteria
 
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import org.json.JSONObject
 import kotlin.math.abs
-import kotlin.math.max
+import kotlin.math.sqrt
 import kotlin.random.Random
 
 /**
- * Controlador para gestionar el zombie en el minijuego de la cafetería
+ * Controlador para gestionar los zombies en el minijuego de la cafetería
  */
 class ZombieController(
-    private val onZombiePositionChanged: (Pair<Int, Int>) -> Unit,
+    private val onZombiePositionChanged: (String, Pair<Int, Int>) -> Unit,
     private val onPlayerCaught: () -> Unit
 ) {
-    // Posición actual del zombie
-    private var position = Pair(30, 30) // Posición inicial en un extremo de la cafetería
+    companion object {
+        private const val TAG = "ZombieController"
 
-    // Velocidad del zombie (menor número = más rápido)
-    private var updateDelayMs = 1000L
+        // Niveles de dificultad
+        const val DIFFICULTY_EASY = 1
+        const val DIFFICULTY_MEDIUM = 2
+        const val DIFFICULTY_HARD = 3
 
-    // Handler para actualizar la posición periódicamente
-    private val handler = Handler(Looper.getMainLooper())
-    private var updateRunnable: Runnable? = null
+        // Número de zombies por dificultad
+        private val ZOMBIES_COUNT = mapOf(
+            DIFFICULTY_EASY to 2,
+            DIFFICULTY_MEDIUM to 4,
+            DIFFICULTY_HARD to 6
+        )
 
-    // Estado del minijuego
-    private var isGameActive = false
-    private var playerPosition = Pair(1, 1)
-    private var difficulty = 1 // 1-3, donde 3 es más difícil
+        // Velocidad de zombies por dificultad (ms entre movimientos - menor = más rápido)
+        private val ZOMBIE_SPEED = mapOf(
+            DIFFICULTY_EASY to 1200L,
+            DIFFICULTY_MEDIUM to 800L,
+            DIFFICULTY_HARD to 500L
+        )
 
-    // Distancia para considerar que el zombie ha atrapado al jugador
-    private val catchDistance = 2
-
-    // Pinta para dibujar el zombie
-    private val zombiePaint = Paint().apply {
-        color = Color.rgb(50, 150, 50) // Verde zombie
-        style = Paint.Style.FILL_AND_STROKE
-        strokeWidth = 3f
+        // Rango de detección por dificultad
+        private val ZOMBIE_DETECTION_RANGE = mapOf(
+            DIFFICULTY_EASY to 8,
+            DIFFICULTY_MEDIUM to 12,
+            DIFFICULTY_HARD to 18
+        )
     }
 
-    private val zombieTextPaint = Paint().apply {
-        color = Color.WHITE
-        textSize = 30f
-        textAlign = Paint.Align.CENTER
+    // Lista de zombies activos
+    private val zombies = mutableListOf<Zombie>()
+
+    // Lista de jugadores en el mapa (id -> posición)
+    private val players = mutableMapOf<String, Pair<Int, Int>>()
+
+    // Estado del juego
+    private var isGameActive = false
+    private var currentDifficulty = DIFFICULTY_EASY
+    private val handler = Handler(Looper.getMainLooper())
+    private var updateRunnable: Runnable? = null
+    private val catchDistance = 2 // Distancia para considerar que un zombie ha atrapado a un jugador
+
+    /**
+     * Clase interna para representar un zombie
+     */
+    inner class Zombie(
+        val id: String,
+        var position: Pair<Int, Int>,
+        var speed: Long = ZOMBIE_SPEED[DIFFICULTY_EASY]!!,
+        var detectionRange: Int = ZOMBIE_DETECTION_RANGE[DIFFICULTY_EASY]!!
+    ) {
+        var lastMove = System.currentTimeMillis()
+        var targetPlayerId: String? = null
+
+        fun move() {
+            // Solo moverse si ha pasado suficiente tiempo desde el último movimiento
+            val currentTime = System.currentTimeMillis()
+            if (currentTime - lastMove < speed) {
+                return
+            }
+
+            lastMove = currentTime
+
+            // Buscar jugador más cercano
+            findNearestPlayer()
+
+            // Si no hay jugadores, moverse aleatoriamente
+            if (targetPlayerId == null || !players.containsKey(targetPlayerId)) {
+                moveRandomly()
+                return
+            }
+
+            // Perseguir al jugador objetivo
+            val targetPosition = players[targetPlayerId]!!
+            moveTowardsTarget(targetPosition)
+
+            // Notificar cambio de posición
+            onZombiePositionChanged(id, position)
+
+            // Verificar colisiones con jugadores
+            checkPlayerCollisions()
+        }
+
+        private fun findNearestPlayer() {
+            if (players.isEmpty()) {
+                targetPlayerId = null
+                return
+            }
+
+            var nearestPlayer: String? = null
+            var shortestDistance = Double.MAX_VALUE
+
+            players.forEach { (playerId, playerPos) ->
+                val distance = calculateDistance(position, playerPos)
+
+                if (distance < shortestDistance && distance <= detectionRange) {
+                    shortestDistance = distance
+                    nearestPlayer = playerId
+                }
+            }
+
+            // Solo cambiar de objetivo si encontramos uno más cercano o no teníamos ninguno
+            if (nearestPlayer != null) {
+                targetPlayerId = nearestPlayer
+            } else if (Random.nextDouble() < 0.1) {
+                // 10% de probabilidad de cambiar a un objetivo aleatorio si no hay uno cercano
+                targetPlayerId = players.keys.randomOrNull()
+            }
+        }
+
+        private fun moveTowardsTarget(targetPosition: Pair<Int, Int>) {
+            // Calcular dirección hacia el objetivo
+            val dx = targetPosition.first - position.first
+            val dy = targetPosition.second - position.second
+
+            // Decidir si moverse horizontal o verticalmente
+            if (abs(dx) > abs(dy)) {
+                // Moverse horizontalmente
+                position = Pair(
+                    position.first + if (dx > 0) 1 else -1,
+                    position.second
+                )
+            } else {
+                // Moverse verticalmente
+                position = Pair(
+                    position.first,
+                    position.second + if (dy > 0) 1 else -1
+                )
+            }
+
+            // En dificultad difícil, hay probabilidad de movimiento diagonal
+            if (currentDifficulty == DIFFICULTY_HARD && Random.nextDouble() < 0.4) {
+                position = Pair(
+                    position.first + if (dx > 0) 1 else -1,
+                    position.second + if (dy > 0) 1 else -1
+                )
+            }
+
+            // Asegurar que la posición esté dentro de los límites
+            position = Pair(
+                position.first.coerceIn(0, 39),
+                position.second.coerceIn(0, 39)
+            )
+        }
+
+        private fun moveRandomly() {
+            // Seleccionar dirección aleatoria
+            val direction = Random.nextInt(4)
+
+            // Moverse según la dirección
+            position = when (direction) {
+                0 -> Pair(position.first + 1, position.second) // Derecha
+                1 -> Pair(position.first - 1, position.second) // Izquierda
+                2 -> Pair(position.first, position.second + 1) // Abajo
+                3 -> Pair(position.first, position.second - 1) // Arriba
+                else -> position
+            }
+
+            // Asegurar que la posición esté dentro de los límites
+            position = Pair(
+                position.first.coerceIn(0, 39),
+                position.second.coerceIn(0, 39)
+            )
+        }
+
+        private fun checkPlayerCollisions() {
+            players.forEach { (playerId, playerPos) ->
+                val distance = calculateDistance(position, playerPos)
+
+                if (distance <= catchDistance) {
+                    // ¡Zombie atrapó a un jugador!
+                    Log.d(TAG, "¡Zombie $id atrapó al jugador $playerId!")
+                    onPlayerCaught()
+                }
+            }
+        }
     }
 
     /**
-     * Inicia el minijuego del zombie
+     * Inicia el minijuego con una dificultad específica
      */
-    fun startGame(initialDifficulty: Int = 1) {
+    fun startGame(difficulty: Int = DIFFICULTY_EASY) {
+        if (isGameActive) return
+
         isGameActive = true
-        difficulty = initialDifficulty.coerceIn(1, 3)
+        currentDifficulty = difficulty.coerceIn(DIFFICULTY_EASY, DIFFICULTY_HARD)
 
-        // Ajustar velocidad según dificultad
-        updateDelayMs = when (difficulty) {
-            1 -> 1200L // Fácil
-            2 -> 800L  // Medio
-            else -> 500L // Difícil
-        }
+        // Crear zombies según la dificultad
+        createZombies()
 
-        // Colocar al zombie en una posición aleatoria lejana al jugador
-        resetZombiePosition()
-
-        // Iniciar el loop de actualización
+        // Iniciar el bucle de actualización
         startUpdateLoop()
 
-        Log.d(TAG, "Minijuego zombie iniciado con dificultad $difficulty")
+        Log.d(TAG, "Minijuego zombie iniciado con dificultad $difficulty y ${zombies.size} zombies")
     }
 
     /**
      * Detiene el minijuego
      */
     fun stopGame() {
+        if (!isGameActive) return
+
         isGameActive = false
-        stopUpdateLoop()
+
+        // Detener el bucle de actualización
+        updateRunnable?.let { handler.removeCallbacks(it) }
+        updateRunnable = null
+
+        // Limpiar zombies
+        zombies.clear()
+
         Log.d(TAG, "Minijuego zombie detenido")
     }
 
     /**
-     * Actualiza la posición del jugador
+     * Actualiza la posición de un jugador
      */
-    fun updatePlayerPosition(position: Pair<Int, Int>) {
-        playerPosition = position
-        checkForCollision()
+    fun updatePlayerPosition(playerId: String, position: Pair<Int, Int>) {
+        players[playerId] = position
     }
 
     /**
-     * Dibuja el zombie en el canvas
+     * Elimina un jugador de la lista
      */
-    fun drawZombie(canvas: Canvas, cellWidth: Float, cellHeight: Float) {
-        if (!isGameActive) return
-
-        val zombieX = position.first * cellWidth + cellWidth / 2
-        val zombieY = position.second * cellHeight + cellHeight / 2
-
-        // Dibujar el cuerpo del zombie (más grande que un jugador normal)
-        canvas.drawCircle(zombieX, zombieY, cellWidth * 0.4f, zombiePaint)
-
-        // Dibujar texto "ZOMBIE"
-        canvas.drawText("ZOMBIE", zombieX, zombieY - cellHeight * 0.7f, zombieTextPaint)
+    fun removePlayer(playerId: String) {
+        players.remove(playerId)
     }
 
     /**
-     * Verifica si el zombie ha atrapado al jugador
+     * Ralentiza temporalmente los zombies (cuando un jugador recoge comida)
      */
-    private fun checkForCollision() {
-        if (!isGameActive) return
+    fun slowDownZombies(durationMs: Long = 3000) {
+        val originalSpeeds = zombies.associate { it.id to it.speed }
 
-        val distanceX = abs(position.first - playerPosition.first)
-        val distanceY = abs(position.second - playerPosition.second)
+        // Aumentar velocidad (más milisegundos entre movimientos = más lento)
+        zombies.forEach { it.speed += 500 }
 
-        // Si el zombie está suficientemente cerca del jugador
-        if (distanceX <= catchDistance && distanceY <= catchDistance) {
-            Log.d(TAG, "¡Jugador atrapado por el zombie!")
-            onPlayerCaught()
-            stopGame()
+        // Restaurar velocidad después de la duración
+        handler.postDelayed({
+            zombies.forEach { zombie ->
+                originalSpeeds[zombie.id]?.let { originalSpeed ->
+                    zombie.speed = originalSpeed
+                }
+            }
+        }, durationMs)
+    }
+
+    private fun createZombies() {
+        zombies.clear()
+
+        val count = ZOMBIES_COUNT[currentDifficulty] ?: 2
+        val speed = ZOMBIE_SPEED[currentDifficulty] ?: 1000L
+        val range = ZOMBIE_DETECTION_RANGE[currentDifficulty] ?: 10
+
+        // Crear zombies
+        for (i in 0 until count) {
+            // Posiciones iniciales alejadas de los jugadores
+            val xPos = Random.nextInt(10, 30)
+            val yPos = Random.nextInt(10, 30)
+
+            val zombie = Zombie(
+                id = "zombie_$i",
+                position = Pair(xPos, yPos),
+                speed = speed,
+                detectionRange = range
+            )
+
+            zombies.add(zombie)
+
+            // Notificar posición inicial del zombie
+            onZombiePositionChanged(zombie.id, zombie.position)
         }
     }
 
-    /**
-     * Restablece la posición del zombie a un punto aleatorio lejos del jugador
-     */
-    private fun resetZombiePosition() {
-        // Generar una posición alejada del jugador
-        var newX: Int
-        var newY: Int
-
-        do {
-            newX = Random.nextInt(5, 35)
-            newY = Random.nextInt(5, 35)
-        } while (abs(newX - playerPosition.first) < 15 || abs(newY - playerPosition.second) < 15)
-
-        position = Pair(newX, newY)
-        onZombiePositionChanged(position)
-    }
-
-    /**
-     * Inicia el bucle de actualización
-     */
     private fun startUpdateLoop() {
-        stopUpdateLoop() // Asegurar que no haya bucles duplicados
+        // Detener el bucle existente si lo hay
+        updateRunnable?.let { handler.removeCallbacks(it) }
 
-        updateRunnable = object : Runnable {
+        // Crear nuevo bucle
+        val runnable = object : Runnable {
             override fun run() {
                 if (isGameActive) {
-                    updateZombiePosition()
-                    handler.postDelayed(this, updateDelayMs)
-                }
-            }
-        }
-
-        updateRunnable?.let { handler.post(it) }
-    }
-
-    /**
-     * Detiene el bucle de actualización
-     */
-    private fun stopUpdateLoop() {
-        updateRunnable?.let { handler.removeCallbacks(it) }
-        updateRunnable = null
-    }
-
-    /**
-     * Actualiza la posición del zombie para que persiga al jugador
-     */
-    private fun updateZombiePosition() {
-        if (!isGameActive) return
-
-        val currentX = position.first
-        val currentY = position.second
-        val targetX = playerPosition.first
-        val targetY = playerPosition.second
-
-        // Calcular dirección para acercarse al jugador
-        val moveX = if (currentX < targetX) 1 else if (currentX > targetX) -1 else 0
-        val moveY = if (currentY < targetY) 1 else if (currentY > targetY) -1 else 0
-
-        // En dificultades más altas, el zombie puede moverse en diagonal
-        val newPosition = if (difficulty >= 2 && Random.nextBoolean()) {
-            // Movimiento en ambas direcciones (diagonal)
-            Pair(currentX + moveX, currentY + moveY)
-        } else {
-            // Movimiento en una sola dirección (horizontal o vertical)
-            if (Random.nextBoolean() && moveX != 0) {
-                Pair(currentX + moveX, currentY)
-            } else if (moveY != 0) {
-                Pair(currentX, currentY + moveY)
-            } else {
-                // Si no hay movimiento posible, mantener posición
-                position
-            }
-        }
-
-        // Actualizar posición
-        position = newPosition
-
-        // Verificar si el zombie atrapó al jugador
-        checkForCollision()
-
-        // Notificar cambio de posición
-        onZombiePositionChanged(position)
-    }
-
-    /**
-     * Establece la posición del zombie (usado para sincronizar con el servidor)
-     */
-    fun setZombiePosition(position: Pair<Int, Int>) {
-        this.position = position
-        checkForCollision()
-    }
-
-    /**
-     * Procesa mensajes del servidor WebSocket relacionados con el zombie
-     */
-    fun processServerMessage(message: JSONObject) {
-        try {
-            when (message.getString("type")) {
-                "zombie_position" -> {
-                    val x = message.getInt("x")
-                    val y = message.getInt("y")
-                    setZombiePosition(Pair(x, y))
-                }
-                "zombie_difficulty" -> {
-                    val newDifficulty = message.getInt("level")
-                    difficulty = newDifficulty.coerceIn(1, 3)
-                    updateDelayMs = when (difficulty) {
-                        1 -> 1200L
-                        2 -> 800L
-                        else -> 500L
+                    try {
+                        updateZombies()
+                        handler.postDelayed(this, 100) // Actualizar más rápido que el movimiento individual
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error en bucle de actualización: ${e.message}")
+                        handler.postDelayed(this, 500) // Reintentar después de un tiempo
                     }
                 }
-                "zombie_game_start" -> {
-                    val gameDifficulty = message.optInt("difficulty", 1)
-                    startGame(gameDifficulty)
-                }
-                "zombie_game_stop" -> {
-                    stopGame()
+            }
+        }
+
+        updateRunnable = runnable
+        handler.post(runnable)
+    }
+
+    private fun updateZombies() {
+        zombies.forEach { it.move() }
+    }
+
+    /**
+     * Establece manualmente la posición de un zombie (para sincronización)
+     */
+    fun setZombiePosition(zombieId: String, position: Pair<Int, Int>) {
+        val zombie = zombies.find { it.id == zombieId }
+
+        if (zombie != null) {
+            zombie.position = position
+        } else if (isGameActive) {
+            // Si no existe el zombie pero el juego está activo, crear uno nuevo
+            val newZombie = Zombie(
+                id = zombieId,
+                position = position,
+                speed = ZOMBIE_SPEED[currentDifficulty]!!,
+                detectionRange = ZOMBIE_DETECTION_RANGE[currentDifficulty]!!
+            )
+            zombies.add(newZombie)
+        }
+
+        // Verificar colisiones
+        checkCollisionsWithAllPlayers()
+    }
+
+
+    /**
+     * Revisa si algún zombie ha atrapado a algún jugador
+     */
+    private fun checkCollisionsWithAllPlayers() {
+        for (zombie in zombies) {
+            for ((playerId, playerPos) in players) {
+                val distance = calculateDistance(zombie.position, playerPos)
+
+                if (distance <= catchDistance) {
+                    Log.d(TAG, "¡Zombie ${zombie.id} atrapó al jugador $playerId!")
+                    onPlayerCaught()
+                    return
                 }
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error procesando mensaje del servidor: ${e.message}")
         }
     }
 
     /**
-     * Genera un mensaje para enviar al servidor con la posición del zombie
+     * Calcula la distancia entre dos puntos
      */
-    fun generateZombiePositionMessage(): String {
-        return JSONObject().apply {
-            put("type", "zombie_position")
-            put("x", position.first)
-            put("y", position.second)
-            put("map", "escom_cafeteria")
-        }.toString()
+    private fun calculateDistance(pos1: Pair<Int, Int>, pos2: Pair<Int, Int>): Double {
+        val dx = pos1.first - pos2.first
+        val dy = pos1.second - pos2.second
+        return sqrt((dx * dx + dy * dy).toDouble())
     }
 
-    companion object {
-        private const val TAG = "ZombieController"
+    /**
+     * Devuelve la lista de zombies activos y sus posiciones
+     */
+    fun getZombies(): List<Pair<String, Pair<Int, Int>>> {
+        return zombies.map { it.id to it.position }
+    }
+
+    /**
+     * Devuelve el nivel de dificultad actual
+     */
+    fun getDifficulty(): Int {
+        return currentDifficulty
     }
 }

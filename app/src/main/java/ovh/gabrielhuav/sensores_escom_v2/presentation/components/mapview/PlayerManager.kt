@@ -6,8 +6,8 @@ import android.graphics.Paint
 import android.graphics.Typeface
 import android.util.Log
 import org.json.JSONObject
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.pacman.PacmanEntityRenderer
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.pacman.PacmanController
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber3.pacman.PacmanEntityRenderer
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber3.pacman.PacmanController
 
 class PlayerManager {
     private var localPlayerPosition: Pair<Int, Int>? = null
@@ -219,6 +219,7 @@ class PlayerManager {
 
     // Método para dibujar entidades especiales
     private fun drawSpecialEntities(canvas: Canvas, cellWidth: Float, cellHeight: Float) {
+
         try {
             // Only draw entities that are in the current map
             val normalizedCurrentMap = MapMatrixProvider.normalizeMapName(currentMap)
@@ -308,7 +309,8 @@ class PlayerManager {
                             }
                         }
                         // Sin cambios para otras entidades...
-                        entityId == "zombie" -> {
+                        entityId == "zombie" || entityId.startsWith("zombie_") -> {
+                            // Dibujo del zombie
                             canvas.drawCircle(x, y, cellWidth * 0.4f, zombiePaint)
                             canvas.drawText("ZOMBIE", x, y - cellHeight * 0.7f, zombieTextPaint)
                         }

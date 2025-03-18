@@ -103,8 +103,7 @@ class MapMatrixProvider {
                 }
             }
             // Explicitly set coordinates 29,22 and 29,23 as blue interactive points
-            matrix[22][29] = INTERACTIVE
-            matrix[23][29] = INTERACTIVE
+            matrix[28][27] = INTERACTIVE
 
             // Áreas de juego específicas
             // Zona central despejada
@@ -532,7 +531,7 @@ class MapMatrixProvider {
             }
 
             // Add this case for the main map to salon1212
-            if (mapId == MAP_MAIN && x == 22 && y == 23) {
+            if (mapId == MAP_MAIN && x == 27 && y == 28) {
                 return MAP_SALON1212
             }
 

@@ -15,8 +15,9 @@ import androidx.appcompat.app.AppCompatActivity
 import org.json.JSONObject
 import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
-import ovh.gabrielhuav.sensores_escom_v2.data.map.BluetoothWebSocketBridge
+import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber3.SalonPacman
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
 
 class GameplayActivity : AppCompatActivity(),
@@ -250,7 +251,7 @@ class GameplayActivity : AppCompatActivity(),
                 if (canChangeMap) {
                     when (targetDestination) {
                         "edificio2" -> startBuilding2Activity()
-                        "edificio4" -> startBuilding4Activity()
+                        "escom_building4_floor_2" -> startBuilding4Activity()
                         "cafeteria" -> startCafeteriaActivity()
                         "salon1212" -> startSalonPacmanActivity()
                         else -> showToast("No hay interacción disponible en esta posición")
@@ -319,12 +320,19 @@ class GameplayActivity : AppCompatActivity(),
                     Toast.makeText(this, "Presiona A para entrar a la cafetería", Toast.LENGTH_SHORT).show()
                 }
             }
-            position.first == 22 && position.second == 23 -> {
+            position.first == 27 && position.second == 28 -> {
                canChangeMap = true
                targetDestination = "salon1212"
                runOnUiThread {
                    Toast.makeText(this, "Presiona A para entrar al salón 1212", Toast.LENGTH_SHORT).show()
                }
+            }
+            position.first == 23 && position.second == 10 -> {
+                canChangeMap = true
+                targetDestination = "escom_building4_floor_2"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para entrar al salón 1212", Toast.LENGTH_SHORT).show()
+                }
             }
             else -> {
                 canChangeMap = false
