@@ -315,43 +315,7 @@ class MapView @JvmOverloads constructor(
         }
     }
 
-    fun zoomToFitGame() {
-        if (playerManager.getCurrentMap() == MapMatrixProvider.MAP_SALON1212) {
-            // Establecer un zoom mucho más agresivo
-            val desiredScale = 4.0f  // Aumento dramático del zoom
-            mapState.scaleFactor = desiredScale
-
-            // Recalcular offset para mantener centrado
-            mapState.backgroundBitmap?.let { bitmap ->
-                val scaledWidth = bitmap.width * mapState.scaleFactor
-                val scaledHeight = bitmap.height * mapState.scaleFactor
-                mapState.offsetX = (width - scaledWidth) / 2f
-                mapState.offsetY = (height - scaledHeight) / 2f
-
-                // Asegurarnos de que el mapa esté centrado en la posición del jugador
-                playerManager.getLocalPlayerPosition()?.let { playerPos ->
-                    val cellWidth = scaledWidth / MapMatrixProvider.MAP_WIDTH
-                    val cellHeight = scaledHeight / MapMatrixProvider.MAP_HEIGHT
-
-                    val playerCenterX = playerPos.first * cellWidth + (cellWidth / 2)
-                    val playerCenterY = playerPos.second * cellHeight + (cellHeight / 2)
-
-                    mapState.offsetX = width / 2f - playerCenterX
-                    mapState.offsetY = height / 2f - playerCenterY
-
-                    // Asegurarse de que no se vea espacio en blanco
-                    constrainMapOffset()
-                }
-            }
-
-            Log.d("MapView", "Zoom agresivo aplicado: scale=${mapState.scaleFactor}")
-            invalidate()
-        }
-    }
-
-
-
-    fun adjustMapToScreen() {
+    private fun adjustMapToScreen() {
         try {
             if (width <= 0 || height <= 0) {
                 Log.d("MapView", "Vista sin dimensiones válidas: width=$width, height=$height")
@@ -359,40 +323,33 @@ class MapView @JvmOverloads constructor(
             }
 
             mapState.backgroundBitmap?.let { bitmap ->
-                // Para mapas normales, usar el mismo cálculo
-                // Para el mapa de Pacman, usar un escalado diferente
-                val currentMap = playerManager.getCurrentMap()
-                if (currentMap == MapMatrixProvider.MAP_SALON1212) {
-                    // Hacer que el mapa ocupe casi toda la pantalla para el juego de Pacman
-                    // Cálculo especial para el mapa Pacman
-                    val baseScale = 0.95f * Math.min(
-                        width.toFloat() / bitmap.width,
-                        height.toFloat() / bitmap.height
-                    )
+                // Primero, determinar los factores de escala para ancho y alto
+                val scaleX = width.toFloat() / bitmap.width
+                val scaleY = height.toFloat() / bitmap.height
 
-                    // Escalar un poco más grande
-                    mapState.scaleFactor = baseScale * 1.5f
+                // Para asegurar que todo el mapa sea visible, usamos la menor escala
+                // Esto garantiza que el mapa ocupe la mayor cantidad de espacio posible
+                // sin salirse de los límites de la pantalla
+                val baseScale = Math.min(scaleX, scaleY)
 
-                    // Centrar el mapa
-                    val scaledWidth = bitmap.width * mapState.scaleFactor
-                    val scaledHeight = bitmap.height * mapState.scaleFactor
-                    mapState.offsetX = (width - scaledWidth) / 2f
-                    mapState.offsetY = (height - scaledHeight) / 2f
+                // Ajustamos con un factor para estar seguros de ocupar toda la pantalla
+                val finalScale = baseScale * 0.98f  // 98% para dejar un pequeño margen
 
-                    Log.d("MapView", "Tablero Pacman ajustado: scale=${mapState.scaleFactor}, offset=(${mapState.offsetX},${mapState.offsetY})")
-                } else {
-                    // Cálculo original para otros mapas
-                    val scaleX = width.toFloat() / bitmap.width
-                    val scaleY = height.toFloat() / bitmap.height
-                    val baseScale = Math.min(scaleX, scaleY)
-                    val finalScale = baseScale * 0.98f
+                // Establecer la escala
+                mapState.scaleFactor = finalScale
 
-                    mapState.scaleFactor = finalScale
-                    val scaledWidth = bitmap.width * finalScale
-                    val scaledHeight = bitmap.height * finalScale
-                    mapState.offsetX = (width - scaledWidth) / 2f
-                    mapState.offsetY = (height - scaledHeight) / 2f
-                }
+                // Calcular dimensiones escaladas del mapa
+                val scaledWidth = bitmap.width * finalScale
+                val scaledHeight = bitmap.height * finalScale
+
+                // Centrar el mapa en la pantalla
+                mapState.offsetX = (width - scaledWidth) / 2f
+                mapState.offsetY = (height - scaledHeight) / 2f
+
+                Log.d("MapView", "Mapa ajustado: scale=$finalScale, offset=(${mapState.offsetX},${mapState.offsetY}), " +
+                        "screenSize=($width,$height), scaledMapSize=(${scaledWidth},${scaledHeight})")
+            } ?: run {
+                Log.e("MapView", "No hay bitmap para ajustar")
             }
         } catch (e: Exception) {
             Log.e("MapView", "Error en adjustMapToScreen: ${e.message}")

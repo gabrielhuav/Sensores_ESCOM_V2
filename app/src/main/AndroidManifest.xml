@@ -47,28 +47,30 @@
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
 
-        <!-- Building2 Activity -->
+        <!-- Building Activity -->
+        <activity
+            android:name=".presentation.components.Biblioteca"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+
         <activity
             android:name=".presentation.components.BuildingNumber2"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
-        <!-- Building4 Activity -->
-        <activity
-            android:name=".presentation.components.BuildingNumber4"
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
-
-
 
         <activity
-            android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2009"
+            android:name=".presentation.components.Salon2009"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
-            android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2010"
+            android:name=".presentation.components.Salon2010"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
-            android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber3.SalonPacman"
+            android:name=".presentation.components.Salida"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+
+        <activity
+            android:name=".presentation.components.Camino"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
@@ -77,7 +79,7 @@
 
         <!-- DeviceList Activity -->
         <activity
-            android:name=".data.map.Bluetooth.DeviceListActivity"
+            android:name=".presentation.components.DeviceListActivity"
             android:exported="true"
             android:theme="@style/Theme.Sensores_ESCOM_V2" />
     </application>

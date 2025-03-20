@@ -15,13 +15,11 @@ import androidx.appcompat.app.AppCompatActivity
 import org.json.JSONObject
 import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
-import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothWebSocketBridge
+import ovh.gabrielhuav.sensores_escom_v2.data.map.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2009
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2010
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
 
-class BuildingNumber4 : AppCompatActivity(),
+class Biblioteca : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,
     BluetoothGameManager.ConnectionListener,
     OnlineServerManager.WebSocketListener,
@@ -41,7 +39,7 @@ class BuildingNumber4 : AppCompatActivity(),
     data class GameState(
         var isServer: Boolean = false,
         var isConnected: Boolean = false,
-        var playerPosition: Pair<Int, Int> = Pair(1, 1),
+        var playerPosition: Pair<Int, Int> = Pair(28, 2),
         var remotePlayerPositions: Map<String, PlayerInfo> = emptyMap(),
         var remotePlayerName: String? = null
     ) {
@@ -63,13 +61,13 @@ class BuildingNumber4 : AppCompatActivity(),
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_building2)
+        setContentView(R.layout.activity_biblioteca)
 
         try {
             // Primero inicializamos el mapView
             mapView = MapView(
                 context = this,
-                mapResourceId = R.drawable.escom_edificio_4_piso_2
+                mapResourceId = R.drawable.escom_biblioteca
             )
             findViewById<FrameLayout>(R.id.map_container).addView(mapView)
 
@@ -79,8 +77,8 @@ class BuildingNumber4 : AppCompatActivity(),
             // Esperar a que el mapView esté listo
             mapView.post {
                 // Configurar el mapa
-                val normalizedMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_BUILDING2)
-                mapView.setCurrentMap(normalizedMap, R.drawable.escom_edificio_4_piso_2)
+                val normalizedMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_BIBLIOTECA)
+                mapView.setCurrentMap(normalizedMap, R.drawable.escom_biblioteca)
 
                 // Después configurar el playerManager
                 mapView.playerManager.apply {
@@ -89,7 +87,7 @@ class BuildingNumber4 : AppCompatActivity(),
                     updateLocalPlayerPosition(gameState.playerPosition)
                 }
 
-                Log.d("BuildingNumber2", "Set map to: $normalizedMap")
+                Log.d("Biblioteca", "Set map to: $normalizedMap")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error en onCreate: ${e.message}")
@@ -109,7 +107,7 @@ class BuildingNumber4 : AppCompatActivity(),
         if (savedInstanceState == null) {
             // Inicializar el estado del juego desde el Intent
             gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
-            gameState.playerPosition = intent.getParcelableExtra("INITIAL_POSITION") ?: Pair(1, 1)
+            gameState.playerPosition = intent.getParcelableExtra("INITIAL_POSITION") ?: Pair(28, 1)
         } else {
             restoreState(savedInstanceState)
         }
@@ -137,14 +135,14 @@ class BuildingNumber4 : AppCompatActivity(),
 
     private fun initializeManagers() {
         bluetoothManager = BluetoothManager.getInstance(this, uiManager.tvBluetoothStatus).apply {
-            setCallback(this@BuildingNumber4)
+            setCallback(this@Biblioteca)
         }
 
         bluetoothBridge = BluetoothWebSocketBridge.getInstance()
 
         // Configurar OnlineServerManager con el listener
         val onlineServerManager = OnlineServerManager.getInstance(this).apply {
-            setListener(this@BuildingNumber4)
+            setListener(this@Biblioteca)
         }
 
         serverConnectionManager = ServerConnectionManager(
@@ -376,11 +374,11 @@ class BuildingNumber4 : AppCompatActivity(),
         finish()
     }
 
-    private fun startBuildingActivity() {
-        val intent = Intent(this, BuildingNumber4::class.java).apply {
+    private fun startBibliotecaActivity() {
+        val intent = Intent(this, Biblioteca::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(1, 1))
+            putExtra("INITIAL_POSITION", Pair(29, 1))
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         startActivity(intent)
@@ -396,7 +394,7 @@ class BuildingNumber4 : AppCompatActivity(),
                 mapView.updateLocalPlayerPosition(position, forceCenter = true)
 
                 if (gameState.isConnected) {
-                    serverConnectionManager.sendUpdateMessage(playerName, position, "escom_building4_floor_2")
+                    serverConnectionManager.sendUpdateMessage(playerName, position, "escom_biblioteca")
                 }
 
                 checkPositionForMapChange(position)

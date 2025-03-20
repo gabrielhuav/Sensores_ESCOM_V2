@@ -6,16 +6,12 @@ import android.graphics.Paint
 import android.graphics.Typeface
 import android.util.Log
 import org.json.JSONObject
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber3.pacman.PacmanEntityRenderer
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber3.pacman.PacmanController
 
 class PlayerManager {
     private var localPlayerPosition: Pair<Int, Int>? = null
     private var remotePlayerPositions = mutableMapOf<String, PlayerInfo>()
     var localPlayerId: String = "player_local"
     private var currentMap = MapMatrixProvider.MAP_MAIN
-    private val pacmanRenderer = PacmanEntityRenderer()
-    private var currentPacmanDirection = PacmanController.DIRECTION_RIGHT // Dirección por defecto
 
     data class PlayerInfo(
         val position: Pair<Int, Int>,
@@ -219,17 +215,9 @@ class PlayerManager {
 
     // Método para dibujar entidades especiales
     private fun drawSpecialEntities(canvas: Canvas, cellWidth: Float, cellHeight: Float) {
-
         try {
-            // Only draw entities that are in the current map
+            // Solo dibujar entidades que estén en el mapa actual
             val normalizedCurrentMap = MapMatrixProvider.normalizeMapName(currentMap)
-
-            // Factor de escala mucho más agresivo para las entidades de Pacman
-            val scaleFactor = if (normalizedCurrentMap == MapMatrixProvider.MAP_SALON1212) 3.0f else 1.0f
-            val adjustedCellWidth = cellWidth * scaleFactor
-            val adjustedCellHeight = cellHeight * scaleFactor
-
-            Log.d("PlayerManager", "Drawing special entities with super-sized cells: $adjustedCellWidth x $adjustedCellHeight")
 
             specialEntities.forEach { (entityId, info) ->
                 val (position, entityMap) = info
@@ -240,97 +228,26 @@ class PlayerManager {
                     val y = position.second * cellHeight + (cellHeight / 2)
 
                     when {
-                        entityId == "pacman" -> {
-                            Log.d("PlayerManager", "Drawing super-sized Pacman at ($x, $y) with direction $currentPacmanDirection")
-
-                            try {
-                                pacmanRenderer.drawPacman(canvas, x, y, adjustedCellWidth, currentPacmanDirection)
-                            } catch(e: Exception) {
-                                // Fallback como antes...
-                            }
-                        }
-                        entityId == "pacman_direction" -> {
-                            // Guardar la dirección actual de Pacman para usarla en el próximo frame
-                            try {
-                                currentPacmanDirection = entityMap.toInt()
-                                Log.d("PlayerManager", "Actualizada dirección de Pacman: $currentPacmanDirection")
-                            } catch(e: Exception) {
-                                Log.e("PlayerManager", "Error actualizando dirección de Pacman: ${e.message}")
-                            }
-                        }
-                        entityId.startsWith("ghost_") -> {
-                            // Fantasmas mucho más grandes
-                            try {
-                                pacmanRenderer.drawGhost(canvas, x, y, adjustedCellWidth, entityId)
-                            } catch(e: Exception) {
-                                // Fallback manual
-                                val ghostPaint = Paint().apply {
-                                    color = when {
-                                        entityId.endsWith("0") -> Color.RED
-                                        entityId.endsWith("1") -> Color.rgb(255, 184, 255) // Pink
-                                        entityId.endsWith("2") -> Color.CYAN
-                                        else -> Color.rgb(255, 184, 82) // Orange
-                                    }
-                                    style = Paint.Style.FILL
-                                    setShadowLayer(5f, 0f, 0f, Color.GRAY)
-                                }
-                                canvas.drawCircle(x, y, adjustedCellWidth * 0.7f, ghostPaint)
-
-                                // Añadir ojos para mejorar visibilidad
-                                val eyePaint = Paint().apply { color = Color.WHITE; style = Paint.Style.FILL }
-                                val pupilPaint = Paint().apply { color = Color.BLACK; style = Paint.Style.FILL }
-
-                                // Ojo izquierdo
-                                canvas.drawCircle(x - adjustedCellWidth*0.2f, y - adjustedCellWidth*0.1f,
-                                    adjustedCellWidth*0.15f, eyePaint)
-                                // Ojo derecho
-                                canvas.drawCircle(x + adjustedCellWidth*0.2f, y - adjustedCellWidth*0.1f,
-                                    adjustedCellWidth*0.15f, eyePaint)
-
-                                // Pupilas
-                                canvas.drawCircle(x - adjustedCellWidth*0.2f, y - adjustedCellWidth*0.1f,
-                                    adjustedCellWidth*0.08f, pupilPaint)
-                                canvas.drawCircle(x + adjustedCellWidth*0.2f, y - adjustedCellWidth*0.1f,
-                                    adjustedCellWidth*0.08f, pupilPaint)
-                            }
-                        }
-                        entityId.startsWith("food_") -> {
-                            // Comida mucho más visible
-                            try {
-                                pacmanRenderer.drawFood(canvas, x, y, adjustedCellWidth)
-                            } catch(e: Exception) {
-                                // Fallback con comida más visible
-                                val foodPaint = Paint().apply {
-                                    color = Color.rgb(255, 223, 0) // Amarillo brillante
-                                    style = Paint.Style.FILL
-                                    setShadowLayer(5f, 0f, 0f, Color.WHITE)
-                                }
-                                canvas.drawCircle(x, y, adjustedCellWidth * 0.3f, foodPaint)
-                            }
-                        }
-                        // Sin cambios para otras entidades...
-                        entityId == "zombie" || entityId.startsWith("zombie_") -> {
-                            // Dibujo del zombie
+                        entityId == "zombie" -> {
+                            // Dibujar zombie (más grande que un jugador normal)
                             canvas.drawCircle(x, y, cellWidth * 0.4f, zombiePaint)
                             canvas.drawText("ZOMBIE", x, y - cellHeight * 0.7f, zombieTextPaint)
                         }
                         entityId.startsWith("item_") -> {
+                            // Dibujar ítem
                             canvas.drawCircle(x, y, cellWidth * 0.3f, itemPaint)
                             canvas.drawText("ITEM", x, y - cellHeight * 0.5f, itemTextPaint)
                         }
                     }
 
-                    // Restringir el logging para no saturar
-                    if (entityId == "pacman" || entityId.startsWith("ghost_")) {
-                        Log.d("PlayerManager", "Dibujada entidad $entityId en ($x, $y) con tamaño ${adjustedCellWidth}")
-                    }
+                    Log.d("PlayerManager", "Dibujada entidad $entityId en ($x, $y)")
                 }
             }
         } catch (e: Exception) {
-            Log.e("PlayerManager", "Error in drawSpecialEntities: ${e.message}")
-            e.printStackTrace()
+            Log.e("PlayerManager", "Error en drawSpecialEntities: ${e.message}")
         }
     }
+
     // Añadir pinturas para entidades especiales si no existen
     private val zombiePaint by lazy {
         Paint().apply {

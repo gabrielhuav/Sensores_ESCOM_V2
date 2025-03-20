@@ -3,8 +3,6 @@ package ovh.gabrielhuav.sensores_escom_v2.presentation.components
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.view.MotionEvent
 import android.widget.Button
@@ -15,7 +13,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import org.json.JSONObject
 import ovh.gabrielhuav.sensores_escom_v2.R
-import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothWebSocketBridge
+import ovh.gabrielhuav.sensores_escom_v2.data.map.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.cafeteria.ZombieController
@@ -47,7 +45,7 @@ class Cafeteria : AppCompatActivity(),
     private lateinit var bluetoothBridge: BluetoothWebSocketBridge
 
     // Reutilizamos la misma estructura de GameState que BuildingNumber2
-    private var gameState = BuildingNumber2.GameState()
+    private var gameState = Biblioteca.GameState()
 
     // Controlador para el minijuego del zombie
     private lateinit var zombieController: ZombieController
@@ -57,12 +55,6 @@ class Cafeteria : AppCompatActivity(),
     private var playerScore = 0
     private var gameStartTime = 0L
     private val GAME_DURATION_MS = 60000L // 60 segundos de duración del juego
-    private var selectedDifficulty = ZombieController.DIFFICULTY_EASY
-    private val difficultyNames = mapOf(
-        ZombieController.DIFFICULTY_EASY to "Fácil",
-        ZombieController.DIFFICULTY_MEDIUM to "Medio",
-        ZombieController.DIFFICULTY_HARD to "Difícil"
-    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -108,43 +100,6 @@ class Cafeteria : AppCompatActivity(),
         }
     }
 
-    private fun changeDifficultyDuringGame() {
-        if (!zombieGameActive) {
-            // Si no hay juego activo, usa el selector normal
-            showDifficultySelectionDialog()
-            return
-        }
-
-        // Si hay un juego activo, muestra opciones pero avisa que reiniciará el juego
-        val options = arrayOf("Fácil", "Medio", "Difícil")
-        var selectedOption = selectedDifficulty - 1 // Índice basado en 0
-
-        AlertDialog.Builder(this)
-            .setTitle("Cambiar Dificultad")
-            .setMessage("Cambiar la dificultad reiniciará el juego actual. ¿Deseas continuar?")
-            .setSingleChoiceItems(options, selectedOption) { _, which ->
-                selectedOption = which
-            }
-            .setPositiveButton("Cambiar") { dialog, _ ->
-                // Actualizar dificultad
-                selectedDifficulty = when(selectedOption) {
-                    1 -> ZombieController.DIFFICULTY_MEDIUM
-                    2 -> ZombieController.DIFFICULTY_HARD
-                    else -> ZombieController.DIFFICULTY_EASY
-                }
-
-                // Reiniciar el juego con la nueva dificultad
-                stopZombieGame()
-                startZombieGame()
-
-                dialog.dismiss()
-            }
-            .setNegativeButton("Cancelar") { dialog, _ ->
-                dialog.dismiss()
-            }
-            .show()
-    }
-
     private fun initializeComponents(savedInstanceState: Bundle?) {
         // Obtener datos desde Intent o restaurar el estado guardado
         playerName = intent.getStringExtra("PLAYER_NAME") ?: run {
@@ -174,10 +129,10 @@ class Cafeteria : AppCompatActivity(),
 
         // Inicializar el controlador del zombie
         zombieController = ZombieController(
-            onZombiePositionChanged = { zombieId, position ->
+            onZombiePositionChanged = { position ->
                 // Cuando el zombie cambia de posición, lo dibujamos en el mapa
                 runOnUiThread {
-                    mapView.updateSpecialEntity(zombieId, position, MapMatrixProvider.MAP_CAFETERIA)
+                    mapView.updateSpecialEntity("zombie", position, MapMatrixProvider.MAP_CAFETERIA)
                     mapView.invalidate()
                 }
             },
@@ -193,29 +148,14 @@ class Cafeteria : AppCompatActivity(),
     }
 
     private fun showZombieGameIntroDialog() {
-        val options = arrayOf("Fácil", "Medio", "Difícil")
-        var selectedOption = 0
-
         AlertDialog.Builder(this)
             .setTitle("¡Bienvenido a la Cafetería ESCOM!")
-            .setMessage("¡Cuidado! Hay zombies hambrientos en la cafetería. " +
+            .setMessage("¡Cuidado! Hay un zombie hambriento en la cafetería. " +
                     "Sobrevive durante 60 segundos sin ser atrapado.\n\n" +
                     "Usa el botón 'B1' para iniciar el juego y 'A' para recoger comida " +
-                    "que ralentizará a los zombies.")
-            .setSingleChoiceItems(options, selectedOption) { _, which ->
-                selectedOption = which
-                selectedDifficulty = when(which) {
-                    1 -> ZombieController.DIFFICULTY_MEDIUM
-                    2 -> ZombieController.DIFFICULTY_HARD
-                    else -> ZombieController.DIFFICULTY_EASY
-                }
-            }
+                    "que ralentizará al zombie.")
             .setPositiveButton("¡Entendido!") { dialog, _ ->
                 dialog.dismiss()
-
-                // Mostrar la dificultad seleccionada
-                val difficultyName = difficultyNames[selectedDifficulty] ?: "Fácil"
-                Toast.makeText(this, "Dificultad seleccionada: $difficultyName", Toast.LENGTH_SHORT).show()
             }
             .setCancelable(false)
             .show()
@@ -228,53 +168,46 @@ class Cafeteria : AppCompatActivity(),
 
         // Actualizar UI
         runOnUiThread {
-            val difficultyName = difficultyNames[selectedDifficulty] ?: "Fácil"
-            tvBluetoothStatus.text = "MINIJUEGO ACTIVO - Dificultad: $difficultyName"
+            tvBluetoothStatus.text = "MINIJUEGO ACTIVO - Sobrevive al zombie"
             btnB1.text = "STOP"
         }
 
-        // Iniciar el controlador del zombie con la dificultad seleccionada
-        zombieController.startGame(selectedDifficulty)
+        // Iniciar el controlador del zombie
+        zombieController.startGame(1) // Dificultad inicial: 1
 
-        // Iniciar timer de actualización
-        startGameUpdateTimer()
+        // AÑADIR: Colocar inmediatamente el zombie en el mapa
+        val initialZombiePosition = Pair(30, 30) // Posición inicial del zombie
+        mapView.updateSpecialEntity("zombie", initialZombiePosition, MapMatrixProvider.MAP_CAFETERIA)
+        mapView.invalidate()
 
         // Informar al servidor que el juego ha iniciado
-        sendZombieGameUpdate("start", difficulty = selectedDifficulty)
+        sendZombieGameUpdate("start")
 
-        // Programar fin del juego (si no es atrapado) - Ya manejado por el timer
+        // Programar fin del juego (si no es atrapado)
+        movementManager.scheduleDelayedAction(GAME_DURATION_MS) {
+            if (zombieGameActive) {
+                completeZombieGame(true)
+            }
+        }
     }
-
     private fun stopZombieGame() {
         if (zombieGameActive) {
             zombieController.stopGame()
             zombieGameActive = false
-
-            // Detener timer
-            stopGameUpdateTimer()
 
             // Actualizar UI
             runOnUiThread {
                 tvBluetoothStatus.text = "Conectado al servidor online - CAFE ESCOM"
                 btnB1.text = "B1"
 
-                // Limpiar los zombies del mapa
-                clearZombieEntities()
+                // Limpiar el zombie del mapa
+                mapView.removeSpecialEntity("zombie")
                 mapView.invalidate()
             }
 
             // Informar al servidor
             sendZombieGameUpdate("stop")
         }
-    }
-
-    private fun clearZombieEntities() {
-        // Buscar y eliminar todos los zombies (zombie_0, zombie_1, etc.)
-        for (i in 0 until 10) { // Máximo razonable de zombies
-            mapView.removeSpecialEntity("zombie_$i")
-        }
-        // También eliminar el zombie original si existe
-        mapView.removeSpecialEntity("zombie")
     }
 
     private fun onZombieCaughtPlayer() {
@@ -288,9 +221,6 @@ class Cafeteria : AppCompatActivity(),
         zombieGameActive = false
         zombieController.stopGame()
 
-        // Detener timer
-        stopGameUpdateTimer()
-
         val timeElapsed = System.currentTimeMillis() - gameStartTime
         val secondsSurvived = timeElapsed / 1000
 
@@ -299,7 +229,7 @@ class Cafeteria : AppCompatActivity(),
             val message = if (survived) {
                 "¡VICTORIA! Has sobrevivido los 60 segundos. Puntuación: $playerScore"
             } else {
-                "¡GAME OVER! Un zombie te atrapó. Sobreviviste $secondsSurvived segundos. Puntuación: $playerScore"
+                "¡GAME OVER! El zombie te atrapó. Sobreviviste $secondsSurvived segundos. Puntuación: $playerScore"
             }
 
             AlertDialog.Builder(this)
@@ -312,7 +242,7 @@ class Cafeteria : AppCompatActivity(),
                     btnB1.text = "B1"
 
                     // Limpiar el zombie del mapa
-                    clearZombieEntities()
+                    mapView.removeSpecialEntity("zombie")
                     mapView.invalidate()
                 }
                 .setCancelable(false)
@@ -323,17 +253,13 @@ class Cafeteria : AppCompatActivity(),
         sendZombieGameUpdate("complete", survived, secondsSurvived.toInt(), playerScore)
     }
 
-    private fun sendZombieGameUpdate(action: String, survived: Boolean = false, time: Int = 0, score: Int = 0, difficulty: Int = ZombieController.DIFFICULTY_EASY) {
+    private fun sendZombieGameUpdate(action: String, survived: Boolean = false, time: Int = 0, score: Int = 0) {
         try {
             val message = JSONObject().apply {
                 put("type", "zombie_game_update")
                 put("action", action)
                 put("player", playerName)
                 put("map", MapMatrixProvider.MAP_CAFETERIA)
-
-                if (action == "start") {
-                    put("difficulty", difficulty)
-                }
 
                 if (action == "complete") {
                     put("survived", survived)
@@ -345,23 +271,6 @@ class Cafeteria : AppCompatActivity(),
             serverConnectionManager.onlineServerManager.queueMessage(message.toString())
         } catch (e: Exception) {
             Log.e(TAG, "Error enviando actualización del juego: ${e.message}")
-        }
-    }
-
-    // 7. Añadir método para actualizar las posiciones de los jugadores remotos en el zombieController
-    private fun updateRemotePlayersForZombies() {
-        // Esta función debe ser llamada cuando se detecten cambios en las posiciones de jugadores remotos
-        if (zombieGameActive && this::zombieController.isInitialized) {
-            // Actualizar la posición del jugador local
-            zombieController.updatePlayerPosition(playerName, gameState.playerPosition)
-
-            // Actualizar las posiciones de jugadores remotos
-            gameState.remotePlayerPositions.forEach { (playerId, playerInfo) ->
-                // Solo considerar jugadores en el mismo mapa (la cafetería)
-                if (MapMatrixProvider.normalizeMapName(playerInfo.map) == MapMatrixProvider.MAP_CAFETERIA) {
-                    zombieController.updatePlayerPosition(playerId, playerInfo.position)
-                }
-            }
         }
     }
 
@@ -384,8 +293,8 @@ class Cafeteria : AppCompatActivity(),
                 // Mostrar mensaje
                 Toast.makeText(this, "¡Recogiste comida! +10 puntos", Toast.LENGTH_SHORT).show()
 
-                // Ralentizar a los zombies
-                zombieController.slowDownZombies(3000) // 3 segundos más lentos
+                // Ralentizar al zombie temporalmente (si implementamos esta función)
+                // zombieController.slowDown(3000) // 3 segundos más lento
 
                 // Informar al servidor
                 val message = JSONObject().apply {
@@ -399,35 +308,6 @@ class Cafeteria : AppCompatActivity(),
                 serverConnectionManager.onlineServerManager.queueMessage(message.toString())
             }
         }
-    }
-
-    private fun showDifficultySelectionDialog() {
-        if (zombieGameActive) {
-            Toast.makeText(this, "No puedes cambiar la dificultad durante el juego", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val options = arrayOf("Fácil", "Medio", "Difícil")
-        var selectedOption = selectedDifficulty - 1 // Índice basado en 0
-
-        AlertDialog.Builder(this)
-            .setTitle("Selecciona la Dificultad")
-            .setSingleChoiceItems(options, selectedOption) { _, which ->
-                selectedOption = which
-                selectedDifficulty = when(which) {
-                    1 -> ZombieController.DIFFICULTY_MEDIUM
-                    2 -> ZombieController.DIFFICULTY_HARD
-                    else -> ZombieController.DIFFICULTY_EASY
-                }
-            }
-            .setPositiveButton("Aceptar") { dialog, _ ->
-                dialog.dismiss()
-
-                // Mostrar la dificultad seleccionada
-                val difficultyName = difficultyNames[selectedDifficulty] ?: "Fácil"
-                Toast.makeText(this, "Dificultad seleccionada: $difficultyName", Toast.LENGTH_SHORT).show()
-            }
-            .show()
     }
 
     private fun connectToOnlineServer() {
@@ -533,26 +413,16 @@ class Cafeteria : AppCompatActivity(),
             true // Solo en setOnLongClickListener se debe retornar true
         }
 
+        // Botón A para interactuar con elementos del juego (comida)
         buttonA.setOnClickListener {
-            if (zombieGameActive) {
-                // Si el juego está activo, buscar comida
-                val currentPosition = gameState.playerPosition
-                checkForFoodItem(currentPosition)
-            } else {
-                // Si el juego no está activo, mostrar diálogo de dificultad
-                showDifficultySelectionDialog()
-            }
+            val currentPosition = gameState.playerPosition
+            checkForFoodItem(currentPosition)
         }
 
         buttonA.setOnLongClickListener {
-            // Si se mantiene A presionado mientras el juego está activo, mostrar opciones de dificultad
-            if (zombieGameActive) {
-                changeDifficultyDuringGame()
-                return@setOnLongClickListener true
-            }
-            return@setOnLongClickListener false
+            forceZombieGameWithFixedZombie()
+            true
         }
-
     }
 
     private fun returnToBuilding2() {
@@ -566,7 +436,7 @@ class Cafeteria : AppCompatActivity(),
             ?: Pair(15, 16) // Por defecto, volver al pasillo principal
 
         // Crear intent para volver al Edificio 2
-        val intent = Intent(this, BuildingNumber2::class.java).apply {
+        val intent = Intent(this, Biblioteca::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("IS_CONNECTED", gameState.isConnected) // Pasar el estado de conexión
@@ -599,8 +469,8 @@ class Cafeteria : AppCompatActivity(),
             }
 
             // Si el minijuego está activo, actualizar la posición del jugador para el zombie
-            if (zombieGameActive && this::zombieController.isInitialized) {
-                zombieController.updatePlayerPosition(playerName, position)
+            if (zombieGameActive) {
+                zombieController.updatePlayerPosition(position)
             }
         }
     }
@@ -613,7 +483,7 @@ class Cafeteria : AppCompatActivity(),
                 ?: Pair(20, 20)
             @Suppress("UNCHECKED_CAST")
             remotePlayerPositions = (savedInstanceState.getSerializable("REMOTE_PLAYER_POSITIONS")
-                    as? HashMap<String, BuildingNumber2.GameState.PlayerInfo>)?.toMap() ?: emptyMap()
+                    as? HashMap<String, Biblioteca.GameState.PlayerInfo>)?.toMap() ?: emptyMap()
             remotePlayerName = savedInstanceState.getString("REMOTE_PLAYER_NAME")
         }
 
@@ -631,54 +501,6 @@ class Cafeteria : AppCompatActivity(),
         if (zombieGameActive) {
             zombieController.startGame()
         }
-    }
-
-    private fun updateGameStatus() {
-        if (!zombieGameActive) {
-            updateBluetoothStatus("CAFETERÍA ESCOM - Conectado al servidor")
-            return
-        }
-
-        val difficultyName = difficultyNames[selectedDifficulty] ?: "Fácil"
-        val elapsedTime = (System.currentTimeMillis() - gameStartTime) / 1000
-        val remainingTime = GAME_DURATION_MS / 1000 - elapsedTime
-
-        // Mostrar tiempo restante, puntuación y dificultad
-        val statusText = "ZOMBIES 🧟‍♂️ | Dif: $difficultyName | Tiempo: ${remainingTime}s | Puntos: $playerScore"
-        updateBluetoothStatus(statusText)
-    }
-
-    private val gameUpdateHandler = Handler(Looper.getMainLooper())
-    private var gameUpdateRunnable: Runnable? = null
-
-    private fun startGameUpdateTimer() {
-        // Detener timer existente si hay
-        gameUpdateRunnable?.let { gameUpdateHandler.removeCallbacks(it) }
-
-        gameUpdateRunnable = object : Runnable {
-            override fun run() {
-                if (zombieGameActive) {
-                    updateGameStatus()
-
-                    // Verificar si el tiempo se ha agotado
-                    val elapsedTime = System.currentTimeMillis() - gameStartTime
-                    if (elapsedTime >= GAME_DURATION_MS) {
-                        completeZombieGame(true)
-                        return
-                    }
-
-                    gameUpdateHandler.postDelayed(this, 1000) // Actualizar cada segundo
-                }
-            }
-        }
-
-        // Iniciar timer
-        gameUpdateHandler.post(gameUpdateRunnable!!)
-    }
-
-    private fun stopGameUpdateTimer() {
-        gameUpdateRunnable?.let { gameUpdateHandler.removeCallbacks(it) }
-        gameUpdateRunnable = null
     }
 
     // Implementación MapTransitionListener
@@ -746,10 +568,7 @@ class Cafeteria : AppCompatActivity(),
 
         // Si hay un ZombieController inicializado, también actualizar ahí
         if (this::zombieController.isInitialized) {
-            // Cambiar esta línea:
-            // zombieController.setZombiePosition(debugPosition)
-            // Por esta:
-            zombieController.setZombiePosition("zombie", debugPosition)
+            zombieController.setZombiePosition(debugPosition)
         }
     }
 
@@ -774,10 +593,7 @@ class Cafeteria : AppCompatActivity(),
         val zombiePosition = Pair(20, 20)
 
         // 5. Establecer la posición del zombie en el controlador
-        // Cambiar esta línea:
-        // zombieController.setZombiePosition(zombiePosition)
-        // Por esta:
-        zombieController.setZombiePosition("zombie", zombiePosition)
+        zombieController.setZombiePosition(zombiePosition)
 
         // 6. Actualizar la entidad especial en el mapa (esto debe llamar a updateSpecialEntity del PlayerManager)
         mapView.playerManager.updateSpecialEntity("zombie", zombiePosition, MapMatrixProvider.MAP_CAFETERIA)
@@ -821,7 +637,7 @@ class Cafeteria : AppCompatActivity(),
 
                                 // Guardar en el estado del juego
                                 gameState.remotePlayerPositions = gameState.remotePlayerPositions +
-                                        (playerId to BuildingNumber2.GameState.PlayerInfo(position, normalizedMap))
+                                        (playerId to Biblioteca.GameState.PlayerInfo(position, normalizedMap))
 
                                 // Obtener el mapa actual normalizado para comparar
                                 val currentMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_CAFETERIA)
@@ -848,7 +664,7 @@ class Cafeteria : AppCompatActivity(),
 
                             // Guardar en el estado
                             gameState.remotePlayerPositions = gameState.remotePlayerPositions +
-                                    (playerId to BuildingNumber2.GameState.PlayerInfo(position, normalizedMap))
+                                    (playerId to Biblioteca.GameState.PlayerInfo(position, normalizedMap))
 
                             // Obtener el mapa actual normalizado para comparar
                             val currentMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_CAFETERIA)
@@ -865,30 +681,27 @@ class Cafeteria : AppCompatActivity(),
                     }
                     "zombie_position" -> {
                         // Manejo de la posición del zombie
-                        val zombieId = jsonObject.optString("id", "zombie")
                         val x = jsonObject.getInt("x")
                         val y = jsonObject.getInt("y")
                         val zombiePosition = Pair(x, y)
 
-                        Log.d(TAG, "¡Recibida posición de zombie $zombieId en ($x, $y)!")
+                        Log.d(TAG, "¡Recibida posición de zombie en ($x, $y)!")
 
                         // Actualizar la posición del zombie en el controlador
                         if (this::zombieController.isInitialized) {
-                            zombieController.setZombiePosition(zombieId, zombiePosition)
+                            zombieController.setZombiePosition(zombiePosition)
                         }
 
                         // IMPORTANTE: Actualizar la entidad especial en el mapa
-                        mapView.updateSpecialEntity(zombieId, zombiePosition, MapMatrixProvider.MAP_CAFETERIA)
+                        mapView.updateSpecialEntity("zombie", zombiePosition, MapMatrixProvider.MAP_CAFETERIA)
                         mapView.invalidate() // Forzar redibujado
                     }
-
                     "zombie_game_command" -> {
                         // Procesar comandos del juego del zombie
                         when (jsonObject.optString("command")) {
                             "start" -> {
                                 if (!zombieGameActive) {
-                                    val gameDifficulty = jsonObject.optInt("difficulty", 1)
-                                    selectedDifficulty = gameDifficulty
+                                    val difficulty = jsonObject.optInt("difficulty", 1)
                                     startZombieGame()
                                 }
                             }
@@ -901,30 +714,6 @@ class Cafeteria : AppCompatActivity(),
                                 val caughtPlayer = jsonObject.optString("player")
                                 if (caughtPlayer == playerName && zombieGameActive) {
                                     completeZombieGame(false)
-                                }
-                            }
-                            "zombie_slowed" -> {
-                                // Mostrar efecto visual de ralentización
-                                if (zombieGameActive) {
-                                    runOnUiThread {
-                                        Toast.makeText(
-                                            this,
-                                            "¡${jsonObject.optString("player")} recogió comida! Zombies ralentizados",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    }
-                                }
-                            }
-                            "zombie_speed_normal" -> {
-                                // Notificar que los zombies vuelven a velocidad normal
-                                if (zombieGameActive) {
-                                    runOnUiThread {
-                                        Toast.makeText(
-                                            this,
-                                            "¡Los zombies recuperan su velocidad!",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    }
                                 }
                             }
                         }
