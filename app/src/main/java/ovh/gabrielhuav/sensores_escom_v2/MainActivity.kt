@@ -11,7 +11,8 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.DeviceListActivity
+import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.DeviceListActivity
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.GameplayActivity
 
 class MainActivity : AppCompatActivity() {
