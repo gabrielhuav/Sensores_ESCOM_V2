@@ -255,6 +255,7 @@ class GameplayActivity : AppCompatActivity(),
                         "cafeteria" -> startCafeteriaActivity()
                         "salon1212" -> startSalonPacmanActivity()
                         "Estacionamiento" -> startEstacionamientoEscomActivity()
+                        "zacatenco" -> startZacatencoActivity()
                         else -> showToast("No hay interacción disponible en esta posición")
                     }
                 } else {
@@ -264,6 +265,29 @@ class GameplayActivity : AppCompatActivity(),
         }
     }
 
+    private fun startEstacionamientoEscomActivity() {
+        val intent = Intent(this, EstacionamientoEscom::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(4, 25))  // Posición dentro del estacionamiento
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda posición actual para regreso
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
+
+    private fun startZacatencoActivity() {
+        val intent = Intent(this, Zacatenco::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(10, 12))
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
 
     private fun startCafeteriaActivity() {
         val intent = Intent(this, Cafeteria::class.java).apply {
@@ -359,7 +383,17 @@ class GameplayActivity : AppCompatActivity(),
                     Toast.makeText(this, "Presiona A para entrar al salón 1212", Toast.LENGTH_SHORT).show()
                 }
             }
-
+            position.first == 25 && position.second == 5 -> {
+                canChangeMap = true
+                targetDestination = "Estacionamiento"
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        "Presiona A para entrar al estacionamiento",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
             else -> {
                 canChangeMap = false
                 targetDestination = null
