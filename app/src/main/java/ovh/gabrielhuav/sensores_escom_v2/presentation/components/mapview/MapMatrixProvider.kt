@@ -258,6 +258,93 @@ class MapMatrixProvider {
             return matrix
         }
 
+        /**
+         * NUEVO MAPA: Estacionamiento de ESCOM
+         */
+        private fun createEstacionamientoMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } } // Todo es muro por defecto
+
+            // Área del estacionamiento (caminable)
+            for (i in 5 until MAP_HEIGHT-5) {
+                for (j in 5 until MAP_WIDTH-5) {
+                    matrix[i][j] = PATH
+                }
+            }
+
+            // Líneas de aparcamiento (obstáculos)
+            for (row in 0..3) {
+                val rowY = 10 + (row * 7)
+
+                // Crear líneas horizontales de autos estacionados
+                for (j in 8 until MAP_WIDTH-8) {
+                    if (j % 5 == 0) { // Espaciado entre autos
+                        matrix[rowY][j] = INACCESSIBLE
+                        matrix[rowY+1][j] = INACCESSIBLE
+                        matrix[rowY+2][j] = INACCESSIBLE
+                    }
+                }
+            }
+
+            // Caseta de vigilancia (obstáculo)
+            for (i in 30..33) {
+                for (j in 15..20) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            // Punto interactivo para salir al mapa principal
+            matrix[38][20] = INTERACTIVE
+
+            // Punto interactivo para ir al siguiente mapa (TramoAtrasPlaza)
+            matrix[20][35] = INTERACTIVE
+
+            return matrix
+        }
+
+        /**
+         * NUEVO MAPA: Tramo Atrás Plaza
+         */
+        private fun createPlazaMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } } // Todo es muro por defecto
+
+            // Crear un camino principal que atraviese el mapa
+            for (i in 18..22) { // Camino horizontal en el centro
+                for (j in 0 until MAP_WIDTH) {
+                    matrix[i][j] = PATH
+                }
+            }
+
+            // Crear áreas verdes (obstáculos)
+            for (i in 5..15) {
+                for (j in 5..15) {
+                    matrix[i][j] = INACCESSIBLE // Área verde superior izquierda
+                }
+            }
+
+            for (i in 25..35) {
+                for (j in 25..35) {
+                    matrix[i][j] = INACCESSIBLE // Área verde inferior derecha
+                }
+            }
+
+            // Bancas en el camino (obstáculos pequeños)
+            for (j in 10..30 step 10) {
+                matrix[17][j] = INACCESSIBLE
+                matrix[23][j] = INACCESSIBLE
+            }
+
+            // Punto interactivo para regresar al Estacionamiento
+            matrix[20][5] = INTERACTIVE
+
+            // Punto interactivo para ir al siguiente mapa (TramoLindavista)
+            matrix[20][35] = INTERACTIVE
+
+            // Añadir un easter egg interactivo
+            matrix[10][30] = INTERACTIVE
+
+            return matrix
+        }
+
 
 
         fun createSalon1212Matrix(): Array<Array<Int>> {
