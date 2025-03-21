@@ -254,6 +254,7 @@ class GameplayActivity : AppCompatActivity(),
                         "escom_building4_floor_2" -> startBuilding4Activity()
                         "cafeteria" -> startCafeteriaActivity()
                         "salon1212" -> startSalonPacmanActivity()
+                        "Estacionamiento" -> startEstacionamientoEscomActivity()
                         "zacatenco" -> startZacatencoActivity()
                         else -> showToast("No hay interacción disponible en esta posición")
                     }
@@ -263,6 +264,7 @@ class GameplayActivity : AppCompatActivity(),
             }
         }
     }
+
 
     private fun startZacatencoActivity() {
         val intent = Intent(this, Zacatenco::class.java).apply {
@@ -312,6 +314,18 @@ class GameplayActivity : AppCompatActivity(),
         finish()
     }
 
+    private fun startEstacionamientoEscomActivity() {
+        val intent = Intent(this, EstacionamientoEscom::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(4, 25))  // Posición dentro del estacionamiento
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda posición actual para regreso
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
+
     private var canChangeMap = false  // Variable para controlar si se puede cambiar de mapa
     private var targetDestination: String? = null  // Variable para almacenar el destino
 
@@ -339,6 +353,19 @@ class GameplayActivity : AppCompatActivity(),
                     Toast.makeText(this, "Presiona A para entrar a la cafetería", Toast.LENGTH_SHORT).show()
                 }
             }
+
+            position.first == 25 && position.second == 5 -> {
+                canChangeMap = true
+                targetDestination = "Estacionamiento"
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        "Presiona A para entrar al estacionamiento",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
             position.first == 27 && position.second == 28 -> {
                canChangeMap = true
                targetDestination = "salon1212"
@@ -351,6 +378,17 @@ class GameplayActivity : AppCompatActivity(),
                 targetDestination = "escom_building4_floor_2"
                 runOnUiThread {
                     Toast.makeText(this, "Presiona A para entrar al salón 1212", Toast.LENGTH_SHORT).show()
+                }
+            }
+            position.first == 25 && position.second == 5 -> {
+                canChangeMap = true
+                targetDestination = "Estacionamiento"
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        "Presiona A para entrar al estacionamiento",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
             else -> {
@@ -373,6 +411,7 @@ class GameplayActivity : AppCompatActivity(),
         startActivity(intent)
         finish()
     }
+
 
     private fun updatePlayerPosition(position: Pair<Int, Int>) {
         runOnUiThread {

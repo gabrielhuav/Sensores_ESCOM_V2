@@ -64,6 +64,13 @@
             android:name=".presentation.components.Lindavista"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
+        <activity
+            android:name=".presentation.components.EstacionamientoEscom"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+
+        <activity
+            android:name=".presentation.components.TramoAtrasPlaza"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
 
 
         <activity
@@ -82,6 +89,13 @@
             android:name=".presentation.components.Cafeteria"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
+        <activity
+            android:name=".presentation.components.EstacionamientoEscom"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+
+        <activity
+            android:name=".presentation.components.TramoAtrasPlaza"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
         <!-- DeviceList Activity -->
         <activity
             android:name=".data.map.Bluetooth.DeviceListActivity"
