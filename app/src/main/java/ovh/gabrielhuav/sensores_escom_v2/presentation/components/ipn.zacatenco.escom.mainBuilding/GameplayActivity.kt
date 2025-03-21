@@ -253,7 +253,12 @@ class GameplayActivity : AppCompatActivity(),
                         "edificio2" -> startBuilding2Activity()
                         "escom_building4_floor_2" -> startBuilding4Activity()
                         "cafeteria" -> startCafeteriaActivity()
+<<<<<<< HEAD
+                        "estacionamiento" -> startEstacionamientoActivity()
+                        "palapas" -> startEstacionamientoActivity()
+=======
                         "salon1212" -> startSalonPacmanActivity()
+>>>>>>> Palapas_IA/main
                         else -> showToast("No hay interacción disponible en esta posición")
                     }
                 } else {
@@ -263,6 +268,29 @@ class GameplayActivity : AppCompatActivity(),
         }
     }
 
+    private fun startPalapasActivity() {
+        val intent = Intent(this, Palapas::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(1, 1))
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
+
+    private fun startEstacionamientoActivity() {
+        val intent = Intent(this, Estacionamiento::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(1, 1))
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
 
     private fun startCafeteriaActivity() {
         val intent = Intent(this, Cafeteria::class.java).apply {
@@ -320,6 +348,21 @@ class GameplayActivity : AppCompatActivity(),
                     Toast.makeText(this, "Presiona A para entrar a la cafetería", Toast.LENGTH_SHORT).show()
                 }
             }
+<<<<<<< HEAD
+            position.first == 9 && position.second == 5 -> {
+                canChangeMap = true
+                targetDestination = "estacionamiento"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para entrar al estacionamiento", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            position.first == 31 && position.second == 11 -> {
+                canChangeMap = true
+                targetDestination = "palapas"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para entrar a palapas de IA", Toast.LENGTH_SHORT).show()
+=======
             position.first == 27 && position.second == 28 -> {
                canChangeMap = true
                targetDestination = "salon1212"
@@ -332,6 +375,7 @@ class GameplayActivity : AppCompatActivity(),
                 targetDestination = "escom_building4_floor_2"
                 runOnUiThread {
                     Toast.makeText(this, "Presiona A para entrar al salón 1212", Toast.LENGTH_SHORT).show()
+>>>>>>> Palapas_IA/main
                 }
             }
             else -> {
