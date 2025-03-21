@@ -243,19 +243,9 @@ class MapMatrixProvider {
                     else if (i == 6 && j == 1) {
                         matrix[i][j] = INTERACTIVE // Entrada a vagon
                     }
-//                    else if (i == 34 && j == 33) {
-//                        matrix[i][j] = INTERACTIVE // Indios Verdes
-//                    }
-//                    else if (i == 23 && j == 30) {
-//                        matrix[i][j] = INTERACTIVE // Plaza
-//                    }
-//                    else if (i == 9 && j == 30) {
-//                        matrix[i][j] = INTERACTIVE // Talleres
-//                    }
-                    // Obstáculos (árboles, bancas, etc)
-                    /**else if (i % 7 == 0 && j % 8 == 0) {
-                    matrix[i][j] = INACCESSIBLE
-                    }**/
+                    else if (i == 18 && j == 3) {
+                        matrix[i][j] = INTERACTIVE // Entrada a vagon
+                    }
                     // Caminos especiales
                     else if ((i % 5 == 0 || j % 5 == 0) && i > 5 && j > 5) {
                         matrix[i][j] = PATH

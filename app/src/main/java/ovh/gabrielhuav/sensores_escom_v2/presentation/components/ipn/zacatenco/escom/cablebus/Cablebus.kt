@@ -281,7 +281,9 @@ class Cablebus : AppCompatActivity(),
                         .show()
                 }
             }
-
+            position.first == 3 && position.second == 18 -> {
+                startCablecarRide()
+            }
             else -> {
                 canChangeMap = false
                 targetDestination = null
@@ -361,6 +363,52 @@ class Cablebus : AppCompatActivity(),
                 Log.e(TAG, "Error en updatePlayerPosition: ${e.message}")
             }
         }
+    }
+
+    private fun startCablecarRide() {
+        // Definir la ruta del teleférico
+        val cablecarRoute = mutableListOf<Pair<Int, Int>>()
+
+        for (i in 1..7) {
+            cablecarRoute.add(Pair(3, 18 - i))
+        }
+
+        for (i in 1..22) {
+            cablecarRoute.add(Pair(3 + i, 11))
+        }
+
+        for (i in 1..7) {
+            cablecarRoute.add(Pair(25, 11 + i))
+        }
+
+        // Iniciar el movimiento automático
+        runOnUiThread {
+            Toast.makeText(this@Cablebus, "¡Disfruta el viaje!", Toast.LENGTH_SHORT).show()
+        }
+        moveAlongRoute(cablecarRoute)
+    }
+
+    private fun moveAlongRoute(route: List<Pair<Int, Int>>) {
+        val handler = Handler(Looper.getMainLooper())
+        var index = 0
+
+        val runnable = object : Runnable {
+            override fun run() {
+                if (index < route.size) {
+                    val nextPosition = route[index]
+                    updatePlayerPosition(nextPosition)
+                    index++
+                    handler.postDelayed(this, 200) // Mover 200 mili segundos
+                } else {
+                    // Cuando termine la ruta, puedes mostrar un mensaje o realizar otra acción
+                    runOnUiThread {
+                        Toast.makeText(this@Cablebus, "¡Paseo en teleférico completado!", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+
+        handler.post(runnable)
     }
 
     private fun handleMovement(event: MotionEvent, deltaX: Int, deltaY: Int) {
