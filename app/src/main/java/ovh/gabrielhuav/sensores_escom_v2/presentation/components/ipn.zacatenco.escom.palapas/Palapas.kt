@@ -60,7 +60,7 @@ class Palapas : AppCompatActivity(),
             // Esperar a que el mapView esté listo
             mapView.post {
                 // Configurar el mapa para palapas
-                val normalizedMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_ESTACIONAMIENTO)
+                val normalizedMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_PALAPAS)
                 mapView.setCurrentMap(normalizedMap, R.drawable.escom_palapas)
 
                 // Configurar el playerManager
