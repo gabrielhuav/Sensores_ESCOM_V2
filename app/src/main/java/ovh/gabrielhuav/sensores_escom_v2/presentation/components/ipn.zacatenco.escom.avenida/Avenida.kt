@@ -50,7 +50,7 @@ class Avenida : AppCompatActivity(),
             // Inicializar el mapView
             mapView = MapView(
                 context = this,
-                mapResourceId = R.drawable.avenida
+                mapResourceId = R.drawable.eje_central_lazaro_cardenas
             )
             findViewById<FrameLayout>(R.id.map_container).addView(mapView)
 
@@ -61,7 +61,7 @@ class Avenida : AppCompatActivity(),
             mapView.post {
                 // Configurar el mapa para el salón 2010
                 val normalizedMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_AVENIDA)
-                mapView.setCurrentMap(normalizedMap, R.drawable.avenida)
+                mapView.setCurrentMap(normalizedMap, R.drawable.eje_central_lazaro_cardenas)
 
                 // Configurar el playerManager
                 mapView.playerManager.apply {
