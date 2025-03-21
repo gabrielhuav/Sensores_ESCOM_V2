@@ -1,9 +1,7 @@
 package ovh.gabrielhuav.sensores_escom_v2.presentation.components
 
-import android.Manifest
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Bundle
 import android.os.Handler
@@ -14,12 +12,13 @@ import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import org.json.JSONObject
 import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
-import ovh.gabrielhuav.sensores_escom_v2.data.map.BluetoothWebSocketBridge
+import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2009
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2010
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
 
 class BuildingNumber2 : AppCompatActivity(),
@@ -64,13 +63,13 @@ class BuildingNumber2 : AppCompatActivity(),
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_building)
+        setContentView(R.layout.activity_building2)
 
         try {
             // Primero inicializamos el mapView
             mapView = MapView(
                 context = this,
-                mapResourceId = R.drawable.escom_edificio2
+                mapResourceId = R.drawable.escom_edificio_2_planta_baja
             )
             findViewById<FrameLayout>(R.id.map_container).addView(mapView)
 
@@ -81,7 +80,7 @@ class BuildingNumber2 : AppCompatActivity(),
             mapView.post {
                 // Configurar el mapa
                 val normalizedMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_BUILDING2)
-                mapView.setCurrentMap(normalizedMap, R.drawable.escom_edificio2)
+                mapView.setCurrentMap(normalizedMap, R.drawable.escom_edificio_2_planta_baja)
 
                 // Después configurar el playerManager
                 mapView.playerManager.apply {
@@ -172,15 +171,15 @@ class BuildingNumber2 : AppCompatActivity(),
         when (targetMap) {
             MapMatrixProvider.MAP_MAIN -> {
                 // Transición al mapa principal
-                returnToMainActivity()
+                //returnToMainActivity()
             }
             MapMatrixProvider.MAP_SALON2009 -> {
                 // Transición al salón 2009
-                startSalon2009Activity()
+                //startSalon2009Activity()
             }
             MapMatrixProvider.MAP_SALON2010 -> {
                 // Transición al salón 2010
-                startSalon2010Activity()
+                //startSalon2010Activity()
             }
             // Añadir más casos según sea necesario para otros mapas
             else -> {
@@ -373,17 +372,6 @@ class BuildingNumber2 : AppCompatActivity(),
 
         // Limpiar datos antes de cambiar de activity
         mapView.playerManager.cleanup()
-        startActivity(intent)
-        finish()
-    }
-
-    private fun startBuildingActivity() {
-        val intent = Intent(this, BuildingNumber2::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(1, 1))
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
         startActivity(intent)
         finish()
     }

@@ -1,4 +1,4 @@
-package ovh.gabrielhuav.sensores_escom_v2.data.map
+package ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth
 
 import android.bluetooth.BluetoothDevice
 import android.util.Log

@@ -11,7 +11,11 @@ class ServerConnectionManager(
     private val context: Context,
     val onlineServerManager: OnlineServerManager
 ) {
+<<<<<<< HEAD
     private val serverUrl = "ws://8.12.0.84:3000"
+=======
+    private val serverUrl = "ws:/192.168.0.114:3000"
+>>>>>>> Palapas_IA/main
     private var isConnecting = false
     private val mainHandler = Handler(Looper.getMainLooper())
 
