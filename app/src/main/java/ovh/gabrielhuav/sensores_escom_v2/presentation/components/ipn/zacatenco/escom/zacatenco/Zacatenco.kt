@@ -1,8 +1,11 @@
 package ovh.gabrielhuav.sensores_escom_v2.presentation.components
 
+import android.Manifest
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -12,18 +15,20 @@ import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import org.json.JSONObject
 import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber3.SalonPacman
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
 
-class GameplayActivity : AppCompatActivity(),
+
+class Zacatenco : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,
     BluetoothGameManager.ConnectionListener,
-    OnlineServerManager.WebSocketListener {
+    OnlineServerManager.WebSocketListener,
+    MapView.MapTransitionListener {
 
     private lateinit var bluetoothManager: BluetoothManager
     private lateinit var movementManager: MovementManager
@@ -39,8 +44,8 @@ class GameplayActivity : AppCompatActivity(),
     data class GameState(
         var isServer: Boolean = false,
         var isConnected: Boolean = false,
-        var playerPosition: Pair<Int, Int> = Pair(1, 1),
-        var remotePlayerPositions: Map<String, PlayerInfo> = emptyMap(), // Cambiado para incluir mapa
+        var playerPosition: Pair<Int, Int> = Pair(10, 12),
+        var remotePlayerPositions: Map<String, PlayerInfo> = emptyMap(),
         var remotePlayerName: String? = null
     ) {
         data class PlayerInfo(
@@ -61,18 +66,34 @@ class GameplayActivity : AppCompatActivity(),
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_gameplay)
+        setContentView(R.layout.activity_zacatenco)
 
         try {
+            // Primero inicializamos el mapView
+            mapView = MapView(
+                context = this,
+                mapResourceId = R.drawable.zacatenco
+            )
+            findViewById<FrameLayout>(R.id.map_container).addView(mapView)
+
+            // Inicializar componentes
             initializeComponents(savedInstanceState)
 
-            // Después de inicializar los componentes, configura el playerManager
-            mapView.playerManager.apply {
-                setCurrentMap("main")
-                localPlayerId = playerName
-                gameState.playerPosition?.let { updateLocalPlayerPosition(it) }
-            }
+            // Esperar a que el mapView esté listo
+            mapView.post {
+                // Configurar el mapa
+                val normalizedMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_ZACATENCO)
+                mapView.setCurrentMap(normalizedMap, R.drawable.zacatenco)
 
+                // Después configurar el playerManager
+                mapView.playerManager.apply {
+                    setCurrentMap(normalizedMap)
+                    localPlayerId = playerName
+                    updateLocalPlayerPosition(gameState.playerPosition)
+                }
+
+                Log.d("Zacatenco", "Set map to: $normalizedMap")
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Error en onCreate: ${e.message}")
             Toast.makeText(this, "Error inicializando la actividad.", Toast.LENGTH_LONG).show()
@@ -81,6 +102,7 @@ class GameplayActivity : AppCompatActivity(),
     }
 
     private fun initializeComponents(savedInstanceState: Bundle?) {
+        // Obtener datos desde Intent o restaurar el estado guardado
         playerName = intent.getStringExtra("PLAYER_NAME") ?: run {
             Toast.makeText(this, "Nombre de jugador no encontrado.", Toast.LENGTH_SHORT).show()
             finish()
@@ -88,10 +110,9 @@ class GameplayActivity : AppCompatActivity(),
         }
 
         if (savedInstanceState == null) {
+            // Inicializar el estado del juego desde el Intent
             gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
-            // Usar la posición inicial proporcionada
-            gameState.playerPosition = intent.getSerializableExtra("INITIAL_POSITION") as? Pair<Int, Int>
-                ?: Pair(1, 1)
+            gameState.playerPosition = intent.getParcelableExtra("INITIAL_POSITION") ?: Pair(10, 12)
         } else {
             restoreState(savedInstanceState)
         }
@@ -111,8 +132,6 @@ class GameplayActivity : AppCompatActivity(),
     }
 
     private fun initializeViews() {
-        mapView = MapView(this)
-        findViewById<FrameLayout>(R.id.map_container).addView(mapView)
 
         uiManager = UIManager(findViewById(R.id.main_layout), mapView).apply {
             initializeViews()
@@ -121,14 +140,14 @@ class GameplayActivity : AppCompatActivity(),
 
     private fun initializeManagers() {
         bluetoothManager = BluetoothManager.getInstance(this, uiManager.tvBluetoothStatus).apply {
-            setCallback(this@GameplayActivity)
+            setCallback(this@Zacatenco)
         }
 
         bluetoothBridge = BluetoothWebSocketBridge.getInstance()
 
         // Configurar OnlineServerManager con el listener
         val onlineServerManager = OnlineServerManager.getInstance(this).apply {
-            setListener(this@GameplayActivity)
+            setListener(this@Zacatenco)
         }
 
         serverConnectionManager = ServerConnectionManager(
@@ -143,8 +162,25 @@ class GameplayActivity : AppCompatActivity(),
         // Establecer el ID del jugador local
         mapView.playerManager.localPlayerId = playerName
 
+        // Configurar el listener de transición de mapas
+        mapView.setMapTransitionListener(this)
+
         // Inicializar posición inicial
         updatePlayerPosition(gameState.playerPosition)
+    }
+
+    // Actualiza el método onMapTransitionRequested para manejar la transición al salón 2009
+    override fun onMapTransitionRequested(targetMap: String, initialPosition: Pair<Int, Int>) {
+        when (targetMap) {
+            MapMatrixProvider.MAP_MAIN -> {
+                // Transición al mapa principal
+                returnToMainActivity()
+            }
+            // Añadir más casos según sea necesario para otros mapas
+            else -> {
+                Log.d(TAG, "Mapa destino no reconocido: $targetMap")
+            }
+        }
     }
 
     private fun restoreState(savedInstanceState: Bundle) {
@@ -183,28 +219,15 @@ class GameplayActivity : AppCompatActivity(),
         setupRole()
         setupButtonListeners()
 
-        // Reemplazamos la comprobación forzosa de Bluetooth por una más flexible
-        // Solo comprobamos si el usuario ha elegido ser servidor o conectarse explícitamente
-        if (gameState.isServer) {
-            // Solo verificamos Bluetooth si somos servidor
-            bluetoothManager.checkBluetoothSupport(enableBluetoothLauncher, false) // Pasamos false para no forzar
-        }
+        // Usamos checkBluetoothSupport con false para no forzar activación
+        bluetoothManager.checkBluetoothSupport(enableBluetoothLauncher, false)
     }
 
     private fun setupRole() {
         if (gameState.isServer) {
             setupServerFlow()
         } else {
-            // Comprobar si tiene un dispositivo seleccionado para conectarse
-            val selectedDevice = intent.getParcelableExtra<BluetoothDevice>("SELECTED_DEVICE")
-            if (selectedDevice != null) {
-                // Solo en este caso iniciamos la conexión Bluetooth
-                bluetoothManager.connectToDevice(selectedDevice)
-                mapView.setBluetoothServerMode(false)
-            } else {
-                // Si no hay dispositivo seleccionado, solo conectamos al servidor online
-                setupServerFlow()
-            }
+            setupClientFlow(false) // Pasamos false para indicar que no forzamos Bluetooth
         }
     }
 
@@ -219,20 +242,87 @@ class GameplayActivity : AppCompatActivity(),
                     requestPositionsUpdate()
                 }
                 uiManager.updateBluetoothStatus("Conectado al servidor online. Puede iniciar servidor Bluetooth si lo desea.")
-                uiManager.btnStartServer.isEnabled = true
+                uiManager.btnStartServer.isEnabled = bluetoothManager.isBluetoothEnabled()
             } else {
-                uiManager.updateBluetoothStatus("Error al conectar al servidor online. El juego funcionará solo en modo local.")
+                uiManager.updateBluetoothStatus("Error al conectar al servidor online.")
             }
         }
     }
-    private fun setupClientFlow() {
+
+    private fun setupClientFlow(forceBluetooth: Boolean = true) {
         val selectedDevice = intent.getParcelableExtra<BluetoothDevice>("SELECTED_DEVICE")
         selectedDevice?.let { device ->
-            bluetoothManager.connectToDevice(device)
-            mapView.setBluetoothServerMode(false)
+            if (bluetoothManager.isBluetoothEnabled() || forceBluetooth) {
+                bluetoothManager.connectToDevice(device)
+                mapView.setBluetoothServerMode(false)
+            } else {
+                // Si Bluetooth está desactivado y no forzamos, solo informamos
+                uiManager.updateBluetoothStatus("Bluetooth desactivado. Las funciones Bluetooth no estarán disponibles.")
+            }
         }
     }
 
+    private var canChangeMap = false  // Variable para controlar si se puede cambiar de mapa
+    private var targetDestination: String? = null  // Variable para almacenar el destino
+
+    private fun checkPositionForMapChange(position: Pair<Int, Int>) {
+
+        when {
+            position.first == 10 && position.second == 12 -> {
+                canChangeMap = true
+                targetDestination = "main"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para entrar a ESCOM", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+            position.first == 34 && position.second == 17 -> {
+                canChangeMap = true
+                targetDestination = "lindavista"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para salir a Lindavista", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+            position.first == 25 && position.second == 12 -> {
+                canChangeMap = true
+                targetDestination = "esia"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para ver la ESIA", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+            position.first == 31 && position.second == 17 -> {
+                canChangeMap = true
+                targetDestination = "esfm"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para ver la ESFM", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+            position.first == 8 && position.second == 18 -> {
+                canChangeMap = true
+                targetDestination = "cidetec"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para ver el CIDETEC", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+            position.first == 5 && position.second == 16 -> {
+                canChangeMap = true
+                targetDestination = "cic"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para ver el CIC", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+
+            else -> {
+                canChangeMap = false
+                targetDestination = null
+            }
+        }
+    }
 
     private fun setupButtonListeners() {
         uiManager.apply {
@@ -241,21 +331,27 @@ class GameplayActivity : AppCompatActivity(),
                 else showToast("Debe conectarse al servidor online primero.")
             }
 
+            // Añadir el listener para el botón de regreso
+            btnConnectDevice.setOnClickListener {
+                returnToMainActivity()
+            }
+
             btnNorth.setOnTouchListener { _, event -> handleMovement(event, 0, -1); true }
             btnSouth.setOnTouchListener { _, event -> handleMovement(event, 0, 1); true }
             btnEast.setOnTouchListener { _, event -> handleMovement(event, 1, 0); true }
             btnWest.setOnTouchListener { _, event -> handleMovement(event, -1, 0); true }
 
-            // Configurar el botón A para verificar la posición y dirigirse al mapa correspondiente
+            // Modificar el botón A para manejar las transiciones de mapa
             buttonA.setOnClickListener {
                 if (canChangeMap) {
                     when (targetDestination) {
-                        "edificio2" -> startBuilding2Activity()
-                        "escom_building4_floor_2" -> startBuilding4Activity()
-                        "cafeteria" -> startCafeteriaActivity()
-                        "salon1212" -> startSalonPacmanActivity()
-                        "Estacionamiento" -> startEstacionamientoEscomActivity()
-                        "zacatenco" -> startZacatencoActivity()
+                        "main" -> returnToMainActivity()
+                        "lindavista" -> startLindavistaActivity()
+                        "esia" -> viewESIA()
+                        "esfm" -> viewESFM()
+                        "cidetec" -> viewCIDETEC()
+                        "cic" -> viewCIC()
+
                         else -> showToast("No hay interacción disponible en esta posición")
                     }
                 } else {
@@ -264,165 +360,55 @@ class GameplayActivity : AppCompatActivity(),
             }
         }
     }
-     private fun startEstacionamientoEscomActivity() {
-        val intent = Intent(this, EstacionamientoEscom::class.java).apply {
+    private fun viewESIA(){
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.esiaz.ipn.mx/"))
+        startActivity(intent)
+
+    }
+    private fun viewESFM(){
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.esfm.ipn.mx/"))
+        startActivity(intent)
+
+    }
+    private fun viewCIDETEC(){
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.cidetec.ipn.mx/"))
+        startActivity(intent)
+
+    }
+    private fun viewCIC(){
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.cic.ipn.mx/"))
+        startActivity(intent)
+
+    }
+    private fun returnToMainActivity() {
+        // Obtener la posición previa del intent
+        val previousPosition = intent.getSerializableExtra("PREVIOUS_POSITION") as? Pair<Int, Int>
+            ?: Pair(11, 4) // Posición por defecto si no hay previa
+
+        val intent = Intent(this, GameplayActivity::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(4, 25))  // Posición dentro del estacionamiento
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda posición actual para regreso
+            putExtra("INITIAL_POSITION", previousPosition) // Usar la posición previa
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
+
+        // Limpiar datos antes de cambiar de activity
+        mapView.playerManager.cleanup()
         startActivity(intent)
         finish()
     }
 
-
-    private fun startZacatencoActivity() {
-        val intent = Intent(this, Zacatenco::class.java).apply {
+    private fun startLindavistaActivity() {
+        val intent = Intent(this, Lindavista::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(10, 12))
+            putExtra("INITIAL_POSITION", Pair(1, 6))
             putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         startActivity(intent)
         finish()
     }
-
-    private fun startCafeteriaActivity() {
-        val intent = Intent(this, Cafeteria::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(1, 1))
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        startActivity(intent)
-        finish()
-    }
-
-    private fun startBuilding2Activity() {
-        val intent = Intent(this, BuildingNumber2::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(1, 1))
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        startActivity(intent)
-        finish()
-    }
-
-    private fun startBuilding4Activity() {
-        val intent = Intent(this, BuildingNumber4::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(1, 1))
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        startActivity(intent)
-        finish()
-    }
-    private fun startEstacionamientoEscomActivity() {
-        val intent = Intent(this, EstacionamientoEscom::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(4, 25))  // Posición dentro del estacionamiento
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda posición actual para regreso
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        startActivity(intent)
-        finish()
-    }
-
-    private var canChangeMap = false  // Variable para controlar si se puede cambiar de mapa
-    private var targetDestination: String? = null  // Variable para almacenar el destino
-
-    private fun checkPositionForMapChange(position: Pair<Int, Int>) {
-        // Comprobar múltiples ubicaciones de transición
-        when {
-            position.first == 15 && position.second == 10 -> {
-                canChangeMap = true
-                targetDestination = "edificio2"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para entrar al edificio 2", Toast.LENGTH_SHORT).show()
-                }
-            }
-            position.first == 11 && position.second == 4 -> {
-                canChangeMap = true
-                targetDestination = "zacatenco"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para salir a Zacatenco", Toast.LENGTH_SHORT).show()
-                }
-            }
-            position.first == 33 && position.second == 34 -> {
-                canChangeMap = true
-                targetDestination = "cafeteria"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para entrar a la cafetería", Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            position.first == 25 && position.second == 5 -> {
-                canChangeMap = true
-                targetDestination = "Estacionamiento"
-                runOnUiThread {
-                    Toast.makeText(
-                        this,
-                        "Presiona A para entrar al estacionamiento",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-
-            position.first == 27 && position.second == 28 -> {
-               canChangeMap = true
-               targetDestination = "salon1212"
-               runOnUiThread {
-                   Toast.makeText(this, "Presiona A para entrar al salón 1212", Toast.LENGTH_SHORT).show()
-               }
-            }
-            position.first == 23 && position.second == 10 -> {
-                canChangeMap = true
-                targetDestination = "escom_building4_floor_2"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para entrar al salón 1212", Toast.LENGTH_SHORT).show()
-                }
-            }
-            position.first == 25 && position.second == 5 -> {
-                canChangeMap = true
-                targetDestination = "Estacionamiento"
-                runOnUiThread {
-                    Toast.makeText(
-                        this,
-                        "Presiona A para entrar al estacionamiento",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-            else -> {
-                canChangeMap = false
-                targetDestination = null
-            }
-
-        }
-    }
-
-
-    private fun startSalonPacmanActivity() {
-        val intent = Intent(this, SalonPacman::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(20, 20)) // Starting position in salon
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Store current position for return
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        startActivity(intent)
-        finish()
-    }
-
-
     private fun updatePlayerPosition(position: Pair<Int, Int>) {
         runOnUiThread {
             try {
@@ -432,7 +418,7 @@ class GameplayActivity : AppCompatActivity(),
                 mapView.updateLocalPlayerPosition(position, forceCenter = true)
 
                 if (gameState.isConnected) {
-                    serverConnectionManager.sendUpdateMessage(playerName, position, "main")
+                    serverConnectionManager.sendUpdateMessage(playerName, position, "escom_zacatenco")
                 }
 
                 checkPositionForMapChange(position)
@@ -458,6 +444,20 @@ class GameplayActivity : AppCompatActivity(),
 
     // Bluetooth Callbacks
     override fun onBluetoothDeviceConnected(device: BluetoothDevice) {
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return
+        }
         gameState.remotePlayerName = device.name
         uiManager.updateBluetoothStatus("Conectado a ${device.name}")
     }
@@ -476,11 +476,24 @@ class GameplayActivity : AppCompatActivity(),
     }
 
     override fun onDeviceConnected(device: BluetoothDevice) {
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return
+        }
         gameState.remotePlayerName = device.name
     }
 
-// Modificación para GameplayActivity.kt en el método onMessageReceived
-
+    // Implementar el método del WebSocketListener
     override fun onMessageReceived(message: String) {
         runOnUiThread {
             try {
@@ -497,18 +510,8 @@ class GameplayActivity : AppCompatActivity(),
                                     playerData.getInt("x"),
                                     playerData.getInt("y")
                                 )
-
-                                // Obtener el mapa del jugador, con 'main' como valor predeterminado
-                                val map = playerData.optString("map", MapMatrixProvider.MAP_MAIN)
-
-                                // Actualizar el estado del juego
-                                gameState.remotePlayerPositions = gameState.remotePlayerPositions +
-                                        (playerId to GameState.PlayerInfo(position, map))
-
-                                // Siempre actualizar la posición, permitiendo que PlayerManager
-                                // determine si debe mostrarse o no
+                                val map = playerData.getString("map")
                                 mapView.updateRemotePlayerPosition(playerId, position, map)
-                                Log.d(TAG, "Updated from positions: player=$playerId, pos=$position, map=$map")
                             }
                         }
                     }
@@ -519,41 +522,8 @@ class GameplayActivity : AppCompatActivity(),
                                 jsonObject.getInt("x"),
                                 jsonObject.getInt("y")
                             )
-
-                            // Obtener el mapa, primero intentando 'map', luego 'currentmap', con 'main' como valor predeterminado
-                            val map = if (jsonObject.has("map")) {
-                                jsonObject.getString("map")
-                            } else if (jsonObject.has("currentmap")) {
-                                jsonObject.getString("currentmap")
-                            } else {
-                                MapMatrixProvider.MAP_MAIN // Valor predeterminado
-                            }
-
-                            // Actualizar el estado del juego
-                            gameState.remotePlayerPositions = gameState.remotePlayerPositions +
-                                    (playerId to GameState.PlayerInfo(position, map))
-
-                            // Siempre actualizar la posición en el mapa
+                            val map = jsonObject.getString("map")
                             mapView.updateRemotePlayerPosition(playerId, position, map)
-                            Log.d(TAG, "Updated from update: player=$playerId, pos=$position, map=$map")
-                        }
-                    }
-                    "join" -> {
-                        // Un jugador se unió, solicitar actualización de posiciones
-                        val newPlayerId = jsonObject.getString("id")
-                        Log.d(TAG, "Player joined: $newPlayerId")
-                        serverConnectionManager.onlineServerManager.requestPositionsUpdate()
-
-                        // También enviamos nuestra posición actual
-                        serverConnectionManager.sendUpdateMessage(playerName, gameState.playerPosition, "main")
-                    }
-                    "disconnect" -> {
-                        // Manejar desconexión de jugador
-                        val disconnectedId = jsonObject.getString("id")
-                        if (disconnectedId != playerName) {
-                            gameState.remotePlayerPositions = gameState.remotePlayerPositions - disconnectedId
-                            mapView.removeRemotePlayer(disconnectedId)
-                            Log.d(TAG, "Player disconnected: $disconnectedId")
                         }
                     }
                 }
@@ -563,6 +533,7 @@ class GameplayActivity : AppCompatActivity(),
             }
         }
     }
+
 
     // Actualiza handlePositionsMessage
     private fun handlePositionsMessage(jsonObject: JSONObject) {
@@ -618,9 +589,25 @@ class GameplayActivity : AppCompatActivity(),
 
     override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
         runOnUiThread {
-            val deviceName = device.name ?: "Unknown"
+            val deviceName = if (ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.BLUETOOTH_CONNECT
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+                return@runOnUiThread
+            } else {
+
+            }
+            device.name ?: "Unknown"
             val currentMap = mapView.playerManager.getCurrentMap()
-            mapView.updateRemotePlayerPosition(deviceName, Pair(x, y), currentMap)
+            mapView.updateRemotePlayerPosition(deviceName.toString(), Pair(x, y), currentMap)
             Log.d("GameplayActivity", "Recibida posición del dispositivo $deviceName: ($x, $y)")
             mapView.invalidate()
         }
@@ -659,6 +646,7 @@ class GameplayActivity : AppCompatActivity(),
         movementManager.stopMovement()
     }
 
+
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
 
@@ -683,7 +671,6 @@ class GameplayActivity : AppCompatActivity(),
             Log.e(TAG, "Error en onConfigurationChanged: ${e.message}")
         }
     }
-
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }

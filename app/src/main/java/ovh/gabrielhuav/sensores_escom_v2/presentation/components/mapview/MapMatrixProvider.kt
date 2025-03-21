@@ -52,6 +52,7 @@ class MapMatrixProvider {
         val ESTACIONAMIENTO_TO_PLAZA_POSITION = Pair(35, 20)
         val PLAZA_TO_ESTACIONAMIENTO_POSITION = Pair(5, 20)
 
+
         fun normalizeMapName(mapName: String?): String {
             if (mapName.isNullOrBlank()) return MAP_MAIN
 
@@ -73,8 +74,14 @@ class MapMatrixProvider {
 
                 // Cafetería
                 lowerMap.contains("cafe") || lowerMap.contains("cafeteria") -> MAP_CAFETERIA
+
                 lowerMap.contains("estacionamiento") -> MAP_ESTACIONAMIENTO
                 lowerMap.contains("plaza") || lowerMap.contains("atras") -> MAP_TRAS_PLAZA
+
+                // Zacatenco
+                lowerMap.contains("zaca") || lowerMap.contains("zacatenco") -> MAP_ZACATENCO
+                // Lindavista
+                lowerMap.contains("linda") || lowerMap.contains("lindavista") -> MAP_LINDAVISTA
 
                 // Si no coincide con ninguno de los anteriores, devolver el original
                 else -> mapName
@@ -115,6 +122,7 @@ class MapMatrixProvider {
                 MAP_CAFETERIA -> createCafeESCOMMatrix()
                 MAP_ESTACIONAMIENTO -> createEstacionamientoMatrix()
                 MAP_TRAS_PLAZA -> createPlazaMatrix()
+
                 MAP_ZACATENCO -> createZacatencoMatrix()
                 MAP_LINDAVISTA -> createLindavistaMatrix()
                 else -> createDefaultMatrix() // Por defecto, un mapa básico
@@ -141,6 +149,9 @@ class MapMatrixProvider {
                     // Zonas interactivas (edificios, entradas)
                     else if (i == 10 && j == 23) {
                         matrix[i][j] = INTERACTIVE // Entrada al edificio 4
+                    }
+                    else if (i == 4 && j == 11) {
+                        matrix[i][j] = INTERACTIVE // Entrada a Zacatenco
                     }
                     // Obstáculos (árboles, bancas, etc)
                     else if (i % 7 == 0 && j % 8 == 0) {
@@ -254,6 +265,101 @@ class MapMatrixProvider {
 
             // Añadir un easter egg interactivo
             matrix[10][30] = INTERACTIVE
+
+            return matrix
+        }
+        private fun createZacatencoMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Configuración de bordes
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    // Bordes exteriores
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = WALL
+                    }
+                    // Zonas interactivas (edificios, entradas)
+                    else if (i == 12 && j == 10) {
+                        matrix[i][j] = INTERACTIVE // Entrada a ESCOM
+                    }
+                    else if (i == 17 && j == 34) {
+                        matrix[i][j] = INTERACTIVE // Entrada a ESCOM
+                    }
+                    else if (i == 12 && j == 25) {
+                        matrix[i][j] = INTERACTIVE // Entrada a ESCOM
+                    }
+                    else if (i == 17 && j == 31) {
+                        matrix[i][j] = INTERACTIVE // Entrada a ESCOM
+                    }
+                    else if (i == 18 && j == 8) {
+                        matrix[i][j] = INTERACTIVE // Entrada a ESCOM
+                    }
+                    else if (i == 16 && j == 5) {
+                        matrix[i][j] = INTERACTIVE // Entrada a ESCOM
+                    }
+                    // Obstáculos (árboles, bancas, etc)
+                    /**else if (i % 7 == 0 && j % 8 == 0) {
+                    matrix[i][j] = INACCESSIBLE
+                    }**/
+                    // Caminos especiales
+                    else if ((i % 5 == 0 || j % 5 == 0) && i > 5 && j > 5) {
+                        matrix[i][j] = PATH
+                    }
+                }
+            }
+
+            // Áreas de juego específicas
+            // Zona central despejada
+            for (i in 15..25) {
+                for (j in 15..25) {
+                    matrix[i][j] = PATH
+                }
+            }
+
+            return matrix
+        }
+
+        private fun createLindavistaMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Configuración de bordes
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    // Bordes exteriores
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = WALL
+                    }
+                    // Zonas interactivas (edificios, entradas)
+                    else if (i == 6 && j == 1) {
+                        matrix[i][j] = INTERACTIVE // Entrada a ESCOM
+                    }
+                    else if (i == 34 && j == 33) {
+                        matrix[i][j] = INTERACTIVE // Indios Verdes
+                    }
+                    else if (i == 23 && j == 30) {
+                        matrix[i][j] = INTERACTIVE // Plaza
+                    }
+                    else if (i == 9 && j == 30) {
+                        matrix[i][j] = INTERACTIVE // Talleres
+                    }
+                    // Obstáculos (árboles, bancas, etc)
+                    /**else if (i % 7 == 0 && j % 8 == 0) {
+                    matrix[i][j] = INACCESSIBLE
+                    }**/
+                    // Caminos especiales
+                    else if ((i % 5 == 0 || j % 5 == 0) && i > 5 && j > 5) {
+                        matrix[i][j] = PATH
+                    }
+                }
+            }
+
+            // Áreas de juego específicas
+            // Zona central despejada
+            for (i in 15..25) {
+                for (j in 15..25) {
+                    matrix[i][j] = PATH
+                }
+            }
 
             return matrix
         }
