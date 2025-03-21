@@ -56,6 +56,13 @@
         <activity
             android:name=".presentation.components.BuildingNumber4"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
+        <activity
+            android:name=".presentation.components.Zacatenco"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+
+        <activity
+            android:name=".presentation.components.Lindavista"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
 
 
 
