@@ -256,6 +256,8 @@ class GameplayActivity : AppCompatActivity(),
                         "salon1212" -> startSalonPacmanActivity()
                         "Estacionamiento" -> startEstacionamientoEscomActivity()
                         "zacatenco" -> startZacatencoActivity()
+                        "Edificioiabajo" -> startEdificioIABajoActivity()
+
                         else -> showToast("No hay interacción disponible en esta posición")
                     }
                 } else {
@@ -277,7 +279,17 @@ class GameplayActivity : AppCompatActivity(),
         startActivity(intent)
         finish()
     }
-
+    private fun startEdificioIABajoActivity() {
+        val intent = Intent(this, BuildingEdificioIA::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(2, 36))
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
     private fun startCafeteriaActivity() {
         val intent = Intent(this, Cafeteria::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
@@ -387,6 +399,17 @@ class GameplayActivity : AppCompatActivity(),
                     Toast.makeText(
                         this,
                         "Presiona A para entrar al estacionamiento",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+            position.first == 31 && position.second == 21 -> {
+                canChangeMap = true
+                targetDestination = "Edificioiabajo"
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        "Presiona A para entrar al edificio de ia ",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
