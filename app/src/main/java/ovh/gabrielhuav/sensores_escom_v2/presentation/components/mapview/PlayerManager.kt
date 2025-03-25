@@ -82,6 +82,7 @@ class PlayerManager {
             mapId.contains("salon2010") -> MapMatrixProvider.MAP_SALON2010
             mapId.contains("building2") -> MapMatrixProvider.MAP_BUILDING2
             mapId.contains("main") -> MapMatrixProvider.MAP_MAIN
+            mapId.contains("escom_building2_piso1") -> MapMatrixProvider.MAP_BUILDING2_PISO1
             else -> mapId
         }
     }

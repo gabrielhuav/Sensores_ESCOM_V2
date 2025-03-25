@@ -96,7 +96,11 @@
         <activity
             android:name=".presentation.components.Cafeteria"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
-
+      
+        <activity 
+            android:name=".presentation.components.BuildingNumber2Piso1"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+      
         <activity
             android:name=".presentation.components.ipn.zacatenco.escom.salidaMetro.SalidaMetro"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
