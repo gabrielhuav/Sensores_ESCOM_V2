@@ -25,7 +25,12 @@ class MapMatrixProvider {
         const val MAP_SALON2009 = "escom_salon2009"
         const val MAP_SALON2010 = "escom_salon2010"
         const val MAP_CAFETERIA = "escom_cafeteria"
+
+        const val MAP_ESTACIONAMIENTO = "escom_estacionamiento"
+        const val MAP_PALAPAS = "escom_palapas"
+
         const val MAP_SALON1212 = "escom_salon1212"
+
         const val MAP_ZACATENCO = "escom_zacatenco"
         const val MAP_LINDAVISTA = "escom_lindavista"
         const val MAP_ESTACIONAMIENTO = "EstacionamientoEscom"
@@ -57,6 +62,13 @@ class MapMatrixProvider {
                 // Cafetería
                 lowerMap.contains("cafe") || lowerMap.contains("cafeteria") -> MAP_CAFETERIA
 
+
+                // Estacionamiento
+                lowerMap.contains("estacionamiento") || lowerMap.contains("estacionamiento") -> MAP_ESTACIONAMIENTO
+
+                // Palapas
+                lowerMap.contains("palapas IA") || lowerMap.contains("palapas IA") -> MAP_PALAPAS
+
                 lowerMap.contains("estacionamiento") -> MAP_ESTACIONAMIENTO
                 lowerMap.contains("plaza") || lowerMap.contains("atras") -> MAP_TRAS_PLAZA
 
@@ -68,6 +80,7 @@ class MapMatrixProvider {
                 lowerMap.contains("ia_baja") || lowerMap.contains("edificio_ia_bajo") -> MAP_EDIFICIO_IA_BAJO
                 lowerMap.contains("ia_medio") || lowerMap.contains("edificio_ia_medio") -> MAP_EDIFICIO_IA_MEDIO
                 lowerMap.contains("ia_alto") || lowerMap.contains("edificio_ia_alto") -> MAP_EDIFICIO_IA_ALTO
+
 
                 // Si no coincide con ninguno de los anteriores, devolver el original
                 else -> mapName
@@ -99,6 +112,27 @@ class MapMatrixProvider {
 
         val EDIFICIO_IA_BAJO_TO_MEDIO = Pair(5, 20)
 
+
+        // Puntos de transición entre mapas
+        val MAIN_TO_BUILDING2_POSITION = Pair(15, 10)
+        val BUILDING2_TO_MAIN_POSITION = Pair(5, 5)  // Posición segura en la esquina superior izquierda
+        val BUILDING2_TO_SALON2009_POSITION = Pair(15, 16)  // Punto en el pasillo principal
+        val SALON2009_TO_BUILDING2_POSITION = Pair(1, 20)  // Punto en la puerta del salón
+
+        val BUILDING2_TO_SALON2010_POSITION = Pair(20, 20)  // Desde edificio 2
+        val MAIN_TO_SALON2010_POSITION = Pair(25, 25)       // Desde mapa principal
+        val SALON2010_TO_BUILDING2_POSITION = Pair(5, 5)    // Vuelta al edificio 2
+        val SALON2010_TO_MAIN_POSITION = Pair(1, 1)         // Vuelta al mapa principal
+
+        val MAIN_TO_CAFETERIA_POSITION = Pair(2, 2)       // Desde mapa principal
+        val CAFETERIA_TO_MAIN_POSITION = Pair(1, 1)         // Vuelta al mapa principal
+
+        val MAIN_TO_ESTACIONAMIENTO_POSITION = Pair(2, 2)       // Desde mapa principal
+        val ESTACIONAMIENTO_TO_MAIN_POSITION = Pair(1, 1)       // Vuelta al mapa principal
+
+        val MAIN_TO_PALAPAS_POSITION = Pair(2, 2)       // Desde mapa principal
+        val PALAPAS_TO_MAIN_POSITION = Pair(1, 1)       // Vuelta al mapa principal
+
         /**
          * Obtiene la matriz para el mapa especificado
          */
@@ -112,6 +146,8 @@ class MapMatrixProvider {
                 MAP_SALON1212 -> createSalon1212Matrix()
                 MAP_CAFETERIA -> createCafeESCOMMatrix()
                 MAP_ESTACIONAMIENTO -> createEstacionamientoMatrix()
+
+                MAP_PALAPAS -> createPalapasMatrix()
                 MAP_TRAS_PLAZA -> createPlazaMatrix()
 
                 MAP_ZACATENCO -> createZacatencoMatrix()
@@ -120,6 +156,7 @@ class MapMatrixProvider {
                 MAP_EDIFICIO_IA_BAJO-> createEdificioIABajoMatrix()
                 MAP_EDIFICIO_IA_MEDIO-> createEdificioIAMedioMatrix()
                 MAP_EDIFICIO_IA_ALTO -> createEdificioIAAltoMatrix()
+
 
                 else -> createDefaultMatrix() // Por defecto, un mapa básico
             }
@@ -529,6 +566,7 @@ class MapMatrixProvider {
 
             return matrix
         }
+
         /**
          * Matriz para el salón 2009
          */
@@ -709,6 +747,115 @@ class MapMatrixProvider {
         }
 
         /**
+         * Matriz para el mapa principal del campus
+         */
+        private fun createEstacionamientoMatrix(): Array<Array<Int>> {
+            val WALL = -1                // 🟫 Pared/Borde del mapa
+            val PATH = 0                 // 🟩 Espacio transitable
+            val PARKING_SPOT = 1         // 🚗 Espacio de estacionamiento (autos)
+            val MOTORCYCLE_PARKING = 2   // 🏍️ Espacio de estacionamiento (motos)
+            val ROAD = 3                 // 🛣️ Calle interna del estacionamiento
+            val TREE = 4                 // 🌳 Obstáculo (árboles o bancas)
+            val INTERACTIVE = 5          // 🏫 Zona de interacción (accesos a edificios)
+
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Configuración de bordes (paredes exteriores)
+            for (i in 0 until MAP_HEIGHT) {
+                matrix[i][0] = WALL  // Lado izquierdo
+                matrix[i][MAP_WIDTH - 1] = WALL  // Lado derecho
+            }
+            for (j in 0 until MAP_WIDTH) {
+                matrix[0][j] = WALL  // Parte superior
+                matrix[MAP_HEIGHT - 1][j] = WALL  // Parte inferior
+            }
+
+            // 🚗 **Zonas de estacionamiento en las orillas** (cajones de autos)
+            for (i in 2 until MAP_HEIGHT step 6) {
+                for (j in 2 until MAP_WIDTH step 10) {
+                    matrix[i][j] = PARKING_SPOT
+                    matrix[i][j + 1] = PARKING_SPOT
+                }
+            }
+
+            // 🏍️ **Zona de estacionamiento para motos**
+            for (i in 5 until MAP_HEIGHT step 10) {
+                for (j in 8 until 12) {
+                    matrix[i][j] = MOTORCYCLE_PARKING
+                }
+            }
+
+            // 🚶 **Calles en forma de laberinto** (zonas transitables)
+            for (i in 3 until MAP_HEIGHT step 4) {
+                for (j in 1 until MAP_WIDTH step 5) {
+                    if (matrix[i][j] == PATH) {
+                        matrix[i][j] = ROAD
+                    }
+                }
+            }
+
+            // 🌳 **Distribución de árboles y bancas** en los espacios de descanso
+            for (i in 6 until MAP_HEIGHT step 9) {
+                for (j in 5 until MAP_WIDTH step 7) {
+                    if (matrix[i][j] == PATH) {
+                        matrix[i][j] = TREE
+                    }
+                }
+            }
+
+            // 🏫 **Zonas interactivas (edificios y accesos)**
+            matrix[10][15] = INTERACTIVE  // Entrada a otro edificio
+            matrix[MAP_HEIGHT / 2][MAP_WIDTH / 2] = INTERACTIVE  // Punto central de acceso
+
+            // 🔲 **Zona central despejada** (para maniobras o circulación)
+            for (i in MAP_HEIGHT / 2 - 3..MAP_HEIGHT / 2 + 3) {
+                for (j in MAP_WIDTH / 2 - 3..MAP_WIDTH / 2 + 3) {
+                    matrix[i][j] = PATH
+                }
+            }
+            return matrix
+        }
+
+        /**
+         * Matriz para el mapa principal del campus
+         */
+        private fun createPalapasMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Configuración de bordes
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    // Bordes exteriores
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = WALL
+                    }
+                    // Zonas interactivas (edificios, entradas)
+                    else if (i == 10 && j == 15) {
+                        matrix[i][j] = INTERACTIVE // Entrada al edificio 2
+                    }
+                    // Obstáculos (árboles, bancas, etc)
+                    else if (i % 7 == 0 && j % 8 == 0) {
+                        matrix[i][j] = INACCESSIBLE
+                    }
+                    // Caminos especiales
+                    else if ((i % 5 == 0 || j % 5 == 0) && i > 5 && j > 5) {
+                        matrix[i][j] = PATH
+                    }
+                }
+            }
+
+            // Áreas de juego específicas
+            // Zona central despejada
+            for (i in 15..25) {
+                for (j in 15..25) {
+                    matrix[i][j] = PATH
+                }
+            }
+
+            return matrix
+        }
+
+        /**
          * Matriz predeterminada para cualquier otro mapa
          */
         private fun createDefaultMatrix(): Array<Array<Int>> {
@@ -831,6 +978,15 @@ class MapMatrixProvider {
                 return MAP_CAFETERIA
             }
 
+
+            if (mapId == MAP_MAIN && x == 9 && y == 5) {
+                return MAP_ESTACIONAMIENTO
+            }
+
+            if (mapId == MAP_MAIN && x == 31 && y == 11) {
+                return MAP_PALAPAS
+            }
+
             if (mapId == MAP_MAIN && x == 23 && y == 10) {
                 return MAP_BUILDING4_F2
             }
@@ -873,6 +1029,9 @@ class MapMatrixProvider {
                 MAP_SALON2009 -> Pair(20, 20)  // Posición central dentro del salón 2009
                 MAP_SALON2010 -> Pair(20, 20)  // Posición central dentro del salón 2010
                 MAP_CAFETERIA -> Pair(2, 2)  // Posición central dentro de la escomCAFE
+
+                MAP_ESTACIONAMIENTO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
+
                 MAP_EDIFICIO_IA_BAJO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
                 MAP_EDIFICIO_IA_MEDIO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
                 MAP_EDIFICIO_IA_ALTO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
