@@ -28,12 +28,12 @@ class MapMatrixProvider {
         const val MAP_SALON1212 = "escom_salon1212"
         const val MAP_ZACATENCO = "escom_zacatenco"
         const val MAP_LINDAVISTA = "escom_lindavista"
-        const val MAP_CABLEBUS = "cablebus"
         const val MAP_ESTACIONAMIENTO = "EstacionamientoEscom"
         const val MAP_TRAS_PLAZA = "TramoAtrasPlaza"
-        const val MAP_ESTACIONAMIENTO = "EstacionamientoEscom"
-        const val MAP_TRAS_PLAZA = "TramoAtrasPlaza"
-        const val MAP_METRO = "escom_metro"
+        const val MAP_EDIFICIO_IA_BAJO = "edificio_ia_bajo"
+        const val MAP_EDIFICIO_IA_MEDIO = "edificio_ia_medio"
+        const val MAP_EDIFICIO_IA_ALTO = "edificio_ia_alto"
+
 
         fun normalizeMapName(mapName: String?): String {
             if (mapName.isNullOrBlank()) return MAP_MAIN
@@ -64,8 +64,10 @@ class MapMatrixProvider {
                 lowerMap.contains("zaca") || lowerMap.contains("zacatenco") -> MAP_ZACATENCO
                 // Lindavista
                 lowerMap.contains("linda") || lowerMap.contains("lindavista") -> MAP_LINDAVISTA
-
-                lowerMap.contains("cable") || lowerMap.contains("cablebus") -> MAP_CABLEBUS
+                // edificio ia
+                lowerMap.contains("ia_baja") || lowerMap.contains("edificio_ia_bajo") -> MAP_EDIFICIO_IA_BAJO
+                lowerMap.contains("ia_medio") || lowerMap.contains("edificio_ia_medio") -> MAP_EDIFICIO_IA_MEDIO
+                lowerMap.contains("ia_alto") || lowerMap.contains("edificio_ia_alto") -> MAP_EDIFICIO_IA_ALTO
 
                 // Si no coincide con ninguno de los anteriores, devolver el original
                 else -> mapName
@@ -91,6 +93,11 @@ class MapMatrixProvider {
         // Del Estacionamiento al segundo mapa (Tramo Atrás Plaza)
         val ESTACIONAMIENTO_TO_PLAZA_POSITION = Pair(35, 20)
         val PLAZA_TO_ESTACIONAMIENTO_POSITION = Pair(5, 20)
+        // edificios ia
+        val MAIN_TO_EDIFICIO_IA_BAJO = Pair(31, 21)
+        val EDIFICIO_IA_BAJO_TO_MAIN = Pair(5, 20)
+
+        val EDIFICIO_IA_BAJO_TO_MEDIO = Pair(5, 20)
 
         /**
          * Obtiene la matriz para el mapa especificado
@@ -106,12 +113,14 @@ class MapMatrixProvider {
                 MAP_CAFETERIA -> createCafeESCOMMatrix()
                 MAP_ESTACIONAMIENTO -> createEstacionamientoMatrix()
                 MAP_TRAS_PLAZA -> createPlazaMatrix()
-                MAP_ESTACIONAMIENTO -> createEstacionamientoMatrix()
-                MAP_TRAS_PLAZA -> createPlazaMatrix()
-                MAP_METRO -> createMETROMatrix()
+
                 MAP_ZACATENCO -> createZacatencoMatrix()
                 MAP_LINDAVISTA -> createLindavistaMatrix()
-                MAP_CABLEBUS -> createCablebusMatix()
+
+                MAP_EDIFICIO_IA_BAJO-> createEdificioIABajoMatrix()
+                MAP_EDIFICIO_IA_MEDIO-> createEdificioIAMedioMatrix()
+                MAP_EDIFICIO_IA_ALTO -> createEdificioIAAltoMatrix()
+
                 else -> createDefaultMatrix() // Por defecto, un mapa básico
             }
         }
@@ -156,6 +165,7 @@ class MapMatrixProvider {
 
             matrix[5][25] = INTERACTIVE // Entrada al Estacionamiento de ESCOM
 
+            matrix[21][31] = INTERACTIVE // entrar edificio ia
             // Áreas de juego específicas
             // Zona central despejada
             for (i in 15..25) {
@@ -168,70 +178,6 @@ class MapMatrixProvider {
 
             return matrix
         }
-
-
-
-        private fun createMETROMatrix(): Array<Array<Int>> {
-            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
-
-            // Configuración de bordes
-            for (i in 0 until MAP_HEIGHT) {
-                for (j in 0 until MAP_WIDTH) {
-                    // Bordes exteriores
-                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
-                        matrix[i][j] = WALL
-                    }
-                    // Zonas interactivas (edificios, entradas)
-                    else if (i == 1 && j == 1 || i == 15 && j ==28  ){
-                        matrix[i][j] = INTERACTIVE // Entrada al edificio 2
-                    }
-                    // Obstáculos (árboles, bancas, etc)
-                    else if ((j in 4..14 && i in 19..20)) { // Rectángulo inaccesible
-                        matrix[i][j] = INACCESSIBLE
-                    }
-                    // Obstáculos (árboles, bancas, etc)i in 1..38 && j in 3..32
-                    else if ((j in 1..38 && i in 29..32)) { // Rectángulo inaccesible
-                        matrix[i][j] = INACCESSIBLE
-                    }
-                    // Obstáculos (árboles, bancas, etc)i in 1..38 && j in 3..32
-                    else if ((j in 31..33 && i in 12..28)) { // Rectángulo inaccesible
-                        matrix[i][j] = INACCESSIBLE
-                    }
-                    // Obstáculos (árboles, bancas, etc)i in 1..38 && j in 3..32
-                    else if ((j in 26..31 && i in 11..12)) { // Rectángulo inaccesible
-                        matrix[i][j] = INACCESSIBLE
-                    }
-                    // Caminos especiales
-                    // else if ((i % 5 == 0 || j % 5 == 0) && i > 5 && j > 5) {
-                    //     matrix[i][j] = PATH
-                    // }
-                    // Obstáculos (árboles, bancas, etc)i in 1..38 && j in 3..32
-                    else if ((j in 2..3 && i in 1..18)) { // Rectángulo inaccesible
-                        matrix[i][j] = INACCESSIBLE
-                    }
-                    // Obstáculos (árboles, bancas, etc)
-                    else if ((j in 15..26 && i in 19..20)) { // Rectángulo inaccesible
-                        matrix[i][j] = INACCESSIBLE
-                    }
-                    // Obstáculos (árboles, bancas, etc)
-                    else if ((j in 24..25 && i in 13..18)) { // Rectángulo inaccesible
-                        matrix[i][j] = INACCESSIBLE
-                    }
-
-                }
-            }
-
-            // Áreas de juego específicas
-            // Zona central despejada
-            // for (i in 15..25) {
-            //  for (j in 15..25) {
-            //     matrix[i][j] = PATH
-            //  }
-            // }
-
-            return matrix
-        }
-
 
         private fun createZacatencoMatrix(): Array<Array<Int>> {
             val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
@@ -260,9 +206,6 @@ class MapMatrixProvider {
                         matrix[i][j] = INTERACTIVE // Entrada a ESCOM
                     }
                     else if (i == 16 && j == 5) {
-                        matrix[i][j] = INTERACTIVE // Entrada a ESCOM
-                    }
-                    else if (i == 25 && j == 5) {
                         matrix[i][j] = INTERACTIVE // Entrada a ESCOM
                     }
                     // Obstáculos (árboles, bancas, etc)
@@ -310,9 +253,6 @@ class MapMatrixProvider {
                     else if (i == 9 && j == 30) {
                         matrix[i][j] = INTERACTIVE // Talleres
                     }
-                    else if (i == 29 && j == 26) {
-                        matrix[i][j] = INTERACTIVE // Cablebus
-                    }
                     // Obstáculos (árboles, bancas, etc)
                     /**else if (i % 7 == 0 && j % 8 == 0) {
                     matrix[i][j] = INACCESSIBLE
@@ -335,34 +275,6 @@ class MapMatrixProvider {
             return matrix
         }
 
-        private fun createCablebusMatix(): Array<Array<Int>> {
-            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
-
-            // Configuración de bordes
-            for (i in 0 until MAP_HEIGHT) {
-                for (j in 0 until MAP_WIDTH) {
-                    // Bordes exteriores
-                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
-                        matrix[i][j] = WALL
-                    }
-                    // Zonas interactivas (edificios, entradas)
-                    else if (i == 6 && j == 1) {
-                        matrix[i][j] = INTERACTIVE // Entrada a vagon
-                    }
-                    else if (i == 18 && j == 3) {
-                        matrix[i][j] = INTERACTIVE // Entrada a vagon
-                    }
-                    // Caminos especiales
-                    else if ((i % 5 == 0 || j % 5 == 0) && i > 5 && j > 5) {
-                        matrix[i][j] = PATH
-                    }
-                }
-            }
-
-            // Áreas de juego específicas
-            // Zona central despejada
-            for (i in 15..25) {
-                for (j in 15..25) {
         /**
          * NUEVO MAPA: Estacionamiento de ESCOM
          */
@@ -814,6 +726,63 @@ class MapMatrixProvider {
             return matrix
         }
 
+
+
+
+        private fun createEdificioIABajoMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Borde simple
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = WALL
+                    }
+                }
+            }
+            matrix[18][33] = INTERACTIVE // Entrada al Estacionamiento de ESCOM
+
+            return matrix
+        }
+
+        private fun createEdificioIAMedioMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Borde simple
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = WALL
+                    }
+                }
+            }
+            matrix[18][33] = INTERACTIVE // Entrada al Estacionamiento de ESCOM
+            matrix[18][36] = INTERACTIVE // Entrada al Estacionamiento de ESCOM
+
+            return matrix
+        }
+        private fun createEdificioIAAltoMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Borde simple
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = WALL
+                    }
+                }
+            }
+            matrix[18][36] = INTERACTIVE // Entrada al Estacionamiento de ESCOM
+
+            return matrix
+        }
+
+
+
+
+
+
+
         /**
          * Comprueba si la coordenada especificada es un punto de transición entre mapas
          */
@@ -883,16 +852,9 @@ class MapMatrixProvider {
                 // Ir al siguiente mapa (Tramo Atrás Plaza)
                 if (x == 35 && y == 20) return MAP_TRAS_PLAZA
             }
-
-            if (mapId == Companion.MAP_CABLEBUS) {
-                if (x == 5 && y == 5) {
-                    return MAP_LINDAVISTA
-                }
-//                if (x == 10 && y == 10) {
-//                    return MAP_MAIN
-//                }
+            if (mapId == MAP_MAIN && x == 31 && y == 21) {
+                return MAP_CAFETERIA
             }
-
 
             // Resto de transiciones...
 
@@ -911,7 +873,9 @@ class MapMatrixProvider {
                 MAP_SALON2009 -> Pair(20, 20)  // Posición central dentro del salón 2009
                 MAP_SALON2010 -> Pair(20, 20)  // Posición central dentro del salón 2010
                 MAP_CAFETERIA -> Pair(2, 2)  // Posición central dentro de la escomCAFE
-                MAP_CABLEBUS -> Pair(2, 2) // Posicion central dentro del cablebus
+                MAP_EDIFICIO_IA_BAJO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
+                MAP_EDIFICIO_IA_MEDIO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
+                MAP_EDIFICIO_IA_ALTO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
 
                 else -> Pair(MAP_WIDTH / 2, MAP_HEIGHT / 2)
             }
