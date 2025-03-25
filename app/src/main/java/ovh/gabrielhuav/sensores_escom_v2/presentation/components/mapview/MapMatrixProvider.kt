@@ -84,8 +84,6 @@ class MapMatrixProvider {
         val MAIN_TO_ESTACIONAMIENTO_POSITION = Pair(25, 5)
         val ESTACIONAMIENTO_TO_MAIN_POSITION = Pair(20, 38)
 
-        val MAIN_TO_CAFETERIA_POSITION = Pair(2, 2)       // Desde mapa principal
-        val CAFETERIA_TO_MAIN_POSITION = Pair(1, 1)         // Vuelta al mapa principal
 
         val MAIN_TO_EDIFICIONUEVO_POSITION = Pair(2, 2)       // Desde mapa principal
         val EDIFICIONUEVO_TO_MAIN_POSITION = Pair(1, 1)         // Vuelta al mapa principal
@@ -199,6 +197,9 @@ class MapMatrixProvider {
                         matrix[i][j] = INTERACTIVE // Entrada a ESCOM
                     }
                     else if (i == 16 && j == 5) {
+                        matrix[i][j] = INTERACTIVE // Entrada a ESCOM
+                    }
+                    else if (i == 19 && j == 4) {
                         matrix[i][j] = INTERACTIVE // Entrada a ESCOM
                     }
                     // Obstáculos (árboles, bancas, etc)
@@ -791,9 +792,8 @@ class MapMatrixProvider {
 
             // Constantes
             val PARED = WALL
-            val CAMINO = PATH
             val BANCA = INACCESSIBLE
-            val INTERACTIVO = INTERACTIVE
+
 
             // Bordes exteriores
             for (i in 0 until MAP_HEIGHT) {
@@ -804,6 +804,9 @@ class MapMatrixProvider {
                 }
             }
 
+            matrix[5][35] = INTERACTIVE
+            matrix[22][17] = INTERACTIVE
+            matrix[27][31] = INTERACTIVE
             // Pared al 70% de la altura desde arriba (equivale a 30% desde abajo)
             val alturaPared = (MAP_HEIGHT * 0.7).toInt() // 28 en un mapa 40x40
             for (j in 0 until MAP_WIDTH) {

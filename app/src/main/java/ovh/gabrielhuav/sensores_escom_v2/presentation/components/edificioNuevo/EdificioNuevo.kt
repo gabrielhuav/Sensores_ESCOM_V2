@@ -12,7 +12,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import org.json.JSONObject
 import ovh.gabrielhuav.sensores_escom_v2.R
-import ovh.gabrielhuav.sensores_escom_v2.data.map.BluetoothWebSocketBridge
+//import ovh.gabrielhuav.sensores_escom_v2.data.map.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
@@ -37,7 +37,7 @@ class EdificioNuevo : AppCompatActivity(),
     private lateinit var tvBluetoothStatus: TextView
 
     private lateinit var playerName: String
-    private lateinit var bluetoothBridge: BluetoothWebSocketBridge
+  //  private lateinit var bluetoothBridge: BluetoothWebSocketBridge
 
     // Reutilizamos la misma estructura de GameState que BuildingNumber2
     private var gameState = BuildingNumber2.GameState()
@@ -163,7 +163,7 @@ class EdificioNuevo : AppCompatActivity(),
             setCallback(this@EdificioNuevo)
         }
 
-        bluetoothBridge = BluetoothWebSocketBridge.getInstance()
+        //bluetoothBridge = BluetoothWebSocketBridge.getInstance()
 
         val onlineServerManager = OnlineServerManager.getInstance(this).apply {
             setListener(this@EdificioNuevo)

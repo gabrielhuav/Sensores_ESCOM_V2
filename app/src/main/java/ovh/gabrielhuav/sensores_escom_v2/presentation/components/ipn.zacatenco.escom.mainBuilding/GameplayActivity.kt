@@ -256,8 +256,6 @@ class GameplayActivity : AppCompatActivity(),
                         "salon1212" -> startSalonPacmanActivity()
                         "Estacionamiento" -> startEstacionamientoEscomActivity()
                         "zacatenco" -> startZacatencoActivity()
-                        "edificioNuevo" -> startEdificioNuevoActivity()
-                        "salidaMetro" -> startSalidaMetroActivity()
                         else -> showToast("No hay interacción disponible en esta posición")
                     }
                 } else {
@@ -294,18 +292,6 @@ class GameplayActivity : AppCompatActivity(),
 
     private fun startEdificioNuevoActivity() {
         val intent = Intent(this, EdificioNuevo::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(1, 1))
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        startActivity(intent)
-        finish()
-    }
-
-    private fun startSalidaMetroActivity() {
-        val intent = Intent(this, SalidaMetro::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_POSITION", Pair(1, 1))
@@ -370,20 +356,6 @@ class GameplayActivity : AppCompatActivity(),
                 targetDestination = "zacatenco"
                 runOnUiThread {
                     Toast.makeText(this, "Presiona A para salir a Zacatenco", Toast.LENGTH_SHORT).show()
-                }
-            }
-            position.first == 32 && position.second == 10 -> {
-                canChangeMap = true
-                targetDestination = "edificioNuevo"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para entrar a las palapas", Toast.LENGTH_SHORT).show()
-                }
-            }
-            position.first == 38 && position.second == 32 -> {
-                canChangeMap = true
-                targetDestination = "salidaMetro"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para salir de la escuela", Toast.LENGTH_SHORT).show()
                 }
             }
             position.first == 33 && position.second == 34 -> {
