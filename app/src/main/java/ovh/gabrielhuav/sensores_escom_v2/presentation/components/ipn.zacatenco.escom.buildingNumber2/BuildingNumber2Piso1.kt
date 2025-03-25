@@ -1,4 +1,4 @@
-package ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber2
+package ovh.gabrielhuav.sensores_escom_v2.presentation.components
 
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
@@ -17,12 +17,11 @@ import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.GameplayActivity
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2009
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2010
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
 
-class BuildingNumber2 : AppCompatActivity(),
+class BuildingNumber2Piso1 : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,
     BluetoothGameManager.ConnectionListener,
     OnlineServerManager.WebSocketListener,
@@ -64,13 +63,13 @@ class BuildingNumber2 : AppCompatActivity(),
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_building2)
+        setContentView(R.layout.activity_building2piso1)
 
         try {
             // Primero inicializamos el mapView
             mapView = MapView(
                 context = this,
-                mapResourceId = R.drawable.escom_edificio_2_planta_baja
+                mapResourceId = R.drawable.escom_edificio_2_primera_planta
             )
             findViewById<FrameLayout>(R.id.map_container).addView(mapView)
 
@@ -80,8 +79,8 @@ class BuildingNumber2 : AppCompatActivity(),
             // Esperar a que el mapView esté listo
             mapView.post {
                 // Configurar el mapa
-                val normalizedMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_BUILDING2)
-                mapView.setCurrentMap(normalizedMap, R.drawable.escom_edificio_2_planta_baja)
+                val normalizedMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_BUILDING2_PISO1)
+                mapView.setCurrentMap(normalizedMap, R.drawable.escom_edificio_2_primera_planta)
 
                 // Después configurar el playerManager
                 mapView.playerManager.apply {
@@ -90,7 +89,7 @@ class BuildingNumber2 : AppCompatActivity(),
                     updateLocalPlayerPosition(gameState.playerPosition)
                 }
 
-                Log.d("BuildingNumber2", "Set map to: $normalizedMap")
+                Log.d("BuildingNumber2Piso1", "Set map to: $normalizedMap")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error en onCreate: ${e.message}")
@@ -110,7 +109,7 @@ class BuildingNumber2 : AppCompatActivity(),
         if (savedInstanceState == null) {
             // Inicializar el estado del juego desde el Intent
             gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
-            gameState.playerPosition = intent.getParcelableExtra("INITIAL_POSITION") ?: Pair(1, 1)
+            gameState.playerPosition = intent.getParcelableExtra("INITIAL_POSITION") ?: Pair(17, 20)
         } else {
             restoreState(savedInstanceState)
         }
@@ -138,14 +137,14 @@ class BuildingNumber2 : AppCompatActivity(),
 
     private fun initializeManagers() {
         bluetoothManager = BluetoothManager.getInstance(this, uiManager.tvBluetoothStatus).apply {
-            setCallback(this@BuildingNumber2)
+            setCallback(this@BuildingNumber2Piso1)
         }
 
         bluetoothBridge = BluetoothWebSocketBridge.getInstance()
 
         // Configurar OnlineServerManager con el listener
         val onlineServerManager = OnlineServerManager.getInstance(this).apply {
-            setListener(this@BuildingNumber2)
+            setListener(this@BuildingNumber2Piso1)
         }
 
         serverConnectionManager = ServerConnectionManager(
@@ -172,7 +171,7 @@ class BuildingNumber2 : AppCompatActivity(),
         when (targetMap) {
             MapMatrixProvider.MAP_MAIN -> {
                 // Transición al mapa principal
-                returnToMainActivity()
+                //returnToMainActivity()
             }
             MapMatrixProvider.MAP_SALON2009 -> {
                 // Transición al salón 2009
@@ -182,9 +181,9 @@ class BuildingNumber2 : AppCompatActivity(),
                 // Transición al salón 2010
                 //startSalon2010Activity()
             }
-            MapMatrixProvider.MAP_BUILDING2_PISO1 -> {
-                // Transición al edificio 2 primera planta
-                startPrimerPisoActivity()
+            MapMatrixProvider.MAP_BUILDING2 -> {
+                // Transición al edificio 2
+                startBuilding2Activity()
             }
             // Añadir más casos según sea necesario para otros mapas
             else -> {
@@ -194,30 +193,14 @@ class BuildingNumber2 : AppCompatActivity(),
     }
 
     // Método para iniciar la Activity del salón 2010
-    private fun startSalon2010Activity() {
-        val intent = Intent(this, Salon2010::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(20, 20)) // Posición inicial en el salón
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guardar la posición actual para regresar
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-
-        // Limpiar datos antes de cambiar de activity
-        mapView.playerManager.cleanup()
-        startActivity(intent)
-        finish()
-    }
-
-    private fun startPrimerPisoActivity() {
-
+    private fun startBuilding2Activity() {
         val previousPosition = intent.getSerializableExtra("PREVIOUS_POSITION") as? Pair<Int, Int>
             ?: Pair(17, 20) // Posición por defecto si no hay previa
-        val intent = Intent(this, BuildingNumber2Piso1::class.java).apply {
+
+        val intent = Intent(this, BuildingNumber2::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", previousPosition) // Posición inicial en el salón
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guardar la posición actual para regresar
+            putExtra("INITIAL_POSITION", previousPosition) // Usar la posición previa
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
 
@@ -322,9 +305,39 @@ class BuildingNumber2 : AppCompatActivity(),
         }
     }
 
+    private var canChangeMap = false  // Variable para controlar si se puede cambiar de mapa
+    private var targetMapId: String? = null  // Añadir esta variable para almacenar el mapa destino
+    private var interactivePosition: Pair<Int, Int>? = null  // Coordenadas del punto interactivo
 
+    private fun checkPositionForMapChange(position: Pair<Int, Int>) {
+        // Verificar si estamos en un punto interactivo que puede ser una transición
+        targetMapId = mapView.getMapTransitionPoint(position.first, position.second)
+        interactivePosition = if (targetMapId != null) position else null
+        canChangeMap = targetMapId != null
 
-//---------------------------------------------------------------------------------------------
+        if (canChangeMap) {
+            runOnUiThread {
+                when (targetMapId) {
+                    MapMatrixProvider.MAP_MAIN -> {
+                        Toast.makeText(this, "Presiona A para volver al mapa principal", Toast.LENGTH_SHORT).show()
+                    }
+                    MapMatrixProvider.MAP_SALON2009 -> {
+                        Toast.makeText(this, "Presiona A para entrar al salón 2009", Toast.LENGTH_SHORT).show()
+                    }
+                    MapMatrixProvider.MAP_SALON2010 -> {
+                        Toast.makeText(this, "Presiona A para entrar al salón 2010", Toast.LENGTH_SHORT).show()
+                    }
+                    MapMatrixProvider.MAP_BUILDING2 -> {
+                        Toast.makeText(this, "Presiona A para entrar al edificio 2 planta baja", Toast.LENGTH_SHORT).show()
+                    }
+                    else -> {
+                        Toast.makeText(this, "Presiona A para interactuar", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+    }
+
     private fun setupButtonListeners() {
         uiManager.apply {
             btnStartServer.setOnClickListener {
@@ -344,86 +357,16 @@ class BuildingNumber2 : AppCompatActivity(),
 
             // Modificar el botón A para manejar las transiciones de mapa
             buttonA.setOnClickListener {
-               /* if (canChangeMap && targetMapId != null) {
+                if (canChangeMap && targetMapId != null) {
                     // En lugar de hacer la lógica aquí directamente, usa el método en MapView
                     mapView.initiateMapTransition(targetMapId!!)
-
-
-                }*/
-                if (canChangeMap){
-                    when (targetDestination) {
-                        "Piso 2" -> startPiso2Activity()
-                        else -> showToast("No hay interacción disponible en esta posición")
-                    }
-                }else {
+                } else {
                     showToast("No hay interacción disponible en esta posición")
                 }
             }
         }
     }
 
-    private fun startPiso2Activity() {
-        val intent = Intent(this, Piso2::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(1, 1))
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        startActivity(intent)
-        finish()
-    }
-
-    private var canChangeMap = false  // Variable para controlar si se puede cambiar de mapa
-    private var targetDestination: String? = null  // Variable para almacenar el destino
-    private var targetMapId: String? = null  // Añadir esta variable para almacenar el mapa destino
-    private var interactivePosition: Pair<Int, Int>? = null  // Coordenadas del punto interactivo
-
-    private fun checkPositionForMapChange(position: Pair<Int, Int>) {
-        // Verificar si estamos en un punto interactivo que puede ser una transición
-        targetMapId = mapView.getMapTransitionPoint(position.first, position.second)
-        interactivePosition = if (targetMapId != null) position else null
-        canChangeMap = targetMapId != null
-
-        when {
-            position.first == 17 && position.second == 20  -> {
-                canChangeMap = true
-                targetDestination = "Piso 2"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para entrar al Piso 2", Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            else -> {
-                canChangeMap = false
-                targetDestination = null
-            }
-
-        }
-
-        if (canChangeMap) {
-            runOnUiThread {
-                when (targetMapId) {
-                    MapMatrixProvider.MAP_MAIN -> {
-                        Toast.makeText(this, "Presiona A para volver al mapa principal", Toast.LENGTH_SHORT).show()
-                    }
-                    MapMatrixProvider.MAP_SALON2009 -> {
-                        Toast.makeText(this, "Presiona A para entrar al salón 2009", Toast.LENGTH_SHORT).show()
-                    }
-                    MapMatrixProvider.MAP_SALON2010 -> {
-                        Toast.makeText(this, "Presiona A para entrar al salón 2010", Toast.LENGTH_SHORT).show()
-                    }
-                    MapMatrixProvider.MAP_BUILDING2_PISO1 -> {
-                        Toast.makeText(this, "Presiona A para entrar al edificio 2 primera planta", Toast.LENGTH_SHORT).show()
-                    }
-                    else -> {
-                        Toast.makeText(this, "Presiona A para interactuar", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
-        }
-    }
-    //-----------------------------------------------------------------------------------------------------------------------
     private fun returnToMainActivity() {
         // Obtener la posición previa del intent
         val previousPosition = intent.getSerializableExtra("PREVIOUS_POSITION") as? Pair<Int, Int>
@@ -435,6 +378,8 @@ class BuildingNumber2 : AppCompatActivity(),
             putExtra("INITIAL_POSITION", previousPosition) // Usar la posición previa
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
+
+
 
         // Limpiar datos antes de cambiar de activity
         mapView.playerManager.cleanup()
@@ -451,7 +396,7 @@ class BuildingNumber2 : AppCompatActivity(),
                 mapView.updateLocalPlayerPosition(position, forceCenter = true)
 
                 if (gameState.isConnected) {
-                    serverConnectionManager.sendUpdateMessage(playerName, position, "escom_building2")
+                    serverConnectionManager.sendUpdateMessage(playerName, position, "escom_building2_primera_planta")
                 }
 
                 checkPositionForMapChange(position)
