@@ -98,19 +98,9 @@
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
-            android:name=".presentation.components.EdificioNuevo"
+            android:name=".presentation.components.ipn.zacatenco.escom.cablebus.Cablebus"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
-        <activity
-            android:name=".presentation.components.SalidaMetro"
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
-        <activity
-            android:name=".presentation.components.EstacionamientoEscom"
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
-
-        <activity
-            android:name=".presentation.components.TramoAtrasPlaza"
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
         <!-- DeviceList Activity -->
         <activity
             android:name=".data.map.Bluetooth.DeviceListActivity"
