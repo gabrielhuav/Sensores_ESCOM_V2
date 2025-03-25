@@ -21,6 +21,7 @@ import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.salidaMetro.SalidaMetro
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
 
 

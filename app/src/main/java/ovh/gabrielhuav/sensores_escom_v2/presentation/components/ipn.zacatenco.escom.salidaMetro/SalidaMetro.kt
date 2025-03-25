@@ -1,4 +1,4 @@
-package ovh.gabrielhuav.sensores_escom_v2.presentation.components
+package ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.salidaMetro
 
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
@@ -12,9 +12,10 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import org.json.JSONObject
 import ovh.gabrielhuav.sensores_escom_v2.R
-//import ovh.gabrielhuav.sensores_escom_v2.data.map.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.BuildingNumber2
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.GameplayActivity
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
 
 class SalidaMetro : AppCompatActivity(),
@@ -352,7 +353,7 @@ class SalidaMetro : AppCompatActivity(),
     override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
         runOnUiThread {
             val deviceName = device.name ?: "Unknown"
-            mapView.updateRemotePlayerPosition(deviceName, Pair(x, y), MapMatrixProvider.MAP_EDIFICIONUEVO)
+            mapView.updateRemotePlayerPosition(deviceName, Pair(x, y), MapMatrixProvider.MAP_SALIDAMETRO)
             mapView.invalidate()
         }
     }
@@ -378,7 +379,10 @@ class SalidaMetro : AppCompatActivity(),
 
                                 // Actualizar la posición del jugador en el mapa
                                 gameState.remotePlayerPositions = gameState.remotePlayerPositions +
-                                        (playerId to BuildingNumber2.GameState.PlayerInfo(position, map))
+                                        (playerId to BuildingNumber2.GameState.PlayerInfo(
+                                            position,
+                                            map
+                                        ))
 
                                 // Solo mostrar jugadores que estén en el mismo mapa
                                 if (map == MapMatrixProvider.MAP_CAFETERIA) {
@@ -399,7 +403,10 @@ class SalidaMetro : AppCompatActivity(),
 
                             // Actualizar el estado del jugador
                             gameState.remotePlayerPositions = gameState.remotePlayerPositions +
-                                    (playerId to BuildingNumber2.GameState.PlayerInfo(position, map))
+                                    (playerId to BuildingNumber2.GameState.PlayerInfo(
+                                        position,
+                                        map
+                                    ))
 
                             // Solo mostrar jugadores que estén en el mismo mapa
                             if (map == MapMatrixProvider.MAP_SALIDAMETRO) {
