@@ -30,11 +30,11 @@ class MapMatrixProvider {
         const val MAP_LINDAVISTA = "escom_lindavista"
         const val MAP_ESTACIONAMIENTO = "EstacionamientoEscom"
         const val MAP_TRAS_PLAZA = "TramoAtrasPlaza"
+        const val MAP_SALIDAMETRO = "escom_salidametro"
         const val MAP_EDIFICIO_IA_BAJO = "edificio_ia_bajo"
         const val MAP_EDIFICIO_IA_MEDIO = "edificio_ia_medio"
         const val MAP_EDIFICIO_IA_ALTO = "edificio_ia_alto"
         const val MAP_CABLEBUS = "cablebus"
-
 
         fun normalizeMapName(mapName: String?): String {
             if (mapName.isNullOrBlank()) return MAP_MAIN
@@ -92,6 +92,9 @@ class MapMatrixProvider {
         val MAIN_TO_ESTACIONAMIENTO_POSITION = Pair(25, 5)
         val ESTACIONAMIENTO_TO_MAIN_POSITION = Pair(20, 38)
 
+
+        val MAIN_TO_SALIDAMETRO_POSITION = Pair(2, 2)       // Desde mapa principal
+        val SALIDAMETRO_TO_MAIN_POSITION = Pair(1, 1)         // Vuelta al mapa principal
         // Del Estacionamiento al segundo mapa (Tramo Atrás Plaza)
         val ESTACIONAMIENTO_TO_PLAZA_POSITION = Pair(35, 20)
         val PLAZA_TO_ESTACIONAMIENTO_POSITION = Pair(5, 20)
@@ -122,7 +125,6 @@ class MapMatrixProvider {
                 MAP_EDIFICIO_IA_BAJO-> createEdificioIABajoMatrix()
                 MAP_EDIFICIO_IA_MEDIO-> createEdificioIAMedioMatrix()
                 MAP_EDIFICIO_IA_ALTO -> createEdificioIAAltoMatrix()
-
                 else -> createDefaultMatrix() // Por defecto, un mapa básico
             }
         }
@@ -246,6 +248,9 @@ class MapMatrixProvider {
                         matrix[i][j] = INTERACTIVE // Entrada a ESCOM
                     }
                     else if (i == 16 && j == 5) {
+                        matrix[i][j] = INTERACTIVE // Entrada a ESCOM
+                    }
+                    else if (i == 19 && j == 4) {
                         matrix[i][j] = INTERACTIVE // Entrada a ESCOM
                     }
                     // Obstáculos (árboles, bancas, etc)
@@ -747,6 +752,7 @@ class MapMatrixProvider {
 
             return matrix
         }
+
 
         /**
          * Matriz predeterminada para cualquier otro mapa

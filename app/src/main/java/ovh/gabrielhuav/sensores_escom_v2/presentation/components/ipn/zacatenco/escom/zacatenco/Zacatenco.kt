@@ -21,6 +21,7 @@ import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.salidaMetro.SalidaMetro
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
 
 
@@ -316,6 +317,14 @@ class Zacatenco : AppCompatActivity(),
                         .show()
                 }
             }
+            position.first == 4 && position.second == 19 -> {
+                canChangeMap = true
+                targetDestination = "ford"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para ver la ford", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
 
             else -> {
                 canChangeMap = false
@@ -351,6 +360,7 @@ class Zacatenco : AppCompatActivity(),
                         "esfm" -> viewESFM()
                         "cidetec" -> viewCIDETEC()
                         "cic" -> viewCIC()
+                        "ford" -> startFordActivity()
 
                         else -> showToast("No hay interacción disponible en esta posición")
                     }
@@ -409,6 +419,19 @@ class Zacatenco : AppCompatActivity(),
         startActivity(intent)
         finish()
     }
+
+    private fun startFordActivity() {
+        val intent = Intent(this, SalidaMetro::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(1, 6))
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
+
     private fun updatePlayerPosition(position: Pair<Int, Int>) {
         runOnUiThread {
             try {
