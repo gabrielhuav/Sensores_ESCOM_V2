@@ -5,7 +5,7 @@
     android:id="@+id/main_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".presentation.components.ipn.zacatenco.escom.buildingNumber2.BuildingNumber2">
+    tools:context=".presentation.components.ipn.zacatenco.escom.buildingNumber2.Piso2">
 
     <Button
         android:id="@+id/button_back_to_home"

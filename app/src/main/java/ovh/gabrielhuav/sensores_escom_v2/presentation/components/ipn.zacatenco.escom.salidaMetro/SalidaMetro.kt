@@ -14,8 +14,8 @@ import org.json.JSONObject
 import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.BuildingNumber2
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.GameplayActivity
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber2.BuildingNumber2
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
 
 class SalidaMetro : AppCompatActivity(),
