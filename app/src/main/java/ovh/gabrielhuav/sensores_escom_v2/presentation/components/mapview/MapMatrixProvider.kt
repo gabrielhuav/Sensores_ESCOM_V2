@@ -892,6 +892,17 @@ class MapMatrixProvider {
                 // Ir al siguiente mapa (Tramo Atrás Plaza)
                 if (x == 35 && y == 20) return MAP_TRAS_PLAZA
             }
+
+
+            if (mapId == Companion.MAP_CABLEBUS) {
+                if (x == 5 && y == 5) {
+                    return MAP_LINDAVISTA
+                }
+//                if (x == 10 && y == 10) {
+//                    return MAP_MAIN
+//                }
+            }
+
             if (mapId == MAP_MAIN && x == 31 && y == 21) {
                 return MAP_CAFETERIA
             }
@@ -913,6 +924,7 @@ class MapMatrixProvider {
                 MAP_SALON2009 -> Pair(20, 20)  // Posición central dentro del salón 2009
                 MAP_SALON2010 -> Pair(20, 20)  // Posición central dentro del salón 2010
                 MAP_CAFETERIA -> Pair(2, 2)  // Posición central dentro de la escomCAFE
+                MAP_CABLEBUS -> Pair(2, 2) // Posicion central dentro del cablebus
                 MAP_EDIFICIO_IA_BAJO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
                 MAP_EDIFICIO_IA_MEDIO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
                 MAP_EDIFICIO_IA_ALTO -> Pair(2, 2)  // Posición central dentro de la escomCAFE

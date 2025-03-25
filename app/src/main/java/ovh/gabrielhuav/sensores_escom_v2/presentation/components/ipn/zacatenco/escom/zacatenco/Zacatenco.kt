@@ -284,14 +284,6 @@ class Zacatenco : AppCompatActivity(),
                         .show()
                 }
             }
-            position.first == 5 && position.second == 25 -> {
-                canChangeMap = true
-                targetDestination = "metro"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para entrar al metro", Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
             position.first == 25 && position.second == 12 -> {
                 canChangeMap = true
                 targetDestination = "esia"
@@ -355,7 +347,6 @@ class Zacatenco : AppCompatActivity(),
                     when (targetDestination) {
                         "main" -> returnToMainActivity()
                         "lindavista" -> startLindavistaActivity()
-                        "metro"-> startMetroActivity()
                         "esia" -> viewESIA()
                         "esfm" -> viewESFM()
                         "cidetec" -> viewCIDETEC()
@@ -407,7 +398,6 @@ class Zacatenco : AppCompatActivity(),
         finish()
     }
 
-
     private fun startLindavistaActivity() {
         val intent = Intent(this, Lindavista::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
@@ -419,19 +409,6 @@ class Zacatenco : AppCompatActivity(),
         startActivity(intent)
         finish()
     }
-    private fun startMetroActivity() {
-        val intent = Intent(this, metro::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(1, 6))
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        startActivity(intent)
-        finish()
-    }
-
-
     private fun updatePlayerPosition(position: Pair<Int, Int>) {
         runOnUiThread {
             try {
