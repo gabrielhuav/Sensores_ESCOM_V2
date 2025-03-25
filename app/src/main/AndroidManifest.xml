@@ -73,7 +73,15 @@
         <activity
             android:name=".presentation.components.TramoAtrasPlaza"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
-
+        <activity
+            android:name=".presentation.components.BuildingEdificioIA"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+        <activity
+            android:name=".presentation.components.BuildingEdificioIA_Medio"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+        <activity
+            android:name=".presentation.components.BuildingEdificioIA_Alto"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
             android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2009"
