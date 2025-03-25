@@ -9,15 +9,19 @@ import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import org.json.JSONObject
 import ovh.gabrielhuav.sensores_escom_v2.R
-import ovh.gabrielhuav.sensores_escom_v2.data.map.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
+import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
 
-class Salon2009 : AppCompatActivity(),
+/**
+ * Activity para el mapa del Estacionamiento de ESCOM
+ */
+class EstacionamientoEscom : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,
     BluetoothGameManager.ConnectionListener,
     OnlineServerManager.WebSocketListener,
@@ -28,13 +32,16 @@ class Salon2009 : AppCompatActivity(),
     private lateinit var serverConnectionManager: ServerConnectionManager
     private lateinit var mapView: MapView
 
-    // UI Components
+    // Componentes de UI
     private lateinit var btnNorth: Button
     private lateinit var btnSouth: Button
     private lateinit var btnEast: Button
     private lateinit var btnWest: Button
     private lateinit var btnBackToHome: Button
     private lateinit var tvBluetoothStatus: TextView
+    private lateinit var buttonA: Button
+    private lateinit var btnB1: Button    // Botón auxiliar 1
+    private lateinit var btnB2: Button    // Botón auxiliar 2 (BCK)
 
     private lateinit var playerName: String
     private lateinit var bluetoothBridge: BluetoothWebSocketBridge
@@ -44,13 +51,13 @@ class Salon2009 : AppCompatActivity(),
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_salon2009)
+        setContentView(R.layout.activity_estacionamientoescom)
 
         try {
             // Inicializar el mapView
             mapView = MapView(
                 context = this,
-                mapResourceId = R.drawable.escom_salon2009 // Usa la imagen del salón 2009
+                mapResourceId = R.drawable.estacionamiento_escom // Usamos la imagen del estacionamiento
             )
             findViewById<FrameLayout>(R.id.map_container).addView(mapView)
 
@@ -59,21 +66,21 @@ class Salon2009 : AppCompatActivity(),
 
             // Esperar a que el mapView esté listo
             mapView.post {
-                // Configurar el mapa para el salón 2009
-                mapView.setCurrentMap(MapMatrixProvider.MAP_SALON2009, R.drawable.escom_salon2009)
+                // Configurar el mapa para el estacionamiento
+                mapView.setCurrentMap(MapMatrixProvider.MAP_ESTACIONAMIENTO, R.drawable.estacionamiento_escom)
 
                 // Configurar el playerManager
                 mapView.playerManager.apply {
-                    setCurrentMap(MapMatrixProvider.MAP_SALON2009)
+                    setCurrentMap(MapMatrixProvider.MAP_ESTACIONAMIENTO)
                     localPlayerId = playerName
                     updateLocalPlayerPosition(gameState.playerPosition)
                 }
 
-                Log.d(TAG, "Set map to: " + MapMatrixProvider.MAP_SALON2009)
+                Log.d(TAG, "Set map to: " + MapMatrixProvider.MAP_ESTACIONAMIENTO)
 
                 // Importante: Enviar un update inmediato para que otros jugadores sepan dónde estamos
                 if (gameState.isConnected) {
-                    serverConnectionManager.sendUpdateMessage(playerName, gameState.playerPosition, MapMatrixProvider.MAP_SALON2009)
+                    serverConnectionManager.sendUpdateMessage(playerName, gameState.playerPosition, MapMatrixProvider.MAP_ESTACIONAMIENTO)
                 }
             }
         } catch (e: Exception) {
@@ -82,6 +89,7 @@ class Salon2009 : AppCompatActivity(),
             finish()
         }
     }
+
     private fun initializeComponents(savedInstanceState: Bundle?) {
         // Obtener datos desde Intent o restaurar el estado guardado
         playerName = intent.getStringExtra("PLAYER_NAME") ?: run {
@@ -95,7 +103,7 @@ class Salon2009 : AppCompatActivity(),
             gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
             gameState.isConnected = intent.getBooleanExtra("IS_CONNECTED", false) // Preservar estado de conexión
             gameState.playerPosition = intent.getSerializableExtra("INITIAL_POSITION") as? Pair<Int, Int>
-                ?: Pair(20, 20)
+                ?: Pair(20, 30)
         } else {
             restoreState(savedInstanceState)
         }
@@ -110,7 +118,6 @@ class Salon2009 : AppCompatActivity(),
         updatePlayerPosition(gameState.playerPosition)
 
         // Asegurarnos de que nos reconectamos al servidor online
-        // Este es un paso importante para mantener la conexión
         connectToOnlineServer()
     }
 
@@ -130,13 +137,13 @@ class Salon2009 : AppCompatActivity(),
                     serverConnectionManager.sendUpdateMessage(
                         playerName,
                         gameState.playerPosition,
-                        MapMatrixProvider.MAP_SALON2009
+                        MapMatrixProvider.MAP_ESTACIONAMIENTO
                     )
 
                     // Solicitar actualizaciones de posición
                     serverConnectionManager.onlineServerManager.requestPositionsUpdate()
 
-                    updateBluetoothStatus("Conectado al servidor online - Salón 2009")
+                    updateBluetoothStatus("Conectado al servidor online - Estacionamiento ESCOM")
                 } else {
                     updateBluetoothStatus("Error al conectar al servidor online")
                 }
@@ -152,20 +159,23 @@ class Salon2009 : AppCompatActivity(),
         btnWest = findViewById(R.id.button_west)
         btnBackToHome = findViewById(R.id.button_back_to_home)
         tvBluetoothStatus = findViewById(R.id.tvBluetoothStatus)
+        buttonA = findViewById(R.id.button_a)
+        btnB1 = findViewById(R.id.button_small_1)
+        btnB2 = findViewById(R.id.button_small_2)
 
         // Cambiar el título para indicar dónde estamos
-        tvBluetoothStatus.text = "Salón 2009 - Conectando..."
+        tvBluetoothStatus.text = "Estacionamiento ESCOM - Conectando..."
     }
 
     private fun initializeManagers() {
         bluetoothManager = BluetoothManager.getInstance(this, tvBluetoothStatus).apply {
-            setCallback(this@Salon2009)
+            setCallback(this@EstacionamientoEscom)
         }
 
         bluetoothBridge = BluetoothWebSocketBridge.getInstance()
 
         val onlineServerManager = OnlineServerManager.getInstance(this).apply {
-            setListener(this@Salon2009)
+            setListener(this@EstacionamientoEscom)
         }
 
         serverConnectionManager = ServerConnectionManager(
@@ -189,28 +199,66 @@ class Salon2009 : AppCompatActivity(),
         btnEast.setOnTouchListener { _, event -> handleMovement(event, 1, 0); true }
         btnWest.setOnTouchListener { _, event -> handleMovement(event, -1, 0); true }
 
-        // Botón para volver al edificio 2
+        // Botón para volver al mapa principal
         btnBackToHome.setOnClickListener {
-            returnToBuilding2()
+            returnToMainMap()
         }
 
         // Configurar el botón BCK si existe
         findViewById<Button?>(R.id.button_small_2)?.setOnClickListener {
-            returnToBuilding2()
+            returnToMainMap()
+        }
+
+        // Botón A para interactuar
+        buttonA.setOnClickListener {
+            checkForInteraction()
         }
     }
 
-    private fun returnToBuilding2() {
+    private fun checkForInteraction() {
+        val currentPosition = gameState.playerPosition
+        val transitionPoint = mapView.getMapTransitionPoint(currentPosition.first, currentPosition.second)
+
+        if (transitionPoint != null) {
+            // Si hay una transición disponible, iniciarla
+            mapView.initiateMapTransition(transitionPoint)
+        } else if (mapView.isInteractivePosition(currentPosition.first, currentPosition.second)) {
+            // Alguna otra interacción disponible en esta posición
+            Toast.makeText(this, "Interactuando en posición ${currentPosition.first},${currentPosition.second}", Toast.LENGTH_SHORT).show()
+            // Aquí se podría implementar algún mini-juego o easter egg
+        } else {
+            Toast.makeText(this, "No hay interacción disponible aquí", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun returnToMainMap() {
         // Obtener la posición previa
         val previousPosition = intent.getSerializableExtra("PREVIOUS_POSITION") as? Pair<Int, Int>
-            ?: Pair(15, 16) // Por defecto, volver al pasillo principal
+            ?: Pair(25, 5) // Punto donde estaría la entrada al estacionamiento en el mapa principal
 
-        // Crear intent para volver al Edificio 2
-        val intent = Intent(this, BuildingNumber2::class.java).apply {
+        // Crear intent para volver al Mapa Principal
+        val intent = Intent(this, GameplayActivity::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("IS_CONNECTED", gameState.isConnected) // Pasar el estado de conexión
             putExtra("INITIAL_POSITION", previousPosition)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+
+        // Limpiar datos
+        mapView.playerManager.cleanup()
+        startActivity(intent)
+        finish()
+    }
+
+    private fun startNextMap() {
+        // Transición al siguiente mapa: TramoAtrasPlaza
+        val intent = Intent(this, TramoAtrasPlaza::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("IS_CONNECTED", gameState.isConnected)
+            putExtra("INITIAL_POSITION", Pair(5, 20)) // Posición de entrada en el siguiente mapa
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guardar posición actual
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
 
@@ -235,7 +283,26 @@ class Salon2009 : AppCompatActivity(),
             // Enviar actualización a otros jugadores con el mapa específico
             if (gameState.isConnected) {
                 // Enviar la posición con el nombre del mapa correcto
-                serverConnectionManager.sendUpdateMessage(playerName, position, MapMatrixProvider.MAP_SALON2009)
+                serverConnectionManager.sendUpdateMessage(playerName, position, MapMatrixProvider.MAP_ESTACIONAMIENTO)
+            }
+
+            // Comprobar si estamos en un punto de transición
+            checkForTransition(position)
+        }
+    }
+
+    private fun checkForTransition(position: Pair<Int, Int>) {
+        val transitionMap = mapView.getMapTransitionPoint(position.first, position.second)
+
+        if (transitionMap != null) {
+            // Mostrar información sobre la transición disponible
+            when (transitionMap) {
+                MapMatrixProvider.MAP_MAIN -> {
+                    Toast.makeText(this, "Presiona A para volver al Mapa Principal", Toast.LENGTH_SHORT).show()
+                }
+                MapMatrixProvider.MAP_TRAS_PLAZA -> {
+                    Toast.makeText(this, "Presiona A para ir al Tramo Atrás Plaza", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -245,7 +312,7 @@ class Salon2009 : AppCompatActivity(),
             isServer = savedInstanceState.getBoolean("IS_SERVER", false)
             isConnected = savedInstanceState.getBoolean("IS_CONNECTED", false)
             playerPosition = savedInstanceState.getSerializable("PLAYER_POSITION") as? Pair<Int, Int>
-                ?: Pair(20, 20)
+                ?: Pair(20, 30)
             @Suppress("UNCHECKED_CAST")
             remotePlayerPositions = (savedInstanceState.getSerializable("REMOTE_PLAYER_POSITIONS")
                     as? HashMap<String, BuildingNumber2.GameState.PlayerInfo>)?.toMap() ?: emptyMap()
@@ -261,8 +328,11 @@ class Salon2009 : AppCompatActivity(),
     // Implementación MapTransitionListener
     override fun onMapTransitionRequested(targetMap: String, initialPosition: Pair<Int, Int>) {
         when (targetMap) {
-            MapMatrixProvider.MAP_BUILDING2 -> {
-                returnToBuilding2()
+            MapMatrixProvider.MAP_MAIN -> {
+                returnToMainMap()
+            }
+            MapMatrixProvider.MAP_TRAS_PLAZA -> {
+                startNextMap()
             }
             else -> {
                 Log.d(TAG, "Mapa destino no reconocido: $targetMap")
@@ -296,7 +366,7 @@ class Salon2009 : AppCompatActivity(),
     override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
         runOnUiThread {
             val deviceName = device.name ?: "Unknown"
-            mapView.updateRemotePlayerPosition(deviceName, Pair(x, y), MapMatrixProvider.MAP_SALON2009)
+            mapView.updateRemotePlayerPosition(deviceName, Pair(x, y), MapMatrixProvider.MAP_ESTACIONAMIENTO)
             mapView.invalidate()
         }
     }
@@ -328,10 +398,7 @@ class Salon2009 : AppCompatActivity(),
                                         (playerId to BuildingNumber2.GameState.PlayerInfo(position, normalizedMap))
 
                                 // Obtener el mapa actual normalizado para comparar
-                                val currentMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_SALON2009)
-
-                                // IMPORTANTE: Loggear para depuración
-                                Log.d(TAG, "Jugador remoto $playerId en mapa '$normalizedMap', mapa actual es '$currentMap'")
+                                val currentMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_ESTACIONAMIENTO)
 
                                 // Solo mostrar jugadores en el mismo mapa
                                 if (normalizedMap == currentMap) {
@@ -358,7 +425,7 @@ class Salon2009 : AppCompatActivity(),
                                     (playerId to BuildingNumber2.GameState.PlayerInfo(position, normalizedMap))
 
                             // Obtener el mapa actual normalizado para comparar
-                            val currentMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_SALON2009)
+                            val currentMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_ESTACIONAMIENTO)
 
                             // Solo mostrar jugadores en el mismo mapa
                             if (normalizedMap == currentMap) {
@@ -375,7 +442,7 @@ class Salon2009 : AppCompatActivity(),
                         serverConnectionManager.sendUpdateMessage(
                             playerName,
                             gameState.playerPosition,
-                            MapMatrixProvider.MAP_SALON2009
+                            MapMatrixProvider.MAP_ESTACIONAMIENTO
                         )
                     }
                     "disconnect" -> {
@@ -394,6 +461,7 @@ class Salon2009 : AppCompatActivity(),
             }
         }
     }
+
     private fun updateBluetoothStatus(status: String) {
         runOnUiThread {
             tvBluetoothStatus.text = status
@@ -429,10 +497,11 @@ class Salon2009 : AppCompatActivity(),
             serverConnectionManager.sendUpdateMessage(
                 playerName,
                 gameState.playerPosition,
-                MapMatrixProvider.MAP_SALON2009
+                MapMatrixProvider.MAP_ESTACIONAMIENTO
             )
         }
     }
+
     override fun onDestroy() {
         super.onDestroy()
         bluetoothManager.cleanup()
@@ -444,6 +513,6 @@ class Salon2009 : AppCompatActivity(),
     }
 
     companion object {
-        private const val TAG = "Salon2009"
+        private const val TAG = "EstacionamientoEscom"
     }
 }

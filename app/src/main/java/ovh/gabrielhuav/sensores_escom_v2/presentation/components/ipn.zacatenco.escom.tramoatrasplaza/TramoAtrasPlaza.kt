@@ -9,15 +9,19 @@ import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import org.json.JSONObject
 import ovh.gabrielhuav.sensores_escom_v2.R
-import ovh.gabrielhuav.sensores_escom_v2.data.map.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
+import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
 
-class Salon2010 : AppCompatActivity(),
+/**
+ * Activity para el mapa del Tramo Atrás Plaza
+ */
+class TramoAtrasPlaza : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,
     BluetoothGameManager.ConnectionListener,
     OnlineServerManager.WebSocketListener,
@@ -28,13 +32,14 @@ class Salon2010 : AppCompatActivity(),
     private lateinit var serverConnectionManager: ServerConnectionManager
     private lateinit var mapView: MapView
 
-    // UI Components
+    // Componentes de UI
     private lateinit var btnNorth: Button
     private lateinit var btnSouth: Button
     private lateinit var btnEast: Button
     private lateinit var btnWest: Button
     private lateinit var btnBackToHome: Button
     private lateinit var tvBluetoothStatus: TextView
+    private lateinit var buttonA: Button
 
     private lateinit var playerName: String
     private lateinit var bluetoothBridge: BluetoothWebSocketBridge
@@ -44,13 +49,13 @@ class Salon2010 : AppCompatActivity(),
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_salon2010)
+        setContentView(R.layout.activity_tramoatrasplaza)
 
         try {
             // Inicializar el mapView
             mapView = MapView(
                 context = this,
-                mapResourceId = R.drawable.escom_salon2010 // Usa la imagen del salón 2010
+                mapResourceId = R.drawable.tramo_atras_plaza // Usamos la imagen del Tramo Atrás Plaza
             )
             findViewById<FrameLayout>(R.id.map_container).addView(mapView)
 
@@ -59,22 +64,21 @@ class Salon2010 : AppCompatActivity(),
 
             // Esperar a que el mapView esté listo
             mapView.post {
-                // Configurar el mapa para el salón 2010
-                val normalizedMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_SALON2010)
-                mapView.setCurrentMap(normalizedMap, R.drawable.escom_salon2010)
+                // Configurar el mapa para el Tramo Atrás Plaza
+                mapView.setCurrentMap(MapMatrixProvider.MAP_TRAS_PLAZA, R.drawable.tramo_atras_plaza)
 
                 // Configurar el playerManager
                 mapView.playerManager.apply {
-                    setCurrentMap(MapMatrixProvider.MAP_SALON2010)
+                    setCurrentMap(MapMatrixProvider.MAP_TRAS_PLAZA)
                     localPlayerId = playerName
                     updateLocalPlayerPosition(gameState.playerPosition)
                 }
 
-                Log.d(TAG, "Set map to: " + MapMatrixProvider.MAP_SALON2010)
+                Log.d(TAG, "Set map to: " + MapMatrixProvider.MAP_TRAS_PLAZA)
 
                 // Importante: Enviar un update inmediato para que otros jugadores sepan dónde estamos
                 if (gameState.isConnected) {
-                    serverConnectionManager.sendUpdateMessage(playerName, gameState.playerPosition, MapMatrixProvider.MAP_SALON2010)
+                    serverConnectionManager.sendUpdateMessage(playerName, gameState.playerPosition, MapMatrixProvider.MAP_TRAS_PLAZA)
                 }
             }
         } catch (e: Exception) {
@@ -112,7 +116,6 @@ class Salon2010 : AppCompatActivity(),
         updatePlayerPosition(gameState.playerPosition)
 
         // Asegurarnos de que nos reconectamos al servidor online
-        // Este es un paso importante para mantener la conexión
         connectToOnlineServer()
     }
 
@@ -132,13 +135,13 @@ class Salon2010 : AppCompatActivity(),
                     serverConnectionManager.sendUpdateMessage(
                         playerName,
                         gameState.playerPosition,
-                        MapMatrixProvider.MAP_SALON2010
+                        MapMatrixProvider.MAP_TRAS_PLAZA
                     )
 
                     // Solicitar actualizaciones de posición
                     serverConnectionManager.onlineServerManager.requestPositionsUpdate()
 
-                    updateBluetoothStatus("Conectado al servidor online - Salón 2010")
+                    updateBluetoothStatus("Conectado al servidor online - Tramo Atrás Plaza")
                 } else {
                     updateBluetoothStatus("Error al conectar al servidor online")
                 }
@@ -154,20 +157,21 @@ class Salon2010 : AppCompatActivity(),
         btnWest = findViewById(R.id.button_west)
         btnBackToHome = findViewById(R.id.button_back_to_home)
         tvBluetoothStatus = findViewById(R.id.tvBluetoothStatus)
+        buttonA = findViewById(R.id.button_a)
 
         // Cambiar el título para indicar dónde estamos
-        tvBluetoothStatus.text = "Salón 2010 - Conectando..."
+        tvBluetoothStatus.text = "Tramo Atrás Plaza - Conectando..."
     }
 
     private fun initializeManagers() {
         bluetoothManager = BluetoothManager.getInstance(this, tvBluetoothStatus).apply {
-            setCallback(this@Salon2010)
+            setCallback(this@TramoAtrasPlaza)
         }
 
         bluetoothBridge = BluetoothWebSocketBridge.getInstance()
 
         val onlineServerManager = OnlineServerManager.getInstance(this).apply {
-            setListener(this@Salon2010)
+            setListener(this@TramoAtrasPlaza)
         }
 
         serverConnectionManager = ServerConnectionManager(
@@ -191,28 +195,59 @@ class Salon2010 : AppCompatActivity(),
         btnEast.setOnTouchListener { _, event -> handleMovement(event, 1, 0); true }
         btnWest.setOnTouchListener { _, event -> handleMovement(event, -1, 0); true }
 
-        // Botón para volver al edificio 2
+        // Botón para volver al mapa anterior
         btnBackToHome.setOnClickListener {
-            returnToBuilding2()
+            returnToPreviousMap()
         }
 
         // Configurar el botón BCK si existe
         findViewById<Button?>(R.id.button_small_2)?.setOnClickListener {
-            returnToBuilding2()
+            returnToPreviousMap()
+        }
+
+        // Botón A para interactuar
+        buttonA.setOnClickListener {
+            checkForInteraction()
         }
     }
 
-    private fun returnToBuilding2() {
-        // Obtener la posición previa
-        val previousPosition = intent.getSerializableExtra("PREVIOUS_POSITION") as? Pair<Int, Int>
-            ?: Pair(15, 16) // Por defecto, volver al pasillo principal
+    private fun checkForInteraction() {
+        val currentPosition = gameState.playerPosition
+        val transitionPoint = mapView.getMapTransitionPoint(currentPosition.first, currentPosition.second)
 
-        // Crear intent para volver al Edificio 2
-        val intent = Intent(this, BuildingNumber2::class.java).apply {
+        if (transitionPoint != null) {
+            // Si hay una transición disponible, iniciarla
+            mapView.initiateMapTransition(transitionPoint)
+        } else if (mapView.isInteractivePosition(currentPosition.first, currentPosition.second)) {
+            // Easter egg especial en este mapa
+            if (currentPosition.first == 10 && currentPosition.second == 30) {
+                showEasterEgg()
+            } else {
+                // Alguna otra interacción disponible en esta posición
+                Toast.makeText(this, "Interactuando en posición ${currentPosition.first},${currentPosition.second}", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(this, "No hay interacción disponible aquí", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun showEasterEgg() {
+        // Mostrar un diálogo con algún contenido especial o información
+        AlertDialog.Builder(this)
+            .setTitle("¡Has encontrado un secreto!")
+            .setMessage("Esta plaza era originalmente un estacionamiento antes de ser remodelada. Se dice que en las noches todavía se pueden escuchar los sonidos de los autos que estuvieron aquí.")
+            .setPositiveButton("¡Genial!") { dialog, _ -> dialog.dismiss() }
+            .show()
+    }
+
+    private fun returnToPreviousMap() {
+        // Volver al Estacionamiento de ESCOM
+        val intent = Intent(this, EstacionamientoEscom::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("IS_CONNECTED", gameState.isConnected) // Pasar el estado de conexión
-            putExtra("INITIAL_POSITION", previousPosition)
+            putExtra("INITIAL_POSITION", Pair(35, 20)) // Posición cercana a la salida hacia este mapa
+            putExtra("PREVIOUS_POSITION", intent.getSerializableExtra("PREVIOUS_POSITION"))
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
 
@@ -221,6 +256,8 @@ class Salon2010 : AppCompatActivity(),
         startActivity(intent)
         finish()
     }
+
+
 
     private fun handleMovement(event: MotionEvent, deltaX: Int, deltaY: Int) {
         movementManager.handleMovement(event, deltaX, deltaY)
@@ -237,7 +274,24 @@ class Salon2010 : AppCompatActivity(),
             // Enviar actualización a otros jugadores con el mapa específico
             if (gameState.isConnected) {
                 // Enviar la posición con el nombre del mapa correcto
-                serverConnectionManager.sendUpdateMessage(playerName, position, MapMatrixProvider.MAP_SALON2010)
+                serverConnectionManager.sendUpdateMessage(playerName, position, MapMatrixProvider.MAP_TRAS_PLAZA)
+            }
+
+            // Comprobar si estamos en un punto de transición
+            checkForTransition(position)
+        }
+    }
+
+    private fun checkForTransition(position: Pair<Int, Int>) {
+        val transitionMap = mapView.getMapTransitionPoint(position.first, position.second)
+
+        if (transitionMap != null) {
+            // Mostrar información sobre la transición disponible
+            when (transitionMap) {
+                MapMatrixProvider.MAP_ESTACIONAMIENTO -> {
+                    Toast.makeText(this, "Presiona A para volver al Estacionamiento", Toast.LENGTH_SHORT).show()
+                }
+
             }
         }
     }
@@ -263,9 +317,10 @@ class Salon2010 : AppCompatActivity(),
     // Implementación MapTransitionListener
     override fun onMapTransitionRequested(targetMap: String, initialPosition: Pair<Int, Int>) {
         when (targetMap) {
-            MapMatrixProvider.MAP_BUILDING2 -> {
-                returnToBuilding2()
+            MapMatrixProvider.MAP_ESTACIONAMIENTO -> {
+                returnToPreviousMap()
             }
+
             else -> {
                 Log.d(TAG, "Mapa destino no reconocido: $targetMap")
             }
@@ -298,7 +353,7 @@ class Salon2010 : AppCompatActivity(),
     override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
         runOnUiThread {
             val deviceName = device.name ?: "Unknown"
-            mapView.updateRemotePlayerPosition(deviceName, Pair(x, y), MapMatrixProvider.MAP_SALON2010)
+            mapView.updateRemotePlayerPosition(deviceName, Pair(x, y), MapMatrixProvider.MAP_TRAS_PLAZA)
             mapView.invalidate()
         }
     }
@@ -320,16 +375,22 @@ class Salon2010 : AppCompatActivity(),
                                     playerData.getInt("x"),
                                     playerData.getInt("y")
                                 )
-                                val map = playerData.getString("map")
 
-                                // Actualizar la posición del jugador en el mapa
+                                // Obtener y normalizar el mapa
+                                val mapStr = playerData.optString("map", playerData.optString("currentMap", "main"))
+                                val normalizedMap = MapMatrixProvider.normalizeMapName(mapStr)
+
+                                // Actualizar el estado
                                 gameState.remotePlayerPositions = gameState.remotePlayerPositions +
-                                        (playerId to BuildingNumber2.GameState.PlayerInfo(position, map))
+                                        (playerId to BuildingNumber2.GameState.PlayerInfo(position, normalizedMap))
 
-                                // Solo mostrar jugadores que estén en el mismo mapa
-                                if (map == MapMatrixProvider.MAP_SALON2010) {
-                                    mapView.updateRemotePlayerPosition(playerId, position, map)
-                                    Log.d(TAG, "Updated remote player $playerId position to $position in map $map")
+                                // Obtener el mapa actual normalizado para comparar
+                                val currentMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_TRAS_PLAZA)
+
+                                // Solo mostrar jugadores en el mismo mapa
+                                if (normalizedMap == currentMap) {
+                                    mapView.updateRemotePlayerPosition(playerId, position, normalizedMap)
+                                    Log.d(TAG, "Updated remote player $playerId in map $normalizedMap")
                                 }
                             }
                         }
@@ -341,16 +402,22 @@ class Salon2010 : AppCompatActivity(),
                                 jsonObject.getInt("x"),
                                 jsonObject.getInt("y")
                             )
-                            val map = jsonObject.getString("map")
 
-                            // Actualizar el estado del jugador
+                            // Obtener y normalizar el mapa
+                            val mapStr = jsonObject.optString("map", jsonObject.optString("currentmap", "main"))
+                            val normalizedMap = MapMatrixProvider.normalizeMapName(mapStr)
+
+                            // Actualizar el estado
                             gameState.remotePlayerPositions = gameState.remotePlayerPositions +
-                                    (playerId to BuildingNumber2.GameState.PlayerInfo(position, map))
+                                    (playerId to BuildingNumber2.GameState.PlayerInfo(position, normalizedMap))
 
-                            // Solo mostrar jugadores que estén en el mismo mapa
-                            if (map == MapMatrixProvider.MAP_SALON2010) {
-                                mapView.updateRemotePlayerPosition(playerId, position, map)
-                                Log.d(TAG, "Updated remote player $playerId position to $position in map $map")
+                            // Obtener el mapa actual normalizado para comparar
+                            val currentMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_TRAS_PLAZA)
+
+                            // Solo mostrar jugadores en el mismo mapa
+                            if (normalizedMap == currentMap) {
+                                mapView.updateRemotePlayerPosition(playerId, position, normalizedMap)
+                                Log.d(TAG, "Updated remote player $playerId in map $normalizedMap")
                             }
                         }
                     }
@@ -362,8 +429,17 @@ class Salon2010 : AppCompatActivity(),
                         serverConnectionManager.sendUpdateMessage(
                             playerName,
                             gameState.playerPosition,
-                            MapMatrixProvider.MAP_SALON2010
+                            MapMatrixProvider.MAP_TRAS_PLAZA
                         )
+                    }
+                    "disconnect" -> {
+                        // Manejar desconexión de jugador
+                        val disconnectedId = jsonObject.getString("id")
+                        if (disconnectedId != playerName) {
+                            gameState.remotePlayerPositions = gameState.remotePlayerPositions - disconnectedId
+                            mapView.removeRemotePlayer(disconnectedId)
+                            Log.d(TAG, "Player disconnected: $disconnectedId")
+                        }
                     }
                 }
                 mapView.invalidate()
@@ -408,10 +484,11 @@ class Salon2010 : AppCompatActivity(),
             serverConnectionManager.sendUpdateMessage(
                 playerName,
                 gameState.playerPosition,
-                MapMatrixProvider.MAP_SALON2010
+                MapMatrixProvider.MAP_TRAS_PLAZA
             )
         }
     }
+
     override fun onDestroy() {
         super.onDestroy()
         bluetoothManager.cleanup()
@@ -423,6 +500,6 @@ class Salon2010 : AppCompatActivity(),
     }
 
     companion object {
-        private const val TAG = "Salon2010"
+        private const val TAG = "TramoAtrasPlaza"
     }
 }

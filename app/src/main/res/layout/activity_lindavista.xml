@@ -4,7 +4,7 @@
     android:id="@+id/main_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2009">
+    tools:context=".presentation.components.GameplayActivity">
 
     <Button
         android:id="@+id/button_back_to_home"
@@ -159,9 +159,9 @@
 
             <Button
                 android:id="@+id/button_small_2"
-                android:layout_width="58dp"
-                android:layout_height="58dp"
-                android:text="BCK"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:text="B2"
                 android:textColor="@android:color/white"
                 android:contentDescription="Button B2"
                 android:layout_marginStart="8dp"/>

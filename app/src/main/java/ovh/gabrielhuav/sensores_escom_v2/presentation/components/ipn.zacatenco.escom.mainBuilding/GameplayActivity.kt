@@ -1,9 +1,7 @@
 package ovh.gabrielhuav.sensores_escom_v2.presentation.components
 
-import android.Manifest
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Bundle
 import android.os.Handler
@@ -14,12 +12,12 @@ import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import org.json.JSONObject
 import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
-import ovh.gabrielhuav.sensores_escom_v2.data.map.BluetoothWebSocketBridge
+import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber3.SalonPacman
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
 
 class GameplayActivity : AppCompatActivity(),
@@ -252,8 +250,12 @@ class GameplayActivity : AppCompatActivity(),
             buttonA.setOnClickListener {
                 if (canChangeMap) {
                     when (targetDestination) {
-                        "edificio2" -> startBuildingActivity()
+                        "edificio2" -> startBuilding2Activity()
+                        "escom_building4_floor_2" -> startBuilding4Activity()
                         "cafeteria" -> startCafeteriaActivity()
+                        "salon1212" -> startSalonPacmanActivity()
+                        "Estacionamiento" -> startEstacionamientoEscomActivity()
+                        "zacatenco" -> startZacatencoActivity()
                         "edificioNuevo" -> startEdificioNuevoActivity()
                         "salidaMetro" -> startSalidaMetroActivity()
                         else -> showToast("No hay interacción disponible en esta posición")
@@ -265,6 +267,18 @@ class GameplayActivity : AppCompatActivity(),
         }
     }
 
+
+    private fun startZacatencoActivity() {
+        val intent = Intent(this, Zacatenco::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(10, 12))
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
 
     private fun startCafeteriaActivity() {
         val intent = Intent(this, Cafeteria::class.java).apply {
@@ -302,12 +316,36 @@ class GameplayActivity : AppCompatActivity(),
         finish()
     }
 
-    private fun startBuildingActivity() {
+    private fun startBuilding2Activity() {
         val intent = Intent(this, BuildingNumber2::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_POSITION", Pair(1, 1))
             putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
+
+    private fun startBuilding4Activity() {
+        val intent = Intent(this, BuildingNumber4::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(1, 1))
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
+
+    private fun startEstacionamientoEscomActivity() {
+        val intent = Intent(this, EstacionamientoEscom::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(4, 25))  // Posición dentro del estacionamiento
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda posición actual para regreso
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         startActivity(intent)
@@ -325,6 +363,13 @@ class GameplayActivity : AppCompatActivity(),
                 targetDestination = "edificio2"
                 runOnUiThread {
                     Toast.makeText(this, "Presiona A para entrar al edificio 2", Toast.LENGTH_SHORT).show()
+                }
+            }
+            position.first == 11 && position.second == 4 -> {
+                canChangeMap = true
+                targetDestination = "zacatenco"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para salir a Zacatenco", Toast.LENGTH_SHORT).show()
                 }
             }
             position.first == 32 && position.second == 10 -> {
@@ -348,12 +393,65 @@ class GameplayActivity : AppCompatActivity(),
                     Toast.makeText(this, "Presiona A para entrar a la cafetería", Toast.LENGTH_SHORT).show()
                 }
             }
+
+            position.first == 25 && position.second == 5 -> {
+                canChangeMap = true
+                targetDestination = "Estacionamiento"
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        "Presiona A para entrar al estacionamiento",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
+            position.first == 27 && position.second == 28 -> {
+               canChangeMap = true
+               targetDestination = "salon1212"
+               runOnUiThread {
+                   Toast.makeText(this, "Presiona A para entrar al salón 1212", Toast.LENGTH_SHORT).show()
+               }
+            }
+            position.first == 23 && position.second == 10 -> {
+                canChangeMap = true
+                targetDestination = "escom_building4_floor_2"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para entrar al salón 1212", Toast.LENGTH_SHORT).show()
+                }
+            }
+            position.first == 25 && position.second == 5 -> {
+                canChangeMap = true
+                targetDestination = "Estacionamiento"
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        "Presiona A para entrar al estacionamiento",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
             else -> {
                 canChangeMap = false
                 targetDestination = null
             }
+
         }
     }
+
+
+    private fun startSalonPacmanActivity() {
+        val intent = Intent(this, SalonPacman::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(20, 20)) // Starting position in salon
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Store current position for return
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
+
 
     private fun updatePlayerPosition(position: Pair<Int, Int>) {
         runOnUiThread {
