@@ -1,4 +1,4 @@
-package ovh.gabrielhuav.sensores_escom_v2.presentation.components
+package ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.cablebus
 
 import android.Manifest
 import android.bluetooth.BluetoothDevice
@@ -21,11 +21,15 @@ import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.salidaMetro.SalidaMetro
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.Lindavista
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.BluetoothManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.MapMatrixProvider
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.MapView
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.MovementManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.ServerConnectionManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.UIManager
 
-
-class Zacatenco : AppCompatActivity(),
+class Cablebus : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,
     BluetoothGameManager.ConnectionListener,
     OnlineServerManager.WebSocketListener,
@@ -67,13 +71,13 @@ class Zacatenco : AppCompatActivity(),
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_zacatenco)
+        setContentView(R.layout.activity_cablebus)
 
         try {
             // Primero inicializamos el mapView
             mapView = MapView(
                 context = this,
-                mapResourceId = R.drawable.zacatenco
+                mapResourceId = R.drawable.cablebus
             )
             findViewById<FrameLayout>(R.id.map_container).addView(mapView)
 
@@ -83,8 +87,8 @@ class Zacatenco : AppCompatActivity(),
             // Esperar a que el mapView esté listo
             mapView.post {
                 // Configurar el mapa
-                val normalizedMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_ZACATENCO)
-                mapView.setCurrentMap(normalizedMap, R.drawable.zacatenco)
+                val normalizedMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_CABLEBUS)
+                mapView.setCurrentMap(normalizedMap, R.drawable.cablebus)
 
                 // Después configurar el playerManager
                 mapView.playerManager.apply {
@@ -93,11 +97,11 @@ class Zacatenco : AppCompatActivity(),
                     updateLocalPlayerPosition(gameState.playerPosition)
                 }
 
-                Log.d("Zacatenco", "Set map to: $normalizedMap")
+                Log.d("Cablebus", "Set map to: $normalizedMap")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error en onCreate: ${e.message}")
-            Toast.makeText(this, "Error inicializando la actividad.", Toast.LENGTH_LONG).show()
+            Log.e(TAG, "Error en onCreate cablebus: ${e.message}")
+            Toast.makeText(this, "Error inicializando la actividad cablebus.", Toast.LENGTH_LONG).show()
             finish()
         }
     }
@@ -113,7 +117,7 @@ class Zacatenco : AppCompatActivity(),
         if (savedInstanceState == null) {
             // Inicializar el estado del juego desde el Intent
             gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
-            gameState.playerPosition = intent.getParcelableExtra("INITIAL_POSITION") ?: Pair(10, 12)
+            gameState.playerPosition = intent.getParcelableExtra("INITIAL_POSITION") ?: Pair(1, 6)
         } else {
             restoreState(savedInstanceState)
         }
@@ -141,14 +145,14 @@ class Zacatenco : AppCompatActivity(),
 
     private fun initializeManagers() {
         bluetoothManager = BluetoothManager.getInstance(this, uiManager.tvBluetoothStatus).apply {
-            setCallback(this@Zacatenco)
+            setCallback(this@Cablebus)
         }
 
         bluetoothBridge = BluetoothWebSocketBridge.getInstance()
 
         // Configurar OnlineServerManager con el listener
         val onlineServerManager = OnlineServerManager.getInstance(this).apply {
-            setListener(this@Zacatenco)
+            setListener(this@Cablebus)
         }
 
         serverConnectionManager = ServerConnectionManager(
@@ -170,12 +174,12 @@ class Zacatenco : AppCompatActivity(),
         updatePlayerPosition(gameState.playerPosition)
     }
 
-    // Actualiza el método onMapTransitionRequested para manejar la transición al salón 2009
+    // Actualiza el metodo onMapTransitionRequested para manejar la transición al salón 2009
     override fun onMapTransitionRequested(targetMap: String, initialPosition: Pair<Int, Int>) {
         when (targetMap) {
-            MapMatrixProvider.MAP_MAIN -> {
+            MapMatrixProvider.MAP_LINDAVISTA -> {
                 // Transición al mapa principal
-                returnToMainActivity()
+                returnToLindavistaActivity()
             }
             // Añadir más casos según sea necesario para otros mapas
             else -> {
@@ -269,73 +273,17 @@ class Zacatenco : AppCompatActivity(),
     private fun checkPositionForMapChange(position: Pair<Int, Int>) {
 
         when {
-            position.first == 10 && position.second == 12 -> {
-                canChangeMap = true
-                targetDestination = "main"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para entrar a ESCOM", Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-            position.first == 34 && position.second == 17 -> {
+            position.first == 1 && position.second == 6 -> {
                 canChangeMap = true
                 targetDestination = "lindavista"
                 runOnUiThread {
-                    Toast.makeText(this, "Presiona A para salir a Lindavista", Toast.LENGTH_SHORT)
+                    Toast.makeText(this, "Presiona A para regresar a lindavista", Toast.LENGTH_SHORT)
                         .show()
                 }
             }
-            position.first == 25 && position.second == 12 -> {
-                canChangeMap = true
-                targetDestination = "esia"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para ver la ESIA", Toast.LENGTH_SHORT)
-                        .show()
-                }
+            position.first == 3 && position.second == 18 -> {
+                startCablecarRide()
             }
-            position.first == 31 && position.second == 17 -> {
-                canChangeMap = true
-                targetDestination = "esfm"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para ver la ESFM", Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-            position.first == 8 && position.second == 18 -> {
-                canChangeMap = true
-                targetDestination = "cidetec"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para ver el CIDETEC", Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-
-            position.first == 5 && position.second == 25 -> {
-                canChangeMap = true
-                targetDestination = "metro"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para entrar al metro", Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-
-            position.first == 5 && position.second == 16 -> {
-                canChangeMap = true
-                targetDestination = "cic"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para ver el CIC", Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-            position.first == 4 && position.second == 19 -> {
-                canChangeMap = true
-                targetDestination = "ford"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para ver la ford", Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-
             else -> {
                 canChangeMap = false
                 targetDestination = null
@@ -352,7 +300,7 @@ class Zacatenco : AppCompatActivity(),
 
             // Añadir el listener para el botón de regreso
             btnConnectDevice.setOnClickListener {
-                returnToMainActivity()
+                returnToLindavistaActivity()
             }
 
             btnNorth.setOnTouchListener { _, event -> handleMovement(event, 0, -1); true }
@@ -364,14 +312,8 @@ class Zacatenco : AppCompatActivity(),
             buttonA.setOnClickListener {
                 if (canChangeMap) {
                     when (targetDestination) {
-                        "main" -> returnToMainActivity()
-                        "lindavista" -> startLindavistaActivity()
-                        "esia" -> viewESIA()
-                        "metro"-> startMetroActivity()
-                        "esfm" -> viewESFM()
-                        "cidetec" -> viewCIDETEC()
-                        "cic" -> viewCIC()
-                        "ford" -> startFordActivity()
+                        "lindavista" -> returnToLindavistaActivity()
+                        "talleres" -> viewTalleresTicoman()
                         else -> showToast("No hay interacción disponible en esta posición")
                     }
                 } else {
@@ -380,32 +322,18 @@ class Zacatenco : AppCompatActivity(),
             }
         }
     }
-    private fun viewESIA(){
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.esiaz.ipn.mx/"))
-        startActivity(intent)
 
-    }
-    private fun viewESFM(){
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.esfm.ipn.mx/"))
+    private fun viewTalleresTicoman() {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://maps.app.goo.gl/g6mWn6vzEZJZsbeb7"))
         startActivity(intent)
-
     }
-    private fun viewCIDETEC(){
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.cidetec.ipn.mx/"))
-        startActivity(intent)
 
-    }
-    private fun viewCIC(){
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.cic.ipn.mx/"))
-        startActivity(intent)
-
-    }
-    private fun returnToMainActivity() {
+    private fun returnToLindavistaActivity() {
         // Obtener la posición previa del intent
         val previousPosition = intent.getSerializableExtra("PREVIOUS_POSITION") as? Pair<Int, Int>
-            ?: Pair(11, 4) // Posición por defecto si no hay previa
+            ?: Pair(34, 17) // Posición por defecto si no hay previa
 
-        val intent = Intent(this, GameplayActivity::class.java).apply {
+        val intent = Intent(this, Lindavista::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_POSITION", previousPosition) // Usar la posición previa
@@ -418,43 +346,6 @@ class Zacatenco : AppCompatActivity(),
         finish()
     }
 
-    private fun startLindavistaActivity() {
-        val intent = Intent(this, Lindavista::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(1, 6))
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        startActivity(intent)
-        finish()
-    }
-    
-    private fun startMetroActivity() {
-        val intent = Intent(this, metro::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(1, 6))
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        startActivity(intent)
-        finish()
-    }
-
-    private fun startFordActivity() {
-        val intent = Intent(this, SalidaMetro::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(1, 6))
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        startActivity(intent)
-        finish()
-    }
-
-
     private fun updatePlayerPosition(position: Pair<Int, Int>) {
         runOnUiThread {
             try {
@@ -464,7 +355,7 @@ class Zacatenco : AppCompatActivity(),
                 mapView.updateLocalPlayerPosition(position, forceCenter = true)
 
                 if (gameState.isConnected) {
-                    serverConnectionManager.sendUpdateMessage(playerName, position, "escom_zacatenco")
+                    serverConnectionManager.sendUpdateMessage(playerName, position, "cablebus")
                 }
 
                 checkPositionForMapChange(position)
@@ -472,6 +363,52 @@ class Zacatenco : AppCompatActivity(),
                 Log.e(TAG, "Error en updatePlayerPosition: ${e.message}")
             }
         }
+    }
+
+    private fun startCablecarRide() {
+        // Definir la ruta del teleférico
+        val cablecarRoute = mutableListOf<Pair<Int, Int>>()
+
+        for (i in 1..7) {
+            cablecarRoute.add(Pair(3, 18 - i))
+        }
+
+        for (i in 1..22) {
+            cablecarRoute.add(Pair(3 + i, 11))
+        }
+
+        for (i in 1..7) {
+            cablecarRoute.add(Pair(25, 11 + i))
+        }
+
+        // Iniciar el movimiento automático
+        runOnUiThread {
+            Toast.makeText(this@Cablebus, "¡Disfruta el viaje!", Toast.LENGTH_SHORT).show()
+        }
+        moveAlongRoute(cablecarRoute)
+    }
+
+    private fun moveAlongRoute(route: List<Pair<Int, Int>>) {
+        val handler = Handler(Looper.getMainLooper())
+        var index = 0
+
+        val runnable = object : Runnable {
+            override fun run() {
+                if (index < route.size) {
+                    val nextPosition = route[index]
+                    updatePlayerPosition(nextPosition)
+                    index++
+                    handler.postDelayed(this, 200) // Mover 200 mili segundos
+                } else {
+                    // Cuando termine la ruta, puedes mostrar un mensaje o realizar otra acción
+                    runOnUiThread {
+                        Toast.makeText(this@Cablebus, "¡Paseo en teleférico completado!", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+
+        handler.post(runnable)
     }
 
     private fun handleMovement(event: MotionEvent, deltaX: Int, deltaY: Int) {
@@ -539,7 +476,7 @@ class Zacatenco : AppCompatActivity(),
         gameState.remotePlayerName = device.name
     }
 
-    // Implementar el método del WebSocketListener
+    // Implementar el metodo del WebSocketListener
     override fun onMessageReceived(message: String) {
         runOnUiThread {
             try {
@@ -654,7 +591,7 @@ class Zacatenco : AppCompatActivity(),
             device.name ?: "Unknown"
             val currentMap = mapView.playerManager.getCurrentMap()
             mapView.updateRemotePlayerPosition(deviceName.toString(), Pair(x, y), currentMap)
-            Log.d("GameplayActivity", "Recibida posición del dispositivo $deviceName: ($x, $y)")
+            Log.d("Cablebus", "Recibida posición del dispositivo $deviceName: ($x, $y)")
             mapView.invalidate()
         }
     }
@@ -722,6 +659,7 @@ class Zacatenco : AppCompatActivity(),
     }
 
     companion object {
-        private const val TAG = "GameplayActivity"
+        private const val TAG = "CablebusActivity"
     }
+
 }

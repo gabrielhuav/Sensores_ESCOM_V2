@@ -171,7 +171,7 @@ class BuildingNumber2 : AppCompatActivity(),
         when (targetMap) {
             MapMatrixProvider.MAP_MAIN -> {
                 // Transición al mapa principal
-                //returnToMainActivity()
+                returnToMainActivity()
             }
             MapMatrixProvider.MAP_SALON2009 -> {
                 // Transición al salón 2009
@@ -180,6 +180,10 @@ class BuildingNumber2 : AppCompatActivity(),
             MapMatrixProvider.MAP_SALON2010 -> {
                 // Transición al salón 2010
                 //startSalon2010Activity()
+            }
+            MapMatrixProvider.MAP_BUILDING2_PISO1 -> {
+                // Transición al edificio 2 primera planta
+                startPrimerPisoActivity()
             }
             // Añadir más casos según sea necesario para otros mapas
             else -> {
@@ -194,6 +198,24 @@ class BuildingNumber2 : AppCompatActivity(),
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_POSITION", Pair(20, 20)) // Posición inicial en el salón
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guardar la posición actual para regresar
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+
+        // Limpiar datos antes de cambiar de activity
+        mapView.playerManager.cleanup()
+        startActivity(intent)
+        finish()
+    }
+
+    private fun startPrimerPisoActivity() {
+
+        val previousPosition = intent.getSerializableExtra("PREVIOUS_POSITION") as? Pair<Int, Int>
+            ?: Pair(17, 20) // Posición por defecto si no hay previa
+        val intent = Intent(this, BuildingNumber2Piso1::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", previousPosition) // Posición inicial en el salón
             putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guardar la posición actual para regresar
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
@@ -320,6 +342,9 @@ class BuildingNumber2 : AppCompatActivity(),
                     }
                     MapMatrixProvider.MAP_SALON2010 -> {
                         Toast.makeText(this, "Presiona A para entrar al salón 2010", Toast.LENGTH_SHORT).show()
+                    }
+                    MapMatrixProvider.MAP_BUILDING2_PISO1 -> {
+                        Toast.makeText(this, "Presiona A para entrar al edificio 2 primera planta", Toast.LENGTH_SHORT).show()
                     }
                     else -> {
                         Toast.makeText(this, "Presiona A para interactuar", Toast.LENGTH_SHORT).show()

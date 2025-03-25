@@ -21,6 +21,7 @@ import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.cablebus.Cablebus
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
 
 class Lindavista : AppCompatActivity(),
@@ -299,6 +300,14 @@ class Lindavista : AppCompatActivity(),
                         .show()
                 }
             }
+            position.first == 26 && position.second == 29 -> {
+                canChangeMap = true
+                targetDestination = "cablebus"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para subir al cablebus", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
             else -> {
                 canChangeMap = false
                 targetDestination = null
@@ -331,6 +340,7 @@ class Lindavista : AppCompatActivity(),
                         "indios" -> viewIndiosVerdes()
                         "plaza" -> viewPlazaVistaNorte()
                         "talleres" -> viewTalleresTicoman()
+                        "cablebus" -> enterCablebus()
                         else -> showToast("No hay interacción disponible en esta posición")
                     }
                 } else {
@@ -359,6 +369,24 @@ class Lindavista : AppCompatActivity(),
             ?: Pair(34, 17) // Posición por defecto si no hay previa
 
         val intent = Intent(this, Zacatenco::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", previousPosition) // Usar la posición previa
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+
+        // Limpiar datos antes de cambiar de activity
+        mapView.playerManager.cleanup()
+        startActivity(intent)
+        finish()
+    }
+
+    private fun enterCablebus() {
+        // Obtener la posición previa del intent
+        val previousPosition = intent.getSerializableExtra("PREVIOUS_POSITION") as? Pair<Int, Int>
+            ?: Pair(34, 17) // Posición por defecto si no hay previa
+
+        val intent = Intent(this, Cablebus::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_POSITION", previousPosition) // Usar la posición previa

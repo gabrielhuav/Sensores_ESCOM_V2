@@ -1,11 +1,8 @@
 package ovh.gabrielhuav.sensores_escom_v2.presentation.components
 
-import android.Manifest
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.content.res.Configuration
-import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -15,17 +12,16 @@ import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import org.json.JSONObject
 import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.salidaMetro.SalidaMetro
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2009
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2010
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
 
-
-class Zacatenco : AppCompatActivity(),
+class BuildingNumber2Piso1 : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,
     BluetoothGameManager.ConnectionListener,
     OnlineServerManager.WebSocketListener,
@@ -45,7 +41,7 @@ class Zacatenco : AppCompatActivity(),
     data class GameState(
         var isServer: Boolean = false,
         var isConnected: Boolean = false,
-        var playerPosition: Pair<Int, Int> = Pair(10, 12),
+        var playerPosition: Pair<Int, Int> = Pair(1, 1),
         var remotePlayerPositions: Map<String, PlayerInfo> = emptyMap(),
         var remotePlayerName: String? = null
     ) {
@@ -67,13 +63,13 @@ class Zacatenco : AppCompatActivity(),
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_zacatenco)
+        setContentView(R.layout.activity_building2piso1)
 
         try {
             // Primero inicializamos el mapView
             mapView = MapView(
                 context = this,
-                mapResourceId = R.drawable.zacatenco
+                mapResourceId = R.drawable.escom_edificio_2_primera_planta
             )
             findViewById<FrameLayout>(R.id.map_container).addView(mapView)
 
@@ -83,8 +79,8 @@ class Zacatenco : AppCompatActivity(),
             // Esperar a que el mapView esté listo
             mapView.post {
                 // Configurar el mapa
-                val normalizedMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_ZACATENCO)
-                mapView.setCurrentMap(normalizedMap, R.drawable.zacatenco)
+                val normalizedMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_BUILDING2_PISO1)
+                mapView.setCurrentMap(normalizedMap, R.drawable.escom_edificio_2_primera_planta)
 
                 // Después configurar el playerManager
                 mapView.playerManager.apply {
@@ -93,7 +89,7 @@ class Zacatenco : AppCompatActivity(),
                     updateLocalPlayerPosition(gameState.playerPosition)
                 }
 
-                Log.d("Zacatenco", "Set map to: $normalizedMap")
+                Log.d("BuildingNumber2Piso1", "Set map to: $normalizedMap")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error en onCreate: ${e.message}")
@@ -113,7 +109,7 @@ class Zacatenco : AppCompatActivity(),
         if (savedInstanceState == null) {
             // Inicializar el estado del juego desde el Intent
             gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
-            gameState.playerPosition = intent.getParcelableExtra("INITIAL_POSITION") ?: Pair(10, 12)
+            gameState.playerPosition = intent.getParcelableExtra("INITIAL_POSITION") ?: Pair(17, 20)
         } else {
             restoreState(savedInstanceState)
         }
@@ -141,14 +137,14 @@ class Zacatenco : AppCompatActivity(),
 
     private fun initializeManagers() {
         bluetoothManager = BluetoothManager.getInstance(this, uiManager.tvBluetoothStatus).apply {
-            setCallback(this@Zacatenco)
+            setCallback(this@BuildingNumber2Piso1)
         }
 
         bluetoothBridge = BluetoothWebSocketBridge.getInstance()
 
         // Configurar OnlineServerManager con el listener
         val onlineServerManager = OnlineServerManager.getInstance(this).apply {
-            setListener(this@Zacatenco)
+            setListener(this@BuildingNumber2Piso1)
         }
 
         serverConnectionManager = ServerConnectionManager(
@@ -175,13 +171,59 @@ class Zacatenco : AppCompatActivity(),
         when (targetMap) {
             MapMatrixProvider.MAP_MAIN -> {
                 // Transición al mapa principal
-                returnToMainActivity()
+                //returnToMainActivity()
+            }
+            MapMatrixProvider.MAP_SALON2009 -> {
+                // Transición al salón 2009
+                //startSalon2009Activity()
+            }
+            MapMatrixProvider.MAP_SALON2010 -> {
+                // Transición al salón 2010
+                //startSalon2010Activity()
+            }
+            MapMatrixProvider.MAP_BUILDING2 -> {
+                // Transición al edificio 2
+                startBuilding2Activity()
             }
             // Añadir más casos según sea necesario para otros mapas
             else -> {
                 Log.d(TAG, "Mapa destino no reconocido: $targetMap")
             }
         }
+    }
+
+    // Método para iniciar la Activity del salón 2010
+    private fun startBuilding2Activity() {
+        val previousPosition = intent.getSerializableExtra("PREVIOUS_POSITION") as? Pair<Int, Int>
+            ?: Pair(17, 20) // Posición por defecto si no hay previa
+
+        val intent = Intent(this, BuildingNumber2::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", previousPosition) // Usar la posición previa
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+
+        // Limpiar datos antes de cambiar de activity
+        mapView.playerManager.cleanup()
+        startActivity(intent)
+        finish()
+    }
+
+    // Método para iniciar la Activity del salón 2009
+    private fun startSalon2009Activity() {
+        val intent = Intent(this, Salon2009::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(20, 20)) // Posición inicial en el salón
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guardar la posición actual para regresar
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+
+        // Limpiar datos antes de cambiar de activity
+        mapView.playerManager.cleanup()
+        startActivity(intent)
+        finish()
     }
 
     private fun restoreState(savedInstanceState: Bundle) {
@@ -264,81 +306,34 @@ class Zacatenco : AppCompatActivity(),
     }
 
     private var canChangeMap = false  // Variable para controlar si se puede cambiar de mapa
-    private var targetDestination: String? = null  // Variable para almacenar el destino
+    private var targetMapId: String? = null  // Añadir esta variable para almacenar el mapa destino
+    private var interactivePosition: Pair<Int, Int>? = null  // Coordenadas del punto interactivo
 
     private fun checkPositionForMapChange(position: Pair<Int, Int>) {
+        // Verificar si estamos en un punto interactivo que puede ser una transición
+        targetMapId = mapView.getMapTransitionPoint(position.first, position.second)
+        interactivePosition = if (targetMapId != null) position else null
+        canChangeMap = targetMapId != null
 
-        when {
-            position.first == 10 && position.second == 12 -> {
-                canChangeMap = true
-                targetDestination = "main"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para entrar a ESCOM", Toast.LENGTH_SHORT)
-                        .show()
+        if (canChangeMap) {
+            runOnUiThread {
+                when (targetMapId) {
+                    MapMatrixProvider.MAP_MAIN -> {
+                        Toast.makeText(this, "Presiona A para volver al mapa principal", Toast.LENGTH_SHORT).show()
+                    }
+                    MapMatrixProvider.MAP_SALON2009 -> {
+                        Toast.makeText(this, "Presiona A para entrar al salón 2009", Toast.LENGTH_SHORT).show()
+                    }
+                    MapMatrixProvider.MAP_SALON2010 -> {
+                        Toast.makeText(this, "Presiona A para entrar al salón 2010", Toast.LENGTH_SHORT).show()
+                    }
+                    MapMatrixProvider.MAP_BUILDING2 -> {
+                        Toast.makeText(this, "Presiona A para entrar al edificio 2 planta baja", Toast.LENGTH_SHORT).show()
+                    }
+                    else -> {
+                        Toast.makeText(this, "Presiona A para interactuar", Toast.LENGTH_SHORT).show()
+                    }
                 }
-            }
-            position.first == 34 && position.second == 17 -> {
-                canChangeMap = true
-                targetDestination = "lindavista"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para salir a Lindavista", Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-            position.first == 25 && position.second == 12 -> {
-                canChangeMap = true
-                targetDestination = "esia"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para ver la ESIA", Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-            position.first == 31 && position.second == 17 -> {
-                canChangeMap = true
-                targetDestination = "esfm"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para ver la ESFM", Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-            position.first == 8 && position.second == 18 -> {
-                canChangeMap = true
-                targetDestination = "cidetec"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para ver el CIDETEC", Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-
-            position.first == 5 && position.second == 25 -> {
-                canChangeMap = true
-                targetDestination = "metro"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para entrar al metro", Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-
-            position.first == 5 && position.second == 16 -> {
-                canChangeMap = true
-                targetDestination = "cic"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para ver el CIC", Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-            position.first == 4 && position.second == 19 -> {
-                canChangeMap = true
-                targetDestination = "ford"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para ver la ford", Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-
-            else -> {
-                canChangeMap = false
-                targetDestination = null
             }
         }
     }
@@ -362,48 +357,20 @@ class Zacatenco : AppCompatActivity(),
 
             // Modificar el botón A para manejar las transiciones de mapa
             buttonA.setOnClickListener {
-                if (canChangeMap) {
-                    when (targetDestination) {
-                        "main" -> returnToMainActivity()
-                        "lindavista" -> startLindavistaActivity()
-                        "esia" -> viewESIA()
-                        "metro"-> startMetroActivity()
-                        "esfm" -> viewESFM()
-                        "cidetec" -> viewCIDETEC()
-                        "cic" -> viewCIC()
-                        "ford" -> startFordActivity()
-                        else -> showToast("No hay interacción disponible en esta posición")
-                    }
+                if (canChangeMap && targetMapId != null) {
+                    // En lugar de hacer la lógica aquí directamente, usa el método en MapView
+                    mapView.initiateMapTransition(targetMapId!!)
                 } else {
                     showToast("No hay interacción disponible en esta posición")
                 }
             }
         }
     }
-    private fun viewESIA(){
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.esiaz.ipn.mx/"))
-        startActivity(intent)
 
-    }
-    private fun viewESFM(){
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.esfm.ipn.mx/"))
-        startActivity(intent)
-
-    }
-    private fun viewCIDETEC(){
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.cidetec.ipn.mx/"))
-        startActivity(intent)
-
-    }
-    private fun viewCIC(){
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.cic.ipn.mx/"))
-        startActivity(intent)
-
-    }
     private fun returnToMainActivity() {
         // Obtener la posición previa del intent
         val previousPosition = intent.getSerializableExtra("PREVIOUS_POSITION") as? Pair<Int, Int>
-            ?: Pair(11, 4) // Posición por defecto si no hay previa
+            ?: Pair(15, 10) // Posición por defecto si no hay previa
 
         val intent = Intent(this, GameplayActivity::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
@@ -412,48 +379,13 @@ class Zacatenco : AppCompatActivity(),
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
 
+
+
         // Limpiar datos antes de cambiar de activity
         mapView.playerManager.cleanup()
         startActivity(intent)
         finish()
     }
-
-    private fun startLindavistaActivity() {
-        val intent = Intent(this, Lindavista::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(1, 6))
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        startActivity(intent)
-        finish()
-    }
-    
-    private fun startMetroActivity() {
-        val intent = Intent(this, metro::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(1, 6))
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        startActivity(intent)
-        finish()
-    }
-
-    private fun startFordActivity() {
-        val intent = Intent(this, SalidaMetro::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(1, 6))
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        startActivity(intent)
-        finish()
-    }
-
 
     private fun updatePlayerPosition(position: Pair<Int, Int>) {
         runOnUiThread {
@@ -464,7 +396,7 @@ class Zacatenco : AppCompatActivity(),
                 mapView.updateLocalPlayerPosition(position, forceCenter = true)
 
                 if (gameState.isConnected) {
-                    serverConnectionManager.sendUpdateMessage(playerName, position, "escom_zacatenco")
+                    serverConnectionManager.sendUpdateMessage(playerName, position, "escom_building2_primera_planta")
                 }
 
                 checkPositionForMapChange(position)
@@ -490,20 +422,6 @@ class Zacatenco : AppCompatActivity(),
 
     // Bluetooth Callbacks
     override fun onBluetoothDeviceConnected(device: BluetoothDevice) {
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.BLUETOOTH_CONNECT
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return
-        }
         gameState.remotePlayerName = device.name
         uiManager.updateBluetoothStatus("Conectado a ${device.name}")
     }
@@ -522,20 +440,6 @@ class Zacatenco : AppCompatActivity(),
     }
 
     override fun onDeviceConnected(device: BluetoothDevice) {
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.BLUETOOTH_CONNECT
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return
-        }
         gameState.remotePlayerName = device.name
     }
 
@@ -635,25 +539,9 @@ class Zacatenco : AppCompatActivity(),
 
     override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
         runOnUiThread {
-            val deviceName = if (ActivityCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.BLUETOOTH_CONNECT
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                // TODO: Consider calling
-                //    ActivityCompat#requestPermissions
-                // here to request the missing permissions, and then overriding
-                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                //                                          int[] grantResults)
-                // to handle the case where the user grants the permission. See the documentation
-                // for ActivityCompat#requestPermissions for more details.
-                return@runOnUiThread
-            } else {
-
-            }
-            device.name ?: "Unknown"
+            val deviceName = device.name ?: "Unknown"
             val currentMap = mapView.playerManager.getCurrentMap()
-            mapView.updateRemotePlayerPosition(deviceName.toString(), Pair(x, y), currentMap)
+            mapView.updateRemotePlayerPosition(deviceName, Pair(x, y), currentMap)
             Log.d("GameplayActivity", "Recibida posición del dispositivo $deviceName: ($x, $y)")
             mapView.invalidate()
         }
