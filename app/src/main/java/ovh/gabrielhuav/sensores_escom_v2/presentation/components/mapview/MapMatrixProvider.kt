@@ -30,8 +30,10 @@ class MapMatrixProvider {
         const val MAP_LINDAVISTA = "escom_lindavista"
         const val MAP_ESTACIONAMIENTO = "EstacionamientoEscom"
         const val MAP_TRAS_PLAZA = "TramoAtrasPlaza"
-        const val MAP_EDIFICIONUEVO = "escom_edificionuevo"
         const val MAP_SALIDAMETRO = "escom_salidametro"
+        const val MAP_EDIFICIO_IA_BAJO = "edificio_ia_bajo"
+        const val MAP_EDIFICIO_IA_MEDIO = "edificio_ia_medio"
+        const val MAP_EDIFICIO_IA_ALTO = "edificio_ia_alto"
 
         fun normalizeMapName(mapName: String?): String {
             if (mapName.isNullOrBlank()) return MAP_MAIN
@@ -62,6 +64,10 @@ class MapMatrixProvider {
                 lowerMap.contains("zaca") || lowerMap.contains("zacatenco") -> MAP_ZACATENCO
                 // Lindavista
                 lowerMap.contains("linda") || lowerMap.contains("lindavista") -> MAP_LINDAVISTA
+                // edificio ia
+                lowerMap.contains("ia_baja") || lowerMap.contains("edificio_ia_bajo") -> MAP_EDIFICIO_IA_BAJO
+                lowerMap.contains("ia_medio") || lowerMap.contains("edificio_ia_medio") -> MAP_EDIFICIO_IA_MEDIO
+                lowerMap.contains("ia_alto") || lowerMap.contains("edificio_ia_alto") -> MAP_EDIFICIO_IA_ALTO
 
                 // Si no coincide con ninguno de los anteriores, devolver el original
                 else -> mapName
@@ -85,14 +91,16 @@ class MapMatrixProvider {
         val ESTACIONAMIENTO_TO_MAIN_POSITION = Pair(20, 38)
 
 
-        val MAIN_TO_EDIFICIONUEVO_POSITION = Pair(2, 2)       // Desde mapa principal
-        val EDIFICIONUEVO_TO_MAIN_POSITION = Pair(1, 1)         // Vuelta al mapa principal
-
         val MAIN_TO_SALIDAMETRO_POSITION = Pair(2, 2)       // Desde mapa principal
         val SALIDAMETRO_TO_MAIN_POSITION = Pair(1, 1)         // Vuelta al mapa principal
         // Del Estacionamiento al segundo mapa (Tramo Atrás Plaza)
         val ESTACIONAMIENTO_TO_PLAZA_POSITION = Pair(35, 20)
         val PLAZA_TO_ESTACIONAMIENTO_POSITION = Pair(5, 20)
+        // edificios ia
+        val MAIN_TO_EDIFICIO_IA_BAJO = Pair(31, 21)
+        val EDIFICIO_IA_BAJO_TO_MAIN = Pair(5, 20)
+
+        val EDIFICIO_IA_BAJO_TO_MEDIO = Pair(5, 20)
 
         /**
          * Obtiene la matriz para el mapa especificado
@@ -111,8 +119,10 @@ class MapMatrixProvider {
 
                 MAP_ZACATENCO -> createZacatencoMatrix()
                 MAP_LINDAVISTA -> createLindavistaMatrix()
-                MAP_EDIFICIONUEVO -> createEdificioNuevoMatrix() // edificio nuevo
                 MAP_SALIDAMETRO -> createSalidaMetroMatrix() // salida metro
+                MAP_EDIFICIO_IA_BAJO-> createEdificioIABajoMatrix()
+                MAP_EDIFICIO_IA_MEDIO-> createEdificioIAMedioMatrix()
+                MAP_EDIFICIO_IA_ALTO -> createEdificioIAAltoMatrix()
                 else -> createDefaultMatrix() // Por defecto, un mapa básico
             }
         }
@@ -157,6 +167,7 @@ class MapMatrixProvider {
 
             matrix[5][25] = INTERACTIVE // Entrada al Estacionamiento de ESCOM
 
+            matrix[21][31] = INTERACTIVE // entrar edificio ia
             // Áreas de juego específicas
             // Zona central despejada
             for (i in 15..25) {
@@ -842,6 +853,63 @@ class MapMatrixProvider {
             return matrix
         }
 
+
+
+
+        private fun createEdificioIABajoMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Borde simple
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = WALL
+                    }
+                }
+            }
+            matrix[18][33] = INTERACTIVE // Entrada al Estacionamiento de ESCOM
+
+            return matrix
+        }
+
+        private fun createEdificioIAMedioMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Borde simple
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = WALL
+                    }
+                }
+            }
+            matrix[18][33] = INTERACTIVE // Entrada al Estacionamiento de ESCOM
+            matrix[18][36] = INTERACTIVE // Entrada al Estacionamiento de ESCOM
+
+            return matrix
+        }
+        private fun createEdificioIAAltoMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Borde simple
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = WALL
+                    }
+                }
+            }
+            matrix[18][36] = INTERACTIVE // Entrada al Estacionamiento de ESCOM
+
+            return matrix
+        }
+
+
+
+
+
+
+
         /**
          * Comprueba si la coordenada especificada es un punto de transición entre mapas
          */
@@ -911,7 +979,9 @@ class MapMatrixProvider {
                 // Ir al siguiente mapa (Tramo Atrás Plaza)
                 if (x == 35 && y == 20) return MAP_TRAS_PLAZA
             }
-
+            if (mapId == MAP_MAIN && x == 31 && y == 21) {
+                return MAP_CAFETERIA
+            }
 
             // Resto de transiciones...
 
@@ -930,6 +1000,9 @@ class MapMatrixProvider {
                 MAP_SALON2009 -> Pair(20, 20)  // Posición central dentro del salón 2009
                 MAP_SALON2010 -> Pair(20, 20)  // Posición central dentro del salón 2010
                 MAP_CAFETERIA -> Pair(2, 2)  // Posición central dentro de la escomCAFE
+                MAP_EDIFICIO_IA_BAJO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
+                MAP_EDIFICIO_IA_MEDIO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
+                MAP_EDIFICIO_IA_ALTO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
 
                 else -> Pair(MAP_WIDTH / 2, MAP_HEIGHT / 2)
             }
