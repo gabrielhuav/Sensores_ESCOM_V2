@@ -91,12 +91,13 @@
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
-            android:name=".presentation.components.EstacionamientoEscom"
+            android:name=".presentation.components.ipn.zacatenco.escom.salidaMetro.SalidaMetro"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
-            android:name=".presentation.components.TramoAtrasPlaza"
+            android:name=".presentation.components.ipn.zacatenco.escom.cablebus.Cablebus"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
+
         <!-- DeviceList Activity -->
 
         <activity
