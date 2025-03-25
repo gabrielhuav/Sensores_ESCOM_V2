@@ -70,18 +70,15 @@
                 android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2009"
                 android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
-<<<<<<< Updated upstream
+
                 android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2010"
                 android:configChanges="orientation|screenSize|keyboardHidden" />
-=======
-            android:name=".presentation.components.TramoAtrasPlaza"
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
             android:name=".presentation.components.metro"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
->>>>>>> Stashed changes
+
         <activity
                 android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber3.SalonPacman"
                 android:configChanges="orientation|screenSize|keyboardHidden" />
