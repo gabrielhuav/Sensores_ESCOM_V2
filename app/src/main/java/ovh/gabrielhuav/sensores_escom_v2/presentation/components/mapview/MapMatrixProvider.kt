@@ -36,6 +36,7 @@ class MapMatrixProvider {
         const val MAP_EDIFICIO_IA_MEDIO = "edificio_ia_medio"
         const val MAP_EDIFICIO_IA_ALTO = "edificio_ia_alto"
         const val MAP_CABLEBUS = "cablebus"
+        const val MAP_METRO = "escom_metro"
 
         fun normalizeMapName(mapName: String?): String {
             if (mapName.isNullOrBlank()) return MAP_MAIN
@@ -125,6 +126,8 @@ class MapMatrixProvider {
                 MAP_ZACATENCO -> createZacatencoMatrix()
                 MAP_LINDAVISTA -> createLindavistaMatrix()
                 MAP_CABLEBUS -> createCablebusMatix()
+                MAP_METRO -> createMETROMatrix()
+
                 MAP_EDIFICIO_IA_BAJO-> createEdificioIABajoMatrix()
                 MAP_EDIFICIO_IA_MEDIO-> createEdificioIAMedioMatrix()
                 MAP_EDIFICIO_IA_ALTO -> createEdificioIAAltoMatrix()
@@ -220,6 +223,67 @@ class MapMatrixProvider {
                     matrix[i][j] = PATH
                 }
             }
+
+            return matrix
+        }
+
+        private fun createMETROMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Configuración de bordes
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    // Bordes exteriores
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = WALL
+                    }
+                    // Zonas interactivas (edificios, entradas)
+                    else if (i == 1 && j == 1 || i == 15 && j ==28  ){
+                        matrix[i][j] = INTERACTIVE // Entrada al edificio 2
+                    }
+                    // Obstáculos (árboles, bancas, etc)
+                    else if ((j in 4..14 && i in 19..20)) { // Rectángulo inaccesible
+                        matrix[i][j] = INACCESSIBLE
+                    }
+                    // Obstáculos (árboles, bancas, etc)i in 1..38 && j in 3..32
+                    else if ((j in 1..38 && i in 29..32)) { // Rectángulo inaccesible
+                        matrix[i][j] = INACCESSIBLE
+                    }
+                    // Obstáculos (árboles, bancas, etc)i in 1..38 && j in 3..32
+                    else if ((j in 31..33 && i in 12..28)) { // Rectángulo inaccesible
+                        matrix[i][j] = INACCESSIBLE
+                    }
+                    // Obstáculos (árboles, bancas, etc)i in 1..38 && j in 3..32
+                    else if ((j in 26..31 && i in 11..12)) { // Rectángulo inaccesible
+                        matrix[i][j] = INACCESSIBLE
+                    }
+                    // Caminos especiales
+                    // else if ((i % 5 == 0 || j % 5 == 0) && i > 5 && j > 5) {
+                    //     matrix[i][j] = PATH
+                    // }
+                    // Obstáculos (árboles, bancas, etc)i in 1..38 && j in 3..32
+                    else if ((j in 2..3 && i in 1..18)) { // Rectángulo inaccesible
+                        matrix[i][j] = INACCESSIBLE
+                    }
+                    // Obstáculos (árboles, bancas, etc)
+                    else if ((j in 15..26 && i in 19..20)) { // Rectángulo inaccesible
+                        matrix[i][j] = INACCESSIBLE
+                    }
+                    // Obstáculos (árboles, bancas, etc)
+                    else if ((j in 24..25 && i in 13..18)) { // Rectángulo inaccesible
+                        matrix[i][j] = INACCESSIBLE
+                    }
+
+                }
+            }
+
+            // Áreas de juego específicas
+            // Zona central despejada
+            // for (i in 15..25) {
+            //  for (j in 15..25) {
+            //     matrix[i][j] = PATH
+            //  }
+            // }
 
             return matrix
         }

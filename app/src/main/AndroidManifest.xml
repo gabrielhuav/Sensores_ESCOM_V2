@@ -59,7 +59,9 @@
         <activity
             android:name=".presentation.components.Zacatenco"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
-
+        <activity
+            android:name=".presentation.components.metro"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
         <activity
             android:name=".presentation.components.Lindavista"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
@@ -114,6 +116,7 @@
             android:name=".data.map.Bluetooth.DeviceListActivity"
             android:exported="true"
             android:theme="@style/Theme.Sensores_ESCOM_V2" />
+
     </application>
 
 </manifest>
