@@ -1,4 +1,4 @@
-package ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.salidaMetro
+package ovh.gabrielhuav.sensores_escom_v2.presentation.components
 
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
