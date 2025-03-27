@@ -71,7 +71,15 @@
         <activity
             android:name=".presentation.components.TramoAtrasPlaza"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
-
+        <activity
+            android:name=".presentation.components.BuildingEdificioIA"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+        <activity
+            android:name=".presentation.components.BuildingEdificioIA_Medio"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+        <activity
+            android:name=".presentation.components.BuildingEdificioIA_Alto"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
             android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2009"
@@ -92,13 +100,19 @@
         <activity
             android:name=".presentation.components.SalidaMetro"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
+
         <activity
-            android:name=".presentation.components.EstacionamientoEscom"
+            android:name=".presentation.components.BuildingNumber2Piso1"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
-            android:name=".presentation.components.TramoAtrasPlaza"
+            android:name=".presentation.components.ipn.zacatenco.escom.salidaMetro.SalidaMetro"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
+
+        <activity
+            android:name=".presentation.components.ipn.zacatenco.escom.cablebus.Cablebus"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+
         <!-- DeviceList Activity -->
         <activity
             android:name=".data.map.Bluetooth.DeviceListActivity"

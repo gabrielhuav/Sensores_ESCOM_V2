@@ -1,5 +1,8 @@
 package ovh.gabrielhuav.sensores_escom_v2.presentation.components
 
+
+//
+
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
 import android.os.Bundle
@@ -14,11 +17,9 @@ import org.json.JSONObject
 import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.BuildingNumber2
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.GameplayActivity
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
 
-class SalidaMetro : AppCompatActivity(),
+class BuildingEdificioIA_Medio : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,
     BluetoothGameManager.ConnectionListener,
     OnlineServerManager.WebSocketListener,
@@ -36,22 +37,22 @@ class SalidaMetro : AppCompatActivity(),
     private lateinit var btnWest: Button
     private lateinit var btnBackToHome: Button
     private lateinit var tvBluetoothStatus: TextView
-
+    private lateinit var buttonA: Button
     private lateinit var playerName: String
-    //private lateinit var bluetoothBridge: BluetoothWebSocketBridge
+    private lateinit var btnConnectDevice: Button
 
     // Reutilizamos la misma estructura de GameState que BuildingNumber2
-    private var gameState = BuildingNumber2.GameState()
+    private var gameState = GameplayActivity.GameState()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_salidametro)
+        setContentView(R.layout.activity_buildingia)
 
         try {
             // Inicializar el mapView
             mapView = MapView(
                 context = this,
-                mapResourceId = R.drawable.escom_salidametro // Usa la imagen de la salida
+                mapResourceId = R.drawable.escom_edificio_ia_planta_media // Usa la imagen de la cafe de la ESCOM
             )
             findViewById<FrameLayout>(R.id.map_container).addView(mapView)
 
@@ -60,21 +61,21 @@ class SalidaMetro : AppCompatActivity(),
 
             // Esperar a que el mapView esté listo
             mapView.post {
-                // Configurar el mapa para la salida del metro
-                mapView.setCurrentMap(MapMatrixProvider.MAP_SALIDAMETRO, R.drawable.escom_salidametro)
+                // Configurar el mapa para la cafe de la ESCOM
+                mapView.setCurrentMap(MapMatrixProvider.MAP_EDIFICIO_IA_MEDIO, R.drawable.escom_edificio_ia_planta_media)
 
                 // Configurar el playerManager
                 mapView.playerManager.apply {
-                    setCurrentMap(MapMatrixProvider.MAP_SALIDAMETRO)
+                    setCurrentMap(MapMatrixProvider.MAP_EDIFICIO_IA_MEDIO)
                     localPlayerId = playerName
                     updateLocalPlayerPosition(gameState.playerPosition)
                 }
 
-                Log.d(TAG, "Set map to: " + MapMatrixProvider.MAP_SALIDAMETRO)
+                Log.d(TAG, "Set map to: " + MapMatrixProvider.MAP_EDIFICIO_IA_MEDIO)
 
                 // Importante: Enviar un update inmediato para que otros jugadores sepan dónde estamos
                 if (gameState.isConnected) {
-                    serverConnectionManager.sendUpdateMessage(playerName, gameState.playerPosition, MapMatrixProvider.MAP_SALIDAMETRO)
+                    serverConnectionManager.sendUpdateMessage(playerName, gameState.playerPosition, MapMatrixProvider.MAP_EDIFICIO_IA_MEDIO)
                 }
             }
         } catch (e: Exception) {
@@ -132,13 +133,13 @@ class SalidaMetro : AppCompatActivity(),
                     serverConnectionManager.sendUpdateMessage(
                         playerName,
                         gameState.playerPosition,
-                        MapMatrixProvider.MAP_SALIDAMETRO
+                        MapMatrixProvider.MAP_EDIFICIO_IA_MEDIO
                     )
 
                     // Solicitar actualizaciones de posición
                     serverConnectionManager.onlineServerManager.requestPositionsUpdate()
 
-                    updateBluetoothStatus("Conectado al servidor online - SALIDA METRO")
+                    updateBluetoothStatus("Conectado al servidor online - CAFE ESCOM")
                 } else {
                     updateBluetoothStatus("Error al conectar al servidor online")
                 }
@@ -154,20 +155,21 @@ class SalidaMetro : AppCompatActivity(),
         btnWest = findViewById(R.id.button_west)
         btnBackToHome = findViewById(R.id.button_back_to_home)
         tvBluetoothStatus = findViewById(R.id.tvBluetoothStatus)
+        buttonA = findViewById(R.id.button_a)
+        btnConnectDevice = findViewById(R.id.button_small_2)
 
         // Cambiar el título para indicar dónde estamos
-        tvBluetoothStatus.text = "Salida Metro - Conectando..."
+        tvBluetoothStatus.text = "Metro - Conectando..."
     }
 
     private fun initializeManagers() {
         bluetoothManager = BluetoothManager.getInstance(this, tvBluetoothStatus).apply {
-            setCallback(this@SalidaMetro)
+            setCallback(this@BuildingEdificioIA_Medio)
         }
 
-        //bluetoothBridge = BluetoothWebSocketBridge.getInstance()
 
         val onlineServerManager = OnlineServerManager.getInstance(this).apply {
-            setListener(this@SalidaMetro)
+            setListener(this@BuildingEdificioIA_Medio)
         }
 
         serverConnectionManager = ServerConnectionManager(
@@ -185,83 +187,111 @@ class SalidaMetro : AppCompatActivity(),
     }
 
     private fun setupButtonListeners() {
-        // Configurar los botones de movimiento
+
         btnNorth.setOnTouchListener { _, event -> handleMovement(event, 0, -1); true }
         btnSouth.setOnTouchListener { _, event -> handleMovement(event, 0, 1); true }
         btnEast.setOnTouchListener { _, event -> handleMovement(event, 1, 0); true }
         btnWest.setOnTouchListener { _, event -> handleMovement(event, -1, 0); true }
-
-        // Botón para volver al edificio 2
-        btnBackToHome.setOnClickListener {
+        btnConnectDevice.setOnClickListener {
             returnToMainActivity()
         }
+        // Configurar el botón A para verificar la posición y dirigirse al mapa correspondiente
+        buttonA.setOnClickListener {
+            if (canChangeMap) {
+                when (targetDestination) {
+                    "alto" -> startPlantaAltaActivity()
+                    "baja" -> returnToMainActivity()
 
-        // Configurar el botón BCK si existe
-        findViewById<Button?>(R.id.button_small_2)?.setOnClickListener {
-            returnToMainActivity()
-        }
-        
-        // Configurar el botón A para interactuar con puntos de interés
-        findViewById<Button?>(R.id.button_a)?.setOnClickListener {
-            handleButtonAPress()
-        }
-    }
-    
-    // Método para manejar la pulsación del botón A
-    private fun handleButtonAPress() {
-        val position = gameState.playerPosition
-        when {
-            position.first == 35 && position.second == 5 -> {
-                // Mostrar información del Metro
-                showInfoDialog("Metro", "Línea 6 del Metro - Estación Instituto del Petróleo\n\nHorario: 5:00 - 24:00\nTarifa: $5.00 MXN")
-            }
-            position.first == 31 && position.second == 27 -> {
-                // Mostrar información del Trolebús
-                showInfoDialog("Trolebús", "Línea K del Trolebús - Estación Politécnico\n\nHorario: 5:30 - 23:30\nTarifa: $4.00 MXN")
-            }
-            position.first == 17 && position.second == 22 -> {
-                // Mostrar información de la Ford
-                showInfoDialog("Ford", "Agencia Ford Lindavista\n\nHorario: 9:00 - 18:00\nServicio de ventas y mantenimiento")
+                    else -> showToast("No hay interacción disponible en esta posición")
+                }
+            } else {
+                showToast("No hay interacción disponible en esta posición")
             }
         }
+
     }
-    
-    // Método para mostrar un diálogo con información
-    private fun showInfoDialog(title: String, message: String) {
-        val builder = androidx.appcompat.app.AlertDialog.Builder(this)
-        builder.setTitle(title)
-        builder.setMessage(message)
-        builder.setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
-        builder.show()
+    private fun startPlantaAltaActivity() {
+        val intent = Intent(this, BuildingEdificioIA_Alto::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(37, 16))
+
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
     }
+
+
+    private var canChangeMap = false  // Variable para controlar si se puede cambiar de mapa
+    private var targetDestination: String? = null  // Variable para almacenar el destino
 
     private fun checkPositionForMapChange(position: Pair<Int, Int>) {
         // Comprobar múltiples ubicaciones de transición
         when {
-            position.first == 35 && position.second == 5 -> {
+            position.first == 36 && position.second == 18 -> {
+                canChangeMap = true
+                targetDestination = "baja"
                 runOnUiThread {
-                    Toast.makeText(this, "Presiona A para ver datos del Metro", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Presiona A subir de planta", Toast.LENGTH_SHORT).show()
                 }
             }
-            position.first == 31 && position.second == 27 -> {
+            position.first == 33 && position.second == 18 -> {
+                canChangeMap = true
+                targetDestination = "alto"
                 runOnUiThread {
-                    Toast.makeText(this, "Presiona A para ver datos del Trolebus", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Presiona A bajar de planta", Toast.LENGTH_SHORT).show()
                 }
             }
-            position.first == 17 && position.second == 22 -> {
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para ver datos de la Ford", Toast.LENGTH_SHORT).show()
-                }
+            else -> {
+                canChangeMap = false
+                targetDestination = null
             }
+        }
+    }
+
+
+    private fun handleMovement(event: MotionEvent, deltaX: Int, deltaY: Int) {
+        movementManager.handleMovement(event, deltaX, deltaY)
+    }
+
+    private fun updatePlayerPosition(position: Pair<Int, Int>) {
+        runOnUiThread {
+            gameState.playerPosition = position
+            mapView.updateLocalPlayerPosition(position)
+
+            if (gameState.isConnected) {
+                serverConnectionManager.sendUpdateMessage(playerName, position, "escom_edificio_ia_planta_media")
+            }
+
+            checkPositionForMapChange(position)
+        }
+    }
+    private fun restoreState(savedInstanceState: Bundle) {
+        gameState.apply {
+            isServer = savedInstanceState.getBoolean("IS_SERVER", false)
+            isConnected = savedInstanceState.getBoolean("IS_CONNECTED", false)
+            playerPosition = savedInstanceState.getSerializable("PLAYER_POSITION") as? Pair<Int, Int>
+                ?: Pair(20, 20)
+            @Suppress("UNCHECKED_CAST")
+            remotePlayerPositions = (savedInstanceState.getSerializable("REMOTE_PLAYER_POSITIONS")
+                    as? HashMap<String, GameplayActivity.GameState.PlayerInfo>)?.toMap() ?: emptyMap()
+            remotePlayerName = savedInstanceState.getString("REMOTE_PLAYER_NAME")
+        }
+
+        // Reconectar si es necesario
+        if (gameState.isConnected) {
+            connectToOnlineServer()
         }
     }
 
     private fun returnToMainActivity() {
         // Obtener la posición previa del intent
         val previousPosition = intent.getSerializableExtra("PREVIOUS_POSITION") as? Pair<Int, Int>
-            ?: Pair(15, 10) // Posición por defecto si no hay previa
+            ?: Pair(38, 1) // Posición por defecto si no hay previa
 
-        val intent = Intent(this, GameplayActivity::class.java).apply {
+        val intent = Intent(this, BuildingEdificioIA::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_POSITION", previousPosition) // Usar la posición previa
@@ -274,52 +304,14 @@ class SalidaMetro : AppCompatActivity(),
         finish()
     }
 
-    private fun handleMovement(event: MotionEvent, deltaX: Int, deltaY: Int) {
-        movementManager.handleMovement(event, deltaX, deltaY)
-    }
-
-    private fun updatePlayerPosition(position: Pair<Int, Int>) {
-        runOnUiThread {
-            gameState.playerPosition = position
-            mapView.updateLocalPlayerPosition(position)
-
-            // Verificar si estamos en un punto de interés
-            checkPositionForMapChange(position)
-
-            // Enviar actualización a otros jugadores con el mapa específico
-            if (gameState.isConnected) {
-                // Enviar la posición con el nombre del mapa correcto
-                serverConnectionManager.sendUpdateMessage(playerName, position, MapMatrixProvider.MAP_SALIDAMETRO)
-
-                // Log de debug para confirmar
-                Log.d(TAG, "Sending update: Player $playerName at $position in map ${MapMatrixProvider.MAP_SALIDAMETRO}")
-            }
-        }
-    }
-
-    private fun restoreState(savedInstanceState: Bundle) {
-        gameState.apply {
-            isServer = savedInstanceState.getBoolean("IS_SERVER", false)
-            isConnected = savedInstanceState.getBoolean("IS_CONNECTED", false)
-            playerPosition = savedInstanceState.getSerializable("PLAYER_POSITION") as? Pair<Int, Int>
-                ?: Pair(20, 20)
-            @Suppress("UNCHECKED_CAST")
-            remotePlayerPositions = (savedInstanceState.getSerializable("REMOTE_PLAYER_POSITIONS")
-                    as? HashMap<String, BuildingNumber2.GameState.PlayerInfo>)?.toMap() ?: emptyMap()
-            remotePlayerName = savedInstanceState.getString("REMOTE_PLAYER_NAME")
-        }
-
-        // Reconectar si es necesario
-        if (gameState.isConnected) {
-            connectToOnlineServer()
-        }
-    }
-
     // Implementación MapTransitionListener
     override fun onMapTransitionRequested(targetMap: String, initialPosition: Pair<Int, Int>) {
         when (targetMap) {
-            MapMatrixProvider.MAP_MAIN -> {
+            MapMatrixProvider.MAP_EDIFICIO_IA_BAJO -> {
                 returnToMainActivity()
+            }
+            MapMatrixProvider.MAP_EDIFICIO_IA_ALTO -> {
+                startPlantaAltaActivity()
             }
             else -> {
                 Log.d(TAG, "Mapa destino no reconocido: $targetMap")
@@ -353,7 +345,7 @@ class SalidaMetro : AppCompatActivity(),
     override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
         runOnUiThread {
             val deviceName = device.name ?: "Unknown"
-            mapView.updateRemotePlayerPosition(deviceName, Pair(x, y), MapMatrixProvider.MAP_SALIDAMETRO)
+            mapView.updateRemotePlayerPosition(deviceName, Pair(x, y), MapMatrixProvider.MAP_EDIFICIO_IA_MEDIO)
             mapView.invalidate()
         }
     }
@@ -379,13 +371,10 @@ class SalidaMetro : AppCompatActivity(),
 
                                 // Actualizar la posición del jugador en el mapa
                                 gameState.remotePlayerPositions = gameState.remotePlayerPositions +
-                                        (playerId to BuildingNumber2.GameState.PlayerInfo(
-                                            position,
-                                            map
-                                        ))
+                                        (playerId to GameplayActivity.GameState.PlayerInfo(position, map))
 
                                 // Solo mostrar jugadores que estén en el mismo mapa
-                                if (map == MapMatrixProvider.MAP_CAFETERIA) {
+                                if (map == MapMatrixProvider.MAP_EDIFICIO_IA_MEDIO) {
                                     mapView.updateRemotePlayerPosition(playerId, position, map)
                                     Log.d(TAG, "Updated remote player $playerId position to $position in map $map")
                                 }
@@ -403,13 +392,10 @@ class SalidaMetro : AppCompatActivity(),
 
                             // Actualizar el estado del jugador
                             gameState.remotePlayerPositions = gameState.remotePlayerPositions +
-                                    (playerId to BuildingNumber2.GameState.PlayerInfo(
-                                        position,
-                                        map
-                                    ))
+                                    (playerId to GameplayActivity.GameState.PlayerInfo(position, map))
 
                             // Solo mostrar jugadores que estén en el mismo mapa
-                            if (map == MapMatrixProvider.MAP_SALIDAMETRO) {
+                            if (map == MapMatrixProvider.MAP_EDIFICIO_IA_MEDIO) {
                                 mapView.updateRemotePlayerPosition(playerId, position, map)
                                 Log.d(TAG, "Updated remote player $playerId position to $position in map $map")
                             }
@@ -423,7 +409,7 @@ class SalidaMetro : AppCompatActivity(),
                         serverConnectionManager.sendUpdateMessage(
                             playerName,
                             gameState.playerPosition,
-                            MapMatrixProvider.MAP_SALIDAMETRO
+                            MapMatrixProvider.MAP_EDIFICIO_IA_MEDIO
                         )
                     }
                 }
@@ -469,7 +455,7 @@ class SalidaMetro : AppCompatActivity(),
             serverConnectionManager.sendUpdateMessage(
                 playerName,
                 gameState.playerPosition,
-                MapMatrixProvider.MAP_SALIDAMETRO
+                MapMatrixProvider.MAP_EDIFICIO_IA_MEDIO
             )
         }
     }
@@ -484,6 +470,6 @@ class SalidaMetro : AppCompatActivity(),
     }
 
     companion object {
-        private const val TAG = "SalidaMetro"
+        private const val TAG = "metro"
     }
 }
