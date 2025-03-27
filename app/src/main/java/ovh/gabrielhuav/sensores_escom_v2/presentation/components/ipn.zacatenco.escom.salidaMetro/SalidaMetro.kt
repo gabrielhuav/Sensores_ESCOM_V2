@@ -19,7 +19,6 @@ import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
 
 class SalidaMetro : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,
-    BluetoothGameManager.ConnectionListener,
     OnlineServerManager.WebSocketListener,
     MapView.MapTransitionListener {
 
@@ -337,28 +336,20 @@ class SalidaMetro : AppCompatActivity(),
         showToast(error)
     }
 
-    override fun onConnectionComplete() {
+     fun onConnectionComplete() {
         updateBluetoothStatus("Conexión establecida completamente.")
     }
 
-    override fun onConnectionFailed(message: String) {
+     fun onConnectionFailed(message: String) {
         onBluetoothConnectionFailed(message)
     }
 
-    override fun onDeviceConnected(device: BluetoothDevice) {
+     fun onDeviceConnected(device: BluetoothDevice) {
         gameState.remotePlayerName = device.name
     }
 
-    override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
-        runOnUiThread {
-            val deviceName = device.name ?: "Unknown"
-            mapView.updateRemotePlayerPosition(deviceName, Pair(x, y), MapMatrixProvider.MAP_EDIFICIONUEVO)
-            mapView.invalidate()
-        }
-    }
-
     // Implementación WebSocketListener
-    override fun onMessageReceived(message: String) {
+     override fun onMessageReceived(message: String) {
         runOnUiThread {
             try {
                 Log.d(TAG, "WebSocket message received: $message")

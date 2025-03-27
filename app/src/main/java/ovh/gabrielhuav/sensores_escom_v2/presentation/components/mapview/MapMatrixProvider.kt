@@ -30,7 +30,6 @@ class MapMatrixProvider {
         const val MAP_LINDAVISTA = "escom_lindavista"
         const val MAP_ESTACIONAMIENTO = "EstacionamientoEscom"
         const val MAP_TRAS_PLAZA = "TramoAtrasPlaza"
-        const val MAP_EDIFICIONUEVO = "escom_edificionuevo"
         const val MAP_SALIDAMETRO = "escom_salidametro"
 
         fun normalizeMapName(mapName: String?): String {
@@ -85,9 +84,6 @@ class MapMatrixProvider {
         val ESTACIONAMIENTO_TO_MAIN_POSITION = Pair(20, 38)
 
 
-        val MAIN_TO_EDIFICIONUEVO_POSITION = Pair(2, 2)       // Desde mapa principal
-        val EDIFICIONUEVO_TO_MAIN_POSITION = Pair(1, 1)         // Vuelta al mapa principal
-
         val MAIN_TO_SALIDAMETRO_POSITION = Pair(2, 2)       // Desde mapa principal
         val SALIDAMETRO_TO_MAIN_POSITION = Pair(1, 1)         // Vuelta al mapa principal
         // Del Estacionamiento al segundo mapa (Tramo Atrás Plaza)
@@ -111,7 +107,6 @@ class MapMatrixProvider {
 
                 MAP_ZACATENCO -> createZacatencoMatrix()
                 MAP_LINDAVISTA -> createLindavistaMatrix()
-                MAP_EDIFICIONUEVO -> createEdificioNuevoMatrix() // edificio nuevo
                 MAP_SALIDAMETRO -> createSalidaMetroMatrix() // salida metro
                 else -> createDefaultMatrix() // Por defecto, un mapa básico
             }
@@ -702,90 +697,6 @@ class MapMatrixProvider {
             return matrix
         }
 
-        private fun createEdificioNuevoMatrix(): Array<Array<Int>> {   // edificio nuevo
-            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
-
-            // Constantes
-            val PARED = WALL
-            val CAMINO = PATH
-            val BANCA = INACCESSIBLE
-            val INTERACTIVO = INTERACTIVE
-
-            // Bordes exteriores
-            for (i in 0 until MAP_HEIGHT) {
-                for (j in 0 until MAP_WIDTH) {
-                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
-                        matrix[i][j] = PARED
-                    }
-                }
-            }
-
-            // Mesas (cada mesa es de 6x6 espacios)
-            val mesaWidth = 6
-            val mesaHeight = 6
-            val espaciosEntreMesas = 8
-
-            // Filas de mesas
-            for (fila in 0..2) {
-                val y = 4 + fila * (mesaHeight + espaciosEntreMesas)
-
-                // Columnas de mesas (3 por fila)
-                for (col in 0..2) {
-                    val x = 4 + col * (mesaWidth + espaciosEntreMesas)
-
-                    // Crear mesa rectangular
-                    for (i in y until y + mesaHeight) {
-                        for (j in x until x + mesaWidth) {
-                            // Bordes de la mesa
-                            if (i == y || i == y + mesaHeight - 1 ||
-                                j == x || j == x + mesaWidth - 1) {
-                                matrix[i][j] = PARED
-                            } else {
-                                matrix[i][j] = BANCA
-                            }
-                        }
-                    }
-
-                    // Añadir punto interactivo en el centro de la mesa
-                    matrix[y + mesaHeight/2][x + mesaWidth/2] = INTERACTIVO
-                }
-            }
-
-            // Pasillo central vertical
-            for (i in 0 until MAP_HEIGHT) {
-                for (j in 20..22) {
-                    matrix[i][j] = CAMINO
-                }
-            }
-
-            // Entrada (parte inferior central)
-            for (i in 35..38) {
-                for (j in 18..22) {
-                    matrix[i][j] = INTERACTIVO
-                    if (i == 35 || j == 18 || j == 22) {
-                        matrix[i][j] = PARED
-                    }
-                }
-            }
-
-            // Árboles decorativos
-            val treePositions = listOf(
-                Pair(5, 5), Pair(5, 35),
-                Pair(25, 5), Pair(25, 35),
-                Pair(35, 5), Pair(35, 35)
-            )
-
-            treePositions.forEach { (y, x) ->
-                for (i in y..y+2) {
-                    for (j in x..x+2) {
-                        matrix[i][j] = BANCA
-                    }
-                }
-                matrix[y+1][x+1] = INTERACTIVO
-            }
-
-            return matrix
-        }
 
         private fun createSalidaMetroMatrix(): Array<Array<Int>> {
             val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }

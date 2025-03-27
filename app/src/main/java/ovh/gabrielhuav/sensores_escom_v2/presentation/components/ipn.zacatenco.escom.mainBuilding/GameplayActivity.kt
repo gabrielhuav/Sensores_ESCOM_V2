@@ -290,18 +290,6 @@ class GameplayActivity : AppCompatActivity(),
         finish()
     }
 
-    private fun startEdificioNuevoActivity() {
-        val intent = Intent(this, EdificioNuevo::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(1, 1))
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        startActivity(intent)
-        finish()
-    }
-
     private fun startBuilding2Activity() {
         val intent = Intent(this, BuildingNumber2::class.java).apply {
             putExtra("PLAYER_NAME", playerName)

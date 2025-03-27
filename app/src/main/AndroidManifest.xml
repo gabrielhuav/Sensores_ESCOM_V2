@@ -90,10 +90,6 @@
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
-            android:name=".presentation.components.EdificioNuevo"
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
-
-        <activity
             android:name=".presentation.components.SalidaMetro"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
         <activity
