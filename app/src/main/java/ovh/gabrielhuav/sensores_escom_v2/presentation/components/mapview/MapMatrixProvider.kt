@@ -21,21 +21,21 @@ class MapMatrixProvider {
         // Constantes para los mapas
         const val MAP_MAIN = "escom_main"
         const val MAP_BUILDING2 = "escom_building2"
+        const val MAP_BUILDING2_PISO1 = "escom_building2_piso1"
         const val MAP_BUILDING4_F2 = "escom_building4_floor_2"
         const val MAP_SALON2009 = "escom_salon2009"
         const val MAP_SALON2010 = "escom_salon2010"
         const val MAP_CAFETERIA = "escom_cafeteria"
         const val MAP_SALON1212 = "escom_salon1212"
-        const val MAP_BUILDING2_PISO1 = "escom_building2_piso1"
         const val MAP_ZACATENCO = "escom_zacatenco"
         const val MAP_LINDAVISTA = "escom_lindavista"
         const val MAP_ESTACIONAMIENTO = "EstacionamientoEscom"
         const val MAP_TRAS_PLAZA = "TramoAtrasPlaza"
-        const val MAP_SALIDAMETRO = "escom_salidametro"
         const val MAP_EDIFICIO_IA_BAJO = "edificio_ia_bajo"
         const val MAP_EDIFICIO_IA_MEDIO = "edificio_ia_medio"
         const val MAP_EDIFICIO_IA_ALTO = "edificio_ia_alto"
         const val MAP_CABLEBUS = "cablebus"
+        const val MAP_SALIDAMETRO = "escom_salidametro"
 
         fun normalizeMapName(mapName: String?): String {
             if (mapName.isNullOrBlank()) return MAP_MAIN
@@ -121,9 +121,9 @@ class MapMatrixProvider {
                 MAP_BUILDING2_PISO1 -> createBuilding2Piso1Matrix()
                 MAP_ESTACIONAMIENTO -> createEstacionamientoMatrix()
                 MAP_TRAS_PLAZA -> createPlazaMatrix()
-
                 MAP_ZACATENCO -> createZacatencoMatrix()
                 MAP_LINDAVISTA -> createLindavistaMatrix()
+                MAP_SALIDAMETRO -> createSalidaMetroMatrix() // salida metro
                 MAP_CABLEBUS -> createCablebusMatix()
                 MAP_EDIFICIO_IA_BAJO-> createEdificioIABajoMatrix()
                 MAP_EDIFICIO_IA_MEDIO-> createEdificioIAMedioMatrix()
@@ -842,6 +842,41 @@ class MapMatrixProvider {
             return matrix
         }
 
+        private fun createSalidaMetroMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Constantes
+            val PARED = WALL
+            val BANCA = INACCESSIBLE
+
+
+            // Bordes exteriores
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = PARED
+                    }
+                }
+            }
+
+            matrix[5][35] = INTERACTIVE
+            matrix[22][17] = INTERACTIVE
+            matrix[27][31] = INTERACTIVE
+            // Pared al 70% de la altura desde arriba (equivale a 30% desde abajo)
+            val alturaPared = (MAP_HEIGHT * 0.7).toInt() // 28 en un mapa 40x40
+            for (j in 0 until MAP_WIDTH) {
+                matrix[alturaPared][j] = PARED
+            }
+
+            // Rectángulo inaccesible (cuadro) con esquinas en (6,1), (6,21), (29,21) y (29,1)
+            for (i in 1..21) {
+                for (j in 6..29) {
+                    matrix[i][j] = BANCA
+                }
+            }
+
+            return matrix
+        }
 
         /**
          * Matriz predeterminada para cualquier otro mapa
