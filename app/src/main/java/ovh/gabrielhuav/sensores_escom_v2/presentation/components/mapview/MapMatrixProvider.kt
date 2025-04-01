@@ -21,6 +21,7 @@ class MapMatrixProvider {
         // Constantes para los mapas
         const val MAP_MAIN = "escom_main"
         const val MAP_BUILDING2 = "escom_building2"
+        const val MAP_BUILDING2_PISO1 = "escom_building2_piso1"
         const val MAP_BUILDING4_F2 = "escom_building4_floor_2"
         const val MAP_SALON2009 = "escom_salon2009"
         const val MAP_SALON2010 = "escom_salon2010"
@@ -30,11 +31,11 @@ class MapMatrixProvider {
         const val MAP_LINDAVISTA = "escom_lindavista"
         const val MAP_ESTACIONAMIENTO = "EstacionamientoEscom"
         const val MAP_TRAS_PLAZA = "TramoAtrasPlaza"
-        const val MAP_SALIDAMETRO = "escom_salidametro"
         const val MAP_EDIFICIO_IA_BAJO = "edificio_ia_bajo"
         const val MAP_EDIFICIO_IA_MEDIO = "edificio_ia_medio"
         const val MAP_EDIFICIO_IA_ALTO = "edificio_ia_alto"
         const val MAP_CABLEBUS = "cablebus"
+        const val MAP_SALIDAMETRO = "escom_salidametro"
 
         fun normalizeMapName(mapName: String?): String {
             if (mapName.isNullOrBlank()) return MAP_MAIN
@@ -48,6 +49,7 @@ class MapMatrixProvider {
                 lowerMap.contains("main") && !lowerMap.contains("building") -> MAP_MAIN
 
                 // Edificio 2
+                lowerMap.contains("escom_building2_piso1") -> MAP_BUILDING2_PISO1
                 lowerMap.contains("building2") || lowerMap.contains("edificio2") -> MAP_BUILDING2
 
                 // Salones
@@ -116,11 +118,12 @@ class MapMatrixProvider {
                 MAP_SALON2010 -> createSalon2010Matrix()  // Nueva matriz para el salón 2010
                 MAP_SALON1212 -> createSalon1212Matrix()
                 MAP_CAFETERIA -> createCafeESCOMMatrix()
+                MAP_BUILDING2_PISO1 -> createBuilding2Piso1Matrix()
                 MAP_ESTACIONAMIENTO -> createEstacionamientoMatrix()
                 MAP_TRAS_PLAZA -> createPlazaMatrix()
-
                 MAP_ZACATENCO -> createZacatencoMatrix()
                 MAP_LINDAVISTA -> createLindavistaMatrix()
+                MAP_SALIDAMETRO -> createSalidaMetroMatrix() // salida metro
                 MAP_CABLEBUS -> createCablebusMatix()
                 MAP_EDIFICIO_IA_BAJO-> createEdificioIABajoMatrix()
                 MAP_EDIFICIO_IA_MEDIO-> createEdificioIAMedioMatrix()
@@ -565,6 +568,92 @@ class MapMatrixProvider {
             matrix[22][24] = INTERACTIVE
             matrix[23][24] = INTERACTIVE
 
+            matrix[15][17] = INTERACTIVE
+            matrix[15][18] = INTERACTIVE
+            matrix[15][16] = INTERACTIVE
+
+            matrix[1][1] = INTERACTIVE
+            // Add labels to help with debugging
+            Log.d("MapMatrix", "Interactive value = $INTERACTIVE")
+            Log.d("MapMatrix", "Wall value = $WALL")
+            Log.d("MapMatrix", "Path value = $PATH")
+            Log.d("MapMatrix", "Value at (29, 22): ${matrix[22][29]}")
+            Log.d("MapMatrix", "Value at (29, 23): ${matrix[23][29]}")
+
+            return matrix
+        }
+
+        private fun createBuilding2Piso1Matrix(): Array<Array<Int>> {
+            // Start with everything as PATH (2) to make most areas walkable
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Add outer walls
+            for (i in 0 until MAP_HEIGHT) {
+                matrix[i][0] = WALL
+                matrix[i][MAP_WIDTH - 1] = WALL
+            }
+            for (j in 0 until MAP_WIDTH) {
+                matrix[0][j] = WALL
+                matrix[MAP_HEIGHT - 1][j] = WALL
+            }
+
+
+            // Define the classroom row
+            val roomTop = 10
+            val roomHeight = 10
+            val corridorY = roomTop + roomHeight
+            val roomWidth = 5
+
+            // Draw the top walls of classrooms
+            for (x in 5 until 40 - 5) {
+                matrix[roomTop][x] = WALL
+            }
+
+            // Draw the dividing walls between classrooms
+            // We'll have 7 classrooms total
+            for (roomNum in 0..7) {
+                val wallX = 5 + (roomNum * roomWidth)
+                if (wallX < MAP_WIDTH - 5) {
+                    for (y in roomTop until roomTop + roomHeight) {
+                        matrix[y][wallX] = WALL
+                    }
+                }
+            }
+
+            // Bottom wall of classrooms (top of corridor)
+            for (x in 5 until 40 - 5) {
+                matrix[corridorY][x] = WALL
+            }
+
+            // Add doors to classrooms
+            for (roomNum in 0..6) {
+                // Skip room 3 which is stairs
+                if (roomNum != 3) {
+                    val doorX = 5 + (roomNum * roomWidth) + 2
+                    matrix[corridorY][doorX] = PATH
+
+                }
+            }
+
+            // Make stairs area in room 3
+
+            // Mark corridor area
+            // The corridor is below the classrooms
+            for (y in corridorY + 1 until corridorY + 4) {
+                for (x in 5 until 40 - 5) {
+                    matrix[y][x] = PATH
+                }
+            }
+
+            // Bottom wall of corridor
+            for (x in 5 until 40 - 5) {
+                matrix[corridorY + 4][x] = WALL
+            }
+
+            // Key interactive points (salon 2006 entrance)
+            // Explicitly set coordinates 29,22 and 29,23 as blue interactive points
+
+            matrix[23][17] = INTERACTIVE
             // Add labels to help with debugging
             Log.d("MapMatrix", "Interactive value = $INTERACTIVE")
             Log.d("MapMatrix", "Wall value = $WALL")
@@ -753,6 +842,41 @@ class MapMatrixProvider {
             return matrix
         }
 
+        private fun createSalidaMetroMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Constantes
+            val PARED = WALL
+            val BANCA = INACCESSIBLE
+
+
+            // Bordes exteriores
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = PARED
+                    }
+                }
+            }
+
+            matrix[5][35] = INTERACTIVE
+            matrix[22][17] = INTERACTIVE
+            matrix[27][31] = INTERACTIVE
+            // Pared al 70% de la altura desde arriba (equivale a 30% desde abajo)
+            val alturaPared = (MAP_HEIGHT * 0.7).toInt() // 28 en un mapa 40x40
+            for (j in 0 until MAP_WIDTH) {
+                matrix[alturaPared][j] = PARED
+            }
+
+            // Rectángulo inaccesible (cuadro) con esquinas en (6,1), (6,21), (29,21) y (29,1)
+            for (i in 1..21) {
+                for (j in 6..29) {
+                    matrix[i][j] = BANCA
+                }
+            }
+
+            return matrix
+        }
 
         /**
          * Matriz predeterminada para cualquier otro mapa
@@ -857,6 +981,15 @@ class MapMatrixProvider {
                 if (x == 5 && y == 5) {
                     return MAP_MAIN
                 }
+                if(x == 1 && y == 1){
+                    return MAP_MAIN
+                }
+            }
+
+            if(mapId == MAP_BUILDING2_PISO1){
+                if(x == 17 && y == 23){
+                    return MAP_BUILDING2
+                }
             }
 
             // Si estamos en el salón 2009, la coordenada (1,20) nos lleva de vuelta al edificio 2
@@ -871,6 +1004,10 @@ class MapMatrixProvider {
                 if (x == 10 && y == 10) {
                     return MAP_MAIN
                 }
+            }
+
+            if(mapId == MAP_BUILDING2 && x == 17 && y == 15){
+                return MAP_BUILDING2_PISO1
             }
 
             if (mapId == MAP_MAIN && x == 33 && y == 34) {
@@ -930,6 +1067,7 @@ class MapMatrixProvider {
                 MAP_SALON2009 -> Pair(20, 20)  // Posición central dentro del salón 2009
                 MAP_SALON2010 -> Pair(20, 20)  // Posición central dentro del salón 2010
                 MAP_CAFETERIA -> Pair(2, 2)  // Posición central dentro de la escomCAFE
+                MAP_BUILDING2_PISO1 -> Pair(20, 16)  // Posición central dentro del salón 2009
                 MAP_CABLEBUS -> Pair(2, 2) // Posicion central dentro del cablebus
                 MAP_EDIFICIO_IA_BAJO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
                 MAP_EDIFICIO_IA_MEDIO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
