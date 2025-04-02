@@ -11,7 +11,7 @@ class ServerConnectionManager(
     private val context: Context,
     val onlineServerManager: OnlineServerManager
 ) {
-    private val serverUrl = "ws://10.3.56.251:3000"
+    private val serverUrl = "ws://10.3.56.44:3000"
     private var isConnecting = false
     private val mainHandler = Handler(Looper.getMainLooper())
 

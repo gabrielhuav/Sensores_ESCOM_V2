@@ -3,6 +3,7 @@ package ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.MapMatrixProvider
 import kotlin.math.abs
 import kotlin.math.sqrt
 import kotlin.random.Random
@@ -68,6 +69,7 @@ class ZombieController(
     ) {
         var lastMove = System.currentTimeMillis()
         var targetPlayerId: String? = null
+        var lastValidPosition = position // Guardar la última posición válida
 
         fun move() {
             // Solo moverse si ha pasado suficiente tiempo desde el último movimiento
@@ -130,54 +132,78 @@ class ZombieController(
             val dx = targetPosition.first - position.first
             val dy = targetPosition.second - position.second
 
-            // Decidir si moverse horizontal o verticalmente
+            // Guardar la posición actual como válida antes de intentar moverse
+            lastValidPosition = position
+
+            // Crear una lista de posibles movimientos priorizados
+            val possibleMoves = mutableListOf<Pair<Int, Int>>()
+
+            // Decidir qué dirección tiene prioridad (horizontal o vertical)
             if (abs(dx) > abs(dy)) {
-                // Moverse horizontalmente
-                position = Pair(
-                    position.first + if (dx > 0) 1 else -1,
-                    position.second
-                )
+                // Priorizar movimiento horizontal
+                addMove(possibleMoves, position.first + if (dx > 0) 1 else -1, position.second)
+                addMove(possibleMoves, position.first, position.second + if (dy > 0) 1 else -1)
+                addMove(possibleMoves, position.first, position.second + if (dy > 0) -1 else 1)
+                addMove(possibleMoves, position.first + if (dx > 0) -1 else 1, position.second)
             } else {
-                // Moverse verticalmente
-                position = Pair(
-                    position.first,
-                    position.second + if (dy > 0) 1 else -1
-                )
+                // Priorizar movimiento vertical
+                addMove(possibleMoves, position.first, position.second + if (dy > 0) 1 else -1)
+                addMove(possibleMoves, position.first + if (dx > 0) 1 else -1, position.second)
+                addMove(possibleMoves, position.first + if (dx > 0) -1 else 1, position.second)
+                addMove(possibleMoves, position.first, position.second + if (dy > 0) -1 else 1)
             }
 
-            // En dificultad difícil, hay probabilidad de movimiento diagonal
+            // En dificultad difícil, añadir posibilidad de movimiento diagonal
             if (currentDifficulty == DIFFICULTY_HARD && Random.nextDouble() < 0.4) {
-                position = Pair(
+                addMove(
+                    possibleMoves,
                     position.first + if (dx > 0) 1 else -1,
                     position.second + if (dy > 0) 1 else -1
                 )
             }
 
-            // Asegurar que la posición esté dentro de los límites
-            position = Pair(
-                position.first.coerceIn(0, 39),
-                position.second.coerceIn(0, 39)
-            )
+            // Intentar cada movimiento hasta encontrar uno válido
+            for (newPosition in possibleMoves) {
+                if (isValidPosition(newPosition.first, newPosition.second)) {
+                    position = newPosition
+                    break
+                }
+            }
+
+            // Si no se ha movido (por estar rodeado de obstáculos), mantener la última posición válida
+            if (position == lastValidPosition) {
+                moveRandomly() // Intentar moverse aleatoriamente si está bloqueado
+            }
+        }
+
+        private fun addMove(list: MutableList<Pair<Int, Int>>, x: Int, y: Int) {
+            val newPosition = Pair(x.coerceIn(0, 39), y.coerceIn(0, 39))
+            if (!list.contains(newPosition)) {
+                list.add(newPosition)
+            }
         }
 
         private fun moveRandomly() {
-            // Seleccionar dirección aleatoria
-            val direction = Random.nextInt(4)
+            // Crear una lista de posibles movimientos aleatorios
+            val possibleDirections = mutableListOf<Pair<Int, Int>>()
 
-            // Moverse según la dirección
-            position = when (direction) {
-                0 -> Pair(position.first + 1, position.second) // Derecha
-                1 -> Pair(position.first - 1, position.second) // Izquierda
-                2 -> Pair(position.first, position.second + 1) // Abajo
-                3 -> Pair(position.first, position.second - 1) // Arriba
-                else -> position
+            // Añadir las cuatro direcciones cardinales
+            possibleDirections.add(Pair(position.first + 1, position.second)) // Derecha
+            possibleDirections.add(Pair(position.first - 1, position.second)) // Izquierda
+            possibleDirections.add(Pair(position.first, position.second + 1)) // Abajo
+            possibleDirections.add(Pair(position.first, position.second - 1)) // Arriba
+
+            // Filtrar solo movimientos válidos
+            val validMoves = possibleDirections.filter {
+                    pos -> isValidPosition(pos.first, pos.second)
             }
 
-            // Asegurar que la posición esté dentro de los límites
-            position = Pair(
-                position.first.coerceIn(0, 39),
-                position.second.coerceIn(0, 39)
-            )
+            // Si hay movimientos válidos, elegir uno al azar
+            if (validMoves.isNotEmpty()) {
+                lastValidPosition = position
+                position = validMoves.random()
+            }
+            // Si no hay movimientos válidos, el zombie se queda en su posición actual
         }
 
         private fun checkPlayerCollisions() {
@@ -271,9 +297,22 @@ class ZombieController(
 
         // Crear zombies
         for (i in 0 until count) {
-            // Posiciones iniciales alejadas de los jugadores
-            val xPos = Random.nextInt(10, 30)
-            val yPos = Random.nextInt(10, 30)
+            // Buscar posición inicial válida para los zombies (no en paredes)
+            var xPos: Int
+            var yPos: Int
+            var attempts = 0
+            do {
+                xPos = Random.nextInt(10, 30)
+                yPos = Random.nextInt(10, 30)
+                attempts++
+                // Si después de muchos intentos no encontramos una posición válida, usar una posición fija
+                if (attempts > 100) {
+                    Log.w(TAG, "No se pudo encontrar una posición válida después de $attempts intentos")
+                    xPos = 20
+                    yPos = 20
+                    break
+                }
+            } while (!isValidPosition(xPos, yPos))
 
             val zombie = Zombie(
                 id = "zombie_$i",
@@ -320,10 +359,17 @@ class ZombieController(
      * Establece manualmente la posición de un zombie (para sincronización)
      */
     fun setZombiePosition(zombieId: String, position: Pair<Int, Int>) {
+        // Solo aceptar posiciones válidas
+        if (!isValidPosition(position.first, position.second)) {
+            Log.d(TAG, "Posición inválida para zombie: $position")
+            return
+        }
+
         val zombie = zombies.find { it.id == zombieId }
 
         if (zombie != null) {
             zombie.position = position
+            zombie.lastValidPosition = position
         } else if (isGameActive) {
             // Si no existe el zombie pero el juego está activo, crear uno nuevo
             val newZombie = Zombie(
@@ -339,7 +385,6 @@ class ZombieController(
         checkCollisionsWithAllPlayers()
     }
 
-
     /**
      * Revisa si algún zombie ha atrapado a algún jugador
      */
@@ -354,6 +399,32 @@ class ZombieController(
                     return
                 }
             }
+        }
+    }
+
+    /**
+     * Verifica si una posición es válida (no es una pared u obstáculo)
+     */
+    private fun isValidPosition(x: Int, y: Int): Boolean {
+        // Verificar límites del mapa
+        if (x < 0 || x >= MapMatrixProvider.MAP_WIDTH || y < 0 || y >= MapMatrixProvider.MAP_HEIGHT) {
+            return false
+        }
+
+        try {
+            // Obtener la matriz de la cafetería directamente del proveedor
+            val cafeteriaMatrix = MapMatrixProvider.getMatrixForMap(MapMatrixProvider.MAP_CAFETERIA)
+
+            // Verificar colisiones con la matriz del mapa
+            val cellType = cafeteriaMatrix[y][x]
+
+            // Los zombies pueden moverse por caminos (PATH=2) y áreas interactivas (INTERACTIVE=0)
+            // pero no por paredes (WALL=1) ni obstáculos (INACCESSIBLE=3)
+            return cellType == MapMatrixProvider.PATH || cellType == MapMatrixProvider.INTERACTIVE
+        } catch (e: Exception) {
+            Log.e(TAG, "Error accediendo a la matriz: ${e.message}")
+            // Si hay un error, consideramos que la posición no es válida por seguridad
+            return false
         }
     }
 
