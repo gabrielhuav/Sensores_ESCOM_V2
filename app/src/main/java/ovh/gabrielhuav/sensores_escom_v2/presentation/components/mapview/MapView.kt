@@ -14,6 +14,7 @@ import android.view.MotionEvent
 import android.view.View
 import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.cafeteria.FogOfWarRenderer
 
 class MapView @JvmOverloads constructor(
     context: Context,
@@ -443,12 +444,53 @@ class MapView @JvmOverloads constructor(
         return handled
     }
 
+    private var fogOfWarRenderer: FogOfWarRenderer? = null
+    private var fogOfWarEnabled = false
+
+    fun setFogOfWarRenderer(renderer: FogOfWarRenderer) {
+        fogOfWarRenderer = renderer
+    }
+
+    fun setFogOfWarEnabled(enabled: Boolean) {
+        fogOfWarEnabled = enabled
+        invalidate() // Forzar redibujado
+    }
+
+    fun isFogOfWarEnabled(): Boolean = fogOfWarEnabled
+
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
         // Usar la matriz del mapa actual para el dibujado
         mapState.setMapMatrix(mapMatrix)
         renderer.draw(canvas, mapState, playerManager)
+        if (fogOfWarEnabled && fogOfWarRenderer != null) {
+            playerManager.getLocalPlayerPosition()?.let { playerPos ->
+                // Calcular el tamaño de celda para el renderizado de la niebla
+                val bitmapWidth = mapState.backgroundBitmap?.width?.toFloat() ?: return
+                val bitmapHeight = mapState.backgroundBitmap?.height?.toFloat() ?: return
+                val cellWidth = bitmapWidth / MapMatrixProvider.MAP_WIDTH
+                val cellHeight = bitmapHeight / MapMatrixProvider.MAP_HEIGHT
+
+                // Guardar estado del canvas
+                canvas.save()
+                canvas.translate(mapState.offsetX, mapState.offsetY)
+                canvas.scale(mapState.scaleFactor, mapState.scaleFactor)
+
+                // Dibujar la niebla de guerra
+                fogOfWarRenderer?.drawFogOfWar(
+                    canvas,
+                    playerPos,
+                    cellWidth,
+                    cellHeight,
+                    18 // Radio de visión predeterminado (puedes ajustarlo según necesites)
+                )
+
+                // Restaurar estado del canvas
+                canvas.restore()
+            }
+        }
     }
 
     // Este método ahora solo devuelve si hay una transición, no la activa

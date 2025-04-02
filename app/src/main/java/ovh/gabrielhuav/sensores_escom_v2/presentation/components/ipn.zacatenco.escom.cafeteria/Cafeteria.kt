@@ -18,6 +18,7 @@ import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.cafeteria.FogOfWarRenderer
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.cafeteria.ZombieController
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
 
@@ -63,6 +64,10 @@ class Cafeteria : AppCompatActivity(),
         ZombieController.DIFFICULTY_MEDIUM to "Medio",
         ZombieController.DIFFICULTY_HARD to "Difícil"
     )
+
+    private lateinit var fogOfWarRenderer: FogOfWarRenderer
+    private var fogOfWarEnabled = false // Flag para activar/desactivar la niebla
+    private val otherPlayersInZombieGame = mutableSetOf<String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -190,7 +195,22 @@ class Cafeteria : AppCompatActivity(),
         // Asegurarnos de que nos reconectamos al servidor online
         // Este es un paso importante para mantener la conexión
         connectToOnlineServer()
+
+        // Inicializar el renderizador de niebla de guerra
+        fogOfWarRenderer = FogOfWarRenderer()
+
+        // Proporcionar el renderizador al MapView
+        mapView.setFogOfWarRenderer(fogOfWarRenderer)
+
+        // Configurar el checker de visibilidad para el PlayerManager
+        mapView.playerManager.setEntityVisibilityChecker(object : PlayerManager.EntityVisibilityChecker {
+            override fun isEntityVisible(entityId: String, position: Pair<Int, Int>): Boolean {
+                return isEntityVisibleThroughFog(entityId, position)
+            }
+        })
     }
+
+
 
     private fun showZombieGameIntroDialog() {
         val options = arrayOf("Fácil", "Medio", "Difícil")
@@ -242,10 +262,22 @@ class Cafeteria : AppCompatActivity(),
         // Informar al servidor que el juego ha iniciado
         sendZombieGameUpdate("start", difficulty = selectedDifficulty)
 
+        // Activar la niebla de guerra cuando inicia el juego
+        if (fogOfWarEnabled) {
+            mapView.setFogOfWarEnabled(true)
+            // Actualizar la información en la UI
+            runOnUiThread {
+                Toast.makeText(this, "¡Cuidado con la niebla! Tu visión es limitada.", Toast.LENGTH_SHORT).show()
+            }
+        }
+
         // Programar fin del juego (si no es atrapado) - Ya manejado por el timer
     }
 
     private fun stopZombieGame() {
+        // Desactivar la niebla de guerra cuando termina el juego
+        mapView.setFogOfWarEnabled(false)
+
         if (zombieGameActive) {
             zombieController.stopGame()
             zombieGameActive = false
@@ -476,6 +508,38 @@ class Cafeteria : AppCompatActivity(),
         tvBluetoothStatus.text = "Cafeteria - Conectando..."
     }
 
+
+    /**
+     * Determina si una entidad está visible a través de la niebla de guerra
+     */
+    private fun isEntityVisibleThroughFog(entityId: String, position: Pair<Int, Int>): Boolean {
+        // Si la niebla no está activada o el juego no está activo, todas las entidades son visibles
+        if (!fogOfWarEnabled || !zombieGameActive) return true
+
+        // El jugador local siempre es visible
+        if (entityId == playerName) return true
+
+        // Comprobar si la entidad está dentro del rango de visión del jugador
+        val visionRadius = getPlayerVisionRadius()
+        return fogOfWarRenderer.isEntityVisible(
+            position,
+            gameState.playerPosition,
+            visionRadius
+        )
+    }
+
+    /**
+     * Obtiene el radio de visión del jugador basado en la dificultad del juego
+     */
+    private fun getPlayerVisionRadius(): Int {
+        // Usar el mismo rango de detección que los zombies en dificultad difícil
+        return when (selectedDifficulty) {
+            ZombieController.DIFFICULTY_HARD -> 18
+            ZombieController.DIFFICULTY_MEDIUM -> 12
+            else -> 8
+        }
+    }
+
     private fun initializeManagers() {
         bluetoothManager = BluetoothManager.getInstance(this, tvBluetoothStatus).apply {
             setCallback(this@Cafeteria)
@@ -513,10 +577,10 @@ class Cafeteria : AppCompatActivity(),
             returnToBuilding2()
         }
 
-        // Botón BCK para volver
-        btnB2.setOnClickListener {
-            returnToBuilding2()
-        }
+//        // Botón BCK para volver
+//        btnB2.setOnClickListener {
+//            returnToBuilding2()
+//        }
 
         // Botón B1 para iniciar/detener el minijuego
         btnB1.setOnClickListener {
@@ -551,6 +615,14 @@ class Cafeteria : AppCompatActivity(),
                 return@setOnLongClickListener true
             }
             return@setOnLongClickListener false
+        }
+
+        btnB2.setOnLongClickListener {
+            fogOfWarEnabled = !fogOfWarEnabled
+            val message = if (fogOfWarEnabled) "Niebla de guerra activada" else "Niebla de guerra desactivada"
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+            mapView.invalidate() // Forzar redibujado del mapa
+            true // Consumir el evento
         }
 
     }
@@ -602,6 +674,9 @@ class Cafeteria : AppCompatActivity(),
             if (zombieGameActive && this::zombieController.isInitialized) {
                 zombieController.updatePlayerPosition(playerName, position)
             }
+        }
+        if (fogOfWarEnabled && zombieGameActive) {
+            mapView.invalidate()
         }
     }
 

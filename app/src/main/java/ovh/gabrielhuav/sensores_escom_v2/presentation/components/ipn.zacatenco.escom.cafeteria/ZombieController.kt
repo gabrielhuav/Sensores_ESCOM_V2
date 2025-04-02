@@ -38,7 +38,7 @@ class ZombieController(
         )
 
         // Rango de detección por dificultad
-        private val ZOMBIE_DETECTION_RANGE = mapOf(
+        val ZOMBIE_DETECTION_RANGE = mapOf(
             DIFFICULTY_EASY to 8,
             DIFFICULTY_MEDIUM to 12,
             DIFFICULTY_HARD to 18
@@ -57,6 +57,9 @@ class ZombieController(
     private val handler = Handler(Looper.getMainLooper())
     private var updateRunnable: Runnable? = null
     private val catchDistance = 2 // Distancia para considerar que un zombie ha atrapado a un jugador
+
+    private lateinit var fogOfWarRenderer: FogOfWarRenderer
+    private var fogOfWarEnabled = false // Flag para activar/desactivar la niebla
 
     /**
      * Clase interna para representar un zombie
