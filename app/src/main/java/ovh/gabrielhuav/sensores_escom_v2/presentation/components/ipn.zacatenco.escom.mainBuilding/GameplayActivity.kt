@@ -257,6 +257,7 @@ class GameplayActivity : AppCompatActivity(),
                         "Estacionamiento" -> startEstacionamientoEscomActivity()
                         "zacatenco" -> startZacatencoActivity()
                         "Edificioiabajo" -> startEdificioIABajoActivity()
+                        "palapas_ia" -> startPalapasIAActivity()
 
                         else -> showToast("No hay interacción disponible en esta posición")
                     }
@@ -265,6 +266,18 @@ class GameplayActivity : AppCompatActivity(),
                 }
             }
         }
+    }
+
+    private fun startPalapasIAActivity() {
+        val intent = Intent(this, PalapasIA::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(15, 37))
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
     }
 
 
@@ -410,6 +423,18 @@ class GameplayActivity : AppCompatActivity(),
                     Toast.makeText(
                         this,
                         "Presiona A para entrar al edificio de ia ",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
+            position.first == 31 && position.second == 10 -> {
+                canChangeMap = true
+                targetDestination = "palapas_ia"
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        "Presiona A para entrar a Palapas de IA ",
                         Toast.LENGTH_SHORT
                     ).show()
                 }

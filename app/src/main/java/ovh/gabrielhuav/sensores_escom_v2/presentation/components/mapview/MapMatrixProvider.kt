@@ -36,6 +36,7 @@ class MapMatrixProvider {
         const val MAP_EDIFICIO_IA_ALTO = "edificio_ia_alto"
         const val MAP_CABLEBUS = "cablebus"
         const val MAP_SALIDAMETRO = "escom_salidametro"
+        const val MAP_PALAPAS_IA = "escom_palapas_ia"
 
         fun normalizeMapName(mapName: String?): String {
             if (mapName.isNullOrBlank()) return MAP_MAIN
@@ -72,6 +73,7 @@ class MapMatrixProvider {
                 lowerMap.contains("ia_medio") || lowerMap.contains("edificio_ia_medio") -> MAP_EDIFICIO_IA_MEDIO
                 lowerMap.contains("ia_alto") || lowerMap.contains("edificio_ia_alto") -> MAP_EDIFICIO_IA_ALTO
                 lowerMap.contains("cable") || lowerMap.contains("cablebus") -> MAP_CABLEBUS
+                lowerMap.contains("palapas_ia") -> MAP_PALAPAS_IA
 
                 // Si no coincide con ninguno de los anteriores, devolver el original
                 else -> mapName
@@ -105,6 +107,7 @@ class MapMatrixProvider {
         val EDIFICIO_IA_BAJO_TO_MAIN = Pair(5, 20)
 
         val EDIFICIO_IA_BAJO_TO_MEDIO = Pair(5, 20)
+        val MAIN_TO_PALAPAS_IA = Pair(1, 1)
 
         /**
          * Obtiene la matriz para el mapa especificado
@@ -128,14 +131,13 @@ class MapMatrixProvider {
                 MAP_EDIFICIO_IA_BAJO-> createEdificioIABajoMatrix()
                 MAP_EDIFICIO_IA_MEDIO-> createEdificioIAMedioMatrix()
                 MAP_EDIFICIO_IA_ALTO -> createEdificioIAAltoMatrix()
+                MAP_PALAPAS_IA -> createPalapasIAMapMatrix()
                 else -> createDefaultMatrix() // Por defecto, un mapa básico
             }
         }
 
 
-
-
-        /**
+        /*
          * Matriz para el mapa principal del campus
          */
         private fun createMainMapMatrix(): Array<Array<Int>> {
@@ -947,10 +949,57 @@ class MapMatrixProvider {
             return matrix
         }
 
+        /* Matriz para el mapa de palapas de IA del campus */
+        private fun createPalapasIAMapMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
 
+            // Configuración de bordes
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    // Bordes exteriores
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = WALL
+                    }
+                    // Zonas interactivas (edificios, entradas)
+                    else if (i == 10 && j == 15) {
+                        matrix[i][j] = INTERACTIVE // Entrada al edificio 2
+                    }
+                    // Zonas interactivas (edificios, entradas)
+                    else if (i == 10 && j == 23) {
+                        matrix[i][j] = INTERACTIVE // Entrada al edificio 4
+                    }
+                    else if (i == 4 && j == 11) {
+                        matrix[i][j] = INTERACTIVE // Entrada a Zacatenco
+                    }
+                    // Obstáculos (árboles, bancas, etc)
+                    else if (i % 7 == 0 && j % 8 == 0) {
+                        matrix[i][j] = INACCESSIBLE
+                    }
+                    // Caminos especiales
+                    else if ((i % 5 == 0 || j % 5 == 0) && i > 5 && j > 5) {
+                        matrix[i][j] = PATH
+                    }
 
+                }
+            }
+            // Explicitly set coordinates 29,22 and 29,23 as blue interactive points
+            matrix[28][27] = INTERACTIVE
 
+            matrix[5][25] = INTERACTIVE // Entrada al Estacionamiento de ESCOM
 
+            matrix[21][31] = INTERACTIVE // entrar edificio ia
+            // Áreas de juego específicas
+            // Zona central despejada
+            for (i in 15..25) {
+                for (j in 15..25) {
+                    matrix[i][j] = PATH
+                }
+            }
+            // Añadir punto interactivo para el nuevo mapa de Estacionamiento
+            matrix[5][25] = INTERACTIVE // Entrada al Estacionamiento de ESCOM
+
+            return matrix
+        }
 
 
         /**
@@ -1050,6 +1099,10 @@ class MapMatrixProvider {
                 return MAP_CAFETERIA
             }
 
+            if (mapId == MAP_MAIN && x == 31 && y == 10) {
+                return MAP_PALAPAS_IA
+            }
+
             // Resto de transiciones...
 
             return null
@@ -1072,6 +1125,7 @@ class MapMatrixProvider {
                 MAP_EDIFICIO_IA_BAJO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
                 MAP_EDIFICIO_IA_MEDIO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
                 MAP_EDIFICIO_IA_ALTO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
+                MAP_PALAPAS_IA -> Pair(2, 2)
 
                 else -> Pair(MAP_WIDTH / 2, MAP_HEIGHT / 2)
             }

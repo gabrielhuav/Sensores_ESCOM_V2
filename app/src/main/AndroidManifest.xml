@@ -109,6 +109,10 @@
             android:name=".presentation.components.ipn.zacatenco.escom.cablebus.Cablebus"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
+        <activity
+            android:name=".presentation.components.PalapasIA"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+
         <!-- DeviceList Activity -->
         <activity
             android:name=".data.map.Bluetooth.DeviceListActivity"
