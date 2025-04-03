@@ -1,17 +1,6 @@
-// server.js
-// Archivo principal del servidor WebSocket
 const express = require("express");
 const { WebSocketServer } = require("ws");
 const path = require("path");
-
-// Importar módulos para el juego de zombies
-const {
-    isValidMove,
-    calculateDistance,
-    moveZombieTowardsPlayer,
-    moveZombieRandomly,
-    isPlayerCaught
-} = require('./zombieController');
 
 const app = express();
 const PORT = 3000;
@@ -144,6 +133,7 @@ wss.on("connection", (ws) => {
 
                             if (hasChanges) {
                                 // Enviar actualización a todos los clientes
+
                                 const updateMessage = {
                                     type: "update",
                                     id: trimmedId,
@@ -169,10 +159,10 @@ wss.on("connection", (ws) => {
                         });
                     }
                     break;
-                case "zombie_game_update":
-                case "zombie_game_food":
-                    processZombieGameMessages(data);
-                    break;                
+                    case "zombie_game_update":
+                        case "zombie_game_food":
+                            processZombieGameMessages(data);
+                            break;                
             }
         } catch (error) {
             console.error("Error processing message:", error);
@@ -282,8 +272,7 @@ function startZombieGame(difficulty = 1) {
         zombieGame.zombies.push({
             id: `zombie_${i}`,
             position: { x, y },
-            target: null,
-            difficulty: difficulty // Añadir la dificultad al objeto zombie
+            target: null
         });
     }
     
@@ -427,7 +416,111 @@ function updateZombiePositions() {
     });
 }
 
+
+// También modificar moveZombieRandomly
+function moveZombieRandomly(zombie) {
+    // Generar movimientos aleatorios y elegir uno válido
+    const possibleMoves = [
+        { x: zombie.position.x, y: Math.max(0, zombie.position.y - 1) }, // Arriba
+        { x: Math.min(39, zombie.position.x + 1), y: zombie.position.y }, // Derecha
+        { x: zombie.position.x, y: Math.min(39, zombie.position.y + 1) }, // Abajo
+        { x: Math.max(0, zombie.position.x - 1), y: zombie.position.y }  // Izquierda
+    ];
+    
+    // Filtrar solo movimientos válidos
+    const validMoves = possibleMoves.filter(move => isValidMove(move.x, move.y));
+    
+    // Si hay movimientos válidos, elegir uno al azar
+    if (validMoves.length > 0) {
+        const randomIndex = Math.floor(Math.random() * validMoves.length);
+        zombie.position = validMoves[randomIndex];
+    }
+    // Si no hay movimientos válidos, el zombie se queda quieto
+}
+
+// 9. Función para calcular distancia entre dos puntos
+function calculateDistance(x1, y1, x2, y2) {
+    return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+}
+
+function moveZombieTowardsPlayer(zombie, playerData) {
+    // Calcular dirección hacia el jugador
+    const dx = playerData.x - zombie.position.x;
+    const dy = playerData.y - zombie.position.y;
+    
+    // Calcular posibles nuevas posiciones
+    const horizontalMove = {
+        x: zombie.position.x + (dx > 0 ? 1 : -1),
+        y: zombie.position.y
+    };
+    
+    const verticalMove = {
+        x: zombie.position.x,
+        y: zombie.position.y + (dy > 0 ? 1 : -1)
+    };
+    
+    // Verificar si los movimientos son válidos
+    const canMoveHorizontal = isValidMove(horizontalMove.x, horizontalMove.y);
+    const canMoveVertical = isValidMove(verticalMove.x, verticalMove.y);
+    
+    // Decidir movimiento basado en preferencia y validez
+    let newPosition;
+    
+    if (Math.abs(dx) > Math.abs(dy) && canMoveHorizontal) {
+        newPosition = horizontalMove;
+    } else if (Math.abs(dy) >= Math.abs(dx) && canMoveVertical) {
+        newPosition = verticalMove;
+    } else if (canMoveHorizontal) {
+        newPosition = horizontalMove;
+    } else if (canMoveVertical) {
+        newPosition = verticalMove;
+    } else {
+        // No hay movimiento válido
+        return;
+    }
+    
+    // En dificultad difícil, intentar movimiento diagonal si ambos son válidos
+    if (zombieGame.difficulty >= 3 && Math.random() > 0.6 && canMoveHorizontal && canMoveVertical) {
+        const diagonalMove = {
+            x: zombie.position.x + (dx > 0 ? 1 : -1),
+            y: zombie.position.y + (dy > 0 ? 1 : -1)
+        };
+        
+        if (isValidMove(diagonalMove.x, diagonalMove.y)) {
+            newPosition = diagonalMove;
+        }
+    }
+    
+    // Actualizar posición del zombie
+    zombie.position = newPosition;
+}
+
+// Función para verificar si un movimiento es válido
+function isValidMove(x, y) {
+    // Verificar límites del mapa
+    if (x < 0 || x >= 40 || y < 0 || y >= 40) {
+        return false;
+    }
+    
+    // Verificar la matriz de colisión (0 = espacio libre, 1 = obstáculo)
+    const cellType = cafeteriaCollisionMatrix[y][x]; // Nota: y primero, luego x
+    
+    // Permitir movimiento solo en espacios libres (0) o interactivos (2)
+    return cellType === 0 || cellType === 2;
+}
+
+function isPlayerCaught(zombie, playerData) {
+    const catchDistance = 2; // Distancia para considerar que ha atrapado a un jugador
+    const distance = calculateDistance(
+        zombie.position.x, zombie.position.y,
+        playerData.x, playerData.y
+    );
+    
+    return distance <= catchDistance;
+}
+
 const caughtPlayers = new Set();
+
 
 // Verificar si el zombie ha atrapado a algún jugador
 function checkZombieCollisions() {
@@ -462,6 +555,7 @@ function checkZombieCollisions() {
         }
     });
 }
+
 
 // Procesar mensajes relacionados con el minijuego del zombie
 function processZombieGameMessages(message) {
@@ -560,7 +654,39 @@ function processZombieGameMessages(message) {
     }
 }
 
-// Rutas administrativas para controlar el minijuego
+// Añadir procesamiento de mensajes para el minijuego zombie en la sección existente
+// Buscar la sección donde se manejan los mensajes en el switch y añadir:
+
+// En el evento "message" del WebSocket:
+wss.on("connection", (ws) => {
+    // [código existente]
+    initializeZombieGame();
+    ws.on("message", (message) => {
+        try {
+            const data = JSON.parse(message);
+            // [código existente]
+            
+            // Añadir esta parte al switch para procesar mensajes del minijuego
+            switch (data.type) {
+                // [casos existentes]
+                
+                case "zombie_game_update":
+                case "zombie_game_food":
+                    processZombieGameMessages(data);
+                    break;
+            }
+            
+        } catch (error) {
+            // [código existente]
+        }
+    });
+    
+    // [código existente]
+});
+
+// Comandos administrativos para controlar el minijuego
+// Puedes agregar un endpoint REST para controlar el juego desde fuera
+
 app.post("/admin/zombie/start", (req, res) => {
     const difficulty = req.body.difficulty || 1;
     startZombieGame(difficulty);
@@ -573,12 +699,22 @@ app.post("/admin/zombie/stop", (req, res) => {
 });
 
 app.get("/admin/zombie/state", (req, res) => {
-    res.json(zombieGame);
+    res.json(zombieState);
 });
 
 app.get("/admin/zombie/start-test", (req, res) => {
     startZombieGame(1);
     res.json({ message: "Minijuego zombie iniciado para pruebas", state: zombieGame });
+});
+
+app.get("/admin/zombie/force-update", (req, res) => {
+    if (zombieState.isActive) {
+        // Forzar una actualización inmediata
+        updateZombiePosition();
+        res.json({ message: "Actualización del zombie forzada", position: zombieState.position });
+    } else {
+        res.json({ message: "El zombie no está activo actualmente" });
+    }
 });
 
 app.get("/admin/zombie/list", (req, res) => {
@@ -588,4 +724,15 @@ app.get("/admin/zombie/list", (req, res) => {
         zombies: zombieGame.zombies,
         zombieCount: zombieGame.zombies.length
     });
+});
+
+app.post("/admin/zombie/start", (req, res) => {
+    const difficulty = req.body.difficulty || 1;
+    startZombieGame(difficulty);
+    res.json({ message: "Minijuego zombie iniciado", state: zombieGame });
+});
+
+app.post("/admin/zombie/stop", (req, res) => {
+    stopZombieGame();
+    res.json({ message: "Minijuego zombie detenido", state: zombieGame });
 });

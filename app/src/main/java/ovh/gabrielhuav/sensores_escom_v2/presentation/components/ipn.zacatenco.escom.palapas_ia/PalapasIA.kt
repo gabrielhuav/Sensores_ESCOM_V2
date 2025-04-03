@@ -329,7 +329,7 @@ class PalapasIA : AppCompatActivity(),
                 put("type", "zombie_game_update")
                 put("action", action)
                 put("player", playerName)
-                put("map", MapMatrixProvider.PALAPAS_IA)
+                put("map", MapMatrixProvider.MAP_PALAPAS_IA)
 
                 if (action == "start") {
                     put("difficulty", difficulty)
@@ -510,12 +510,12 @@ class PalapasIA : AppCompatActivity(),
 
         // Botón para volver al edificio 2
         btnBackToHome.setOnClickListener {
-            returnToBuilding2()
+            returnToMainMap()
         }
 
         // Botón BCK para volver
         btnB2.setOnClickListener {
-            returnToBuilding2()
+            returnToMainMap()
         }
 
         // Botón B1 para iniciar/detener el minijuego
@@ -555,7 +555,7 @@ class PalapasIA : AppCompatActivity(),
 
     }
 
-    private fun returnToBuilding2() {
+    private fun returnToMainMap() {
         // Si hay un juego activo, detenerlo primero
         if (zombieGameActive) {
             stopZombieGame()
@@ -566,7 +566,7 @@ class PalapasIA : AppCompatActivity(),
             ?: Pair(15, 16) // Por defecto, volver al pasillo principal
 
         // Crear intent para volver al Edificio 2
-        val intent = Intent(this, BuildingNumber2::class.java).apply {
+        val intent = Intent(this, GameplayActivity::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("IS_CONNECTED", gameState.isConnected) // Pasar el estado de conexión
@@ -684,8 +684,8 @@ class PalapasIA : AppCompatActivity(),
     // Implementación MapTransitionListener
     override fun onMapTransitionRequested(targetMap: String, initialPosition: Pair<Int, Int>) {
         when (targetMap) {
-            MapMatrixProvider.MAP_BUILDING2 -> {
-                returnToBuilding2()
+            MapMatrixProvider.MAP_MAIN -> {
+                returnToMainMap()
             }
             else -> {
                 Log.d(TAG, "Mapa destino no reconocido: $targetMap")
