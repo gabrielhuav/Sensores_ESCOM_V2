@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.RectF
 import android.os.Handler
 import android.os.Looper
 import android.util.AttributeSet
@@ -15,6 +16,7 @@ import android.view.View
 import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.cafeteria.FogOfWarRenderer
+import kotlin.math.min
 
 class MapView @JvmOverloads constructor(
     context: Context,
@@ -31,7 +33,7 @@ class MapView @JvmOverloads constructor(
     private val renderer = MapRenderer()
     private val gestureHandler = MapGestureHandler(this)
     val playerManager = PlayerManager()
-    private val mapState = MapState()
+    val mapState = MapState()
 
     // Inicializar el handler inmediatamente en la declaración para evitar nulos
     private val handler = Handler(Looper.getMainLooper())
@@ -444,27 +446,46 @@ class MapView @JvmOverloads constructor(
         return handled
     }
 
+    // Add interface for car rendering
+    interface CarRenderer {
+        fun drawCars(canvas: Canvas)
+    }
+
+    // Add fog of war renderer
     private var fogOfWarRenderer: FogOfWarRenderer? = null
     private var fogOfWarEnabled = false
+    
+    // Add car renderer
+    private var carRenderer: CarRenderer? = null
 
+    // Add this method to set the fog of war renderer
     fun setFogOfWarRenderer(renderer: FogOfWarRenderer) {
         fogOfWarRenderer = renderer
     }
 
+    // Add this method to enable/disable fog of war
     fun setFogOfWarEnabled(enabled: Boolean) {
         fogOfWarEnabled = enabled
-        invalidate() // Forzar redibujado
+        invalidate()
     }
 
-    fun isFogOfWarEnabled(): Boolean = fogOfWarEnabled
-
-
+    // Add this method to set the car renderer
+    fun setCarRenderer(renderer: CarRenderer) {
+        carRenderer = renderer
+        invalidate()
+    }
+    
+    // The CarRenderer interface is already defined at line 468
+    
+    // Modify the onDraw method to include car rendering with proper transformations
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-
+        
         // Usar la matriz del mapa actual para el dibujado
         mapState.setMapMatrix(mapMatrix)
         renderer.draw(canvas, mapState, playerManager)
+        
+        // Draw fog of war if enabled
         if (fogOfWarEnabled && fogOfWarRenderer != null) {
             playerManager.getLocalPlayerPosition()?.let { playerPos ->
                 // Calcular el tamaño de celda para el renderizado de la niebla
@@ -472,12 +493,12 @@ class MapView @JvmOverloads constructor(
                 val bitmapHeight = mapState.backgroundBitmap?.height?.toFloat() ?: return
                 val cellWidth = bitmapWidth / MapMatrixProvider.MAP_WIDTH
                 val cellHeight = bitmapHeight / MapMatrixProvider.MAP_HEIGHT
-
+        
                 // Guardar estado del canvas
                 canvas.save()
                 canvas.translate(mapState.offsetX, mapState.offsetY)
                 canvas.scale(mapState.scaleFactor, mapState.scaleFactor)
-
+        
                 // Dibujar la niebla de guerra
                 fogOfWarRenderer?.drawFogOfWar(
                     canvas,
@@ -486,10 +507,26 @@ class MapView @JvmOverloads constructor(
                     cellHeight,
                     18 // Radio de visión predeterminado (puedes ajustarlo según necesites)
                 )
-
+        
                 // Restaurar estado del canvas
                 canvas.restore()
             }
+        }
+        
+        // Draw cars on top of everything else, applying map transformations
+        if (carRenderer != null) {
+            // Save canvas state
+            canvas.save()
+            
+            // Apply map transformations (scale and offset)
+            canvas.translate(mapState.offsetX, mapState.offsetY)
+            canvas.scale(mapState.scaleFactor, mapState.scaleFactor)
+            
+            // Draw the cars
+            carRenderer?.drawCars(canvas)
+            
+            // Restore canvas state
+            canvas.restore()
         }
     }
 
@@ -657,5 +694,29 @@ class MapView @JvmOverloads constructor(
         val specialEntitiesCount = playerManager.getSpecialEntitiesCount()
         Log.d("MapView", "Entidades especiales registradas: $specialEntitiesCount")
         playerManager.logSpecialEntities()
+    }
+        // Add this method to get player rectangle in map coordinates
+    // Fixed getPlayerRect method with proper type handling
+    fun getPlayerRect(position: Pair<Int, Int>): RectF? {
+        val bitmap = mapState.backgroundBitmap ?: return null
+        
+        // Calculate the cell size based on the bitmap dimensions and matrix size
+        // Using MapMatrixProvider constants instead of mapMatrix.getWidth/getHeight
+        val cellWidth = bitmap.width / MapMatrixProvider.MAP_WIDTH.toFloat()
+        val cellHeight = bitmap.height / MapMatrixProvider.MAP_HEIGHT.toFloat()
+        
+        // Calculate player position in pixels
+        val playerX = position.first * cellWidth
+        val playerY = position.second * cellHeight
+        
+        // Create a rectangle for the player (make it slightly smaller than a cell)
+        // Explicitly using Float for all calculations to avoid ambiguity
+        val playerSize = min(cellWidth, cellHeight) * 0.8f
+        return RectF(
+            playerX + (cellWidth - playerSize) / 2f,
+            playerY + (cellHeight - playerSize) / 2f,
+            playerX + (cellWidth + playerSize) / 2f,
+            playerY + (cellHeight + playerSize) / 2f
+        )
     }
 }
