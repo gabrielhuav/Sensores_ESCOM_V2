@@ -86,10 +86,8 @@ class SalidaMetro : AppCompatActivity(),
             return !isGreen && distance < 80f // Aumentar distancia de detección
         }
     }
-      // Nuevo: Sistema de peatones con IA - ELIMINADO
-    // private val pedestrians = mutableListOf<Pedestrian>()
-    // private val pedestrianColors = listOf(Color.MAGENTA, Color.YELLOW, Color.CYAN, Color.GREEN)    // ELIMINADO: Clase Pedestrian
-      private fun initializeTrafficLights() {
+    
+    private fun initializeTrafficLights() {
         // Colocar semáforos en intersecciones críticas
         val mapBitmap = mapView.mapState.backgroundBitmap ?: return
         
@@ -130,8 +128,52 @@ class SalidaMetro : AppCompatActivity(),
                 3 -> light.isGreen = false // Todos en rojo (fase de parada)
             }
         }
+          Log.d("TrafficLight", "Updated lights - Cycle: $trafficLightCycle")
+    }
+    
+    // Funciones del sistema de clima
+    private fun initializeWeather() {
+        currentWeather = WeatherState.SUNNY
+        weatherAlpha = 0f
+        rainDrops.clear()
         
-        Log.d("TrafficLight", "Updated lights - Cycle: $trafficLightCycle")
+        // Inicializar algunas gotas de lluvia
+        val mapBitmap = mapView.mapState.backgroundBitmap
+        if (mapBitmap != null) {
+            for (i in 0 until 50) {
+                rainDrops.add(RainDrop(
+                    Math.random().toFloat() * mapBitmap.width,
+                    Math.random().toFloat() * mapBitmap.height
+                ))
+            }
+        }
+    }
+    
+    private fun changeWeather() {
+        val newWeather = WeatherState.values()[(Math.random() * WeatherState.values().size).toInt()]
+        currentWeather = newWeather
+        
+        when (currentWeather) {
+            WeatherState.SUNNY -> weatherAlpha = 0f
+            WeatherState.CLOUDY -> weatherAlpha = 0.3f
+            WeatherState.RAINY -> weatherAlpha = 0.5f
+            WeatherState.NIGHT -> weatherAlpha = 0.7f
+        }
+        
+        Log.d("Weather", "Weather changed to: $currentWeather")
+    }
+    
+    private fun updateWeather() {
+        if (currentWeather == WeatherState.RAINY) {
+            // Actualizar gotas de lluvia
+            for (drop in rainDrops) {
+                drop.update()
+            }
+        }
+    }
+    
+    private fun startWeatherSystem() {
+        handler.post(weatherChangeRunnable)
     }
 
     // Car class to represent each moving car - update to use map coordinates
@@ -164,13 +206,42 @@ class SalidaMetro : AppCompatActivity(),
                 rect.top = y
                 rect.bottom = y + height
             }
+        }    }
+
+    // Sistema de clima dinámico 
+    private enum class WeatherState { SUNNY, CLOUDY, RAINY, NIGHT }
+    private var currentWeather = WeatherState.SUNNY
+    private val rainDrops = mutableListOf<RainDrop>()
+    private val WEATHER_CHANGE_INTERVAL = 30000L
+    private var weatherAlpha = 0f
+    
+    // Clase para gotas de lluvia
+    inner class RainDrop(
+        var x: Float,
+        var y: Float,
+        val speed: Float = 8f + (Math.random().toFloat() * 4f),
+        val length: Float = 15f + (Math.random().toFloat() * 10f)
+    ) {
+        fun update() {
+            y += speed
+            x += speed * 0.3f // Efecto de viento diagonal
+            
+            // Resetear la gota cuando salga de la pantalla
+            val mapBitmap = mapView.mapState.backgroundBitmap
+            if (mapBitmap != null && y > mapBitmap.height) {
+                y = -length
+                x = Math.random().toFloat() * mapBitmap.width
+            }
         }
-    }    // Sistema de clima dinámico - ELIMINADO
-    // private enum class WeatherState { SUNNY, CLOUDY, RAINY, NIGHT }
-    // private var currentWeather = WeatherState.SUNNY
-    // private val rainDrops = mutableListOf<RainDrop>()
-    // private val WEATHER_CHANGE_INTERVAL = 30000L
-    // private var weatherAlpha = 0f    // ELIMINADO: Clases RainDrop y Pedestrian
+    }
+    
+    // Runnable para cambios de clima
+    private val weatherChangeRunnable = object : Runnable {
+        override fun run() {
+            changeWeather()
+            handler.postDelayed(this, WEATHER_CHANGE_INTERVAL)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -198,11 +269,13 @@ class SalidaMetro : AppCompatActivity(),
                 // Importante: Enviar un update inmediato para que otros jugadores sepan dónde estamos
                 if (gameState.isConnected) {
                     serverConnectionManager.sendUpdateMessage(playerName, gameState.playerPosition, MapMatrixProvider.MAP_SALIDAMETRO)
-                }                // Initialize enhanced systems after mapView is created (solo autos y semáforos)
+                }                // Initialize enhanced systems after mapView is created (autos, semáforos y clima)
                 initializeCars()
                 initializeTrafficLights()
+                initializeWeather()
                 startCarAnimation()
                 startTrafficLightCycle()
+                startWeatherSystem()
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error en onCreate: ${e.message}")
@@ -264,7 +337,7 @@ class SalidaMetro : AppCompatActivity(),
                 val x = mapWidth * (i / 5f) + (Math.random().toFloat() * mapWidth * 0.2f)
                 val color = carColors[i % carColors.size]
                 carList.add(Car(x, y, 40f, 20f, speed, color))
-            }            // Set the enhanced renderer for MapView (solo autos y semáforos)
+            }            // Set the enhanced renderer for MapView (autos, semáforos y clima)
             mapView.setCarRenderer(object : MapView.CarRenderer {
                 override fun drawCars(canvas: Canvas) {
                     val paint = Paint().apply {
@@ -308,6 +381,43 @@ class SalidaMetro : AppCompatActivity(),
                             paint
                         )
                     }
+                    
+                    // Draw weather effects
+                    drawWeatherEffects(canvas, paint)
+                }
+                
+                private fun drawWeatherEffects(canvas: Canvas, paint: Paint) {
+                    when (currentWeather) {
+                        WeatherState.RAINY -> {
+                            // Dibujar gotas de lluvia
+                            paint.color = Color.argb(150, 200, 200, 255)
+                            paint.strokeWidth = 2f
+                            paint.style = Paint.Style.STROKE
+                            
+                            for (drop in rainDrops) {
+                                canvas.drawLine(
+                                    drop.x, drop.y,
+                                    drop.x + drop.length * 0.3f, drop.y + drop.length,
+                                    paint
+                                )
+                            }
+                        }
+                        WeatherState.NIGHT -> {
+                            // Oscurecer la pantalla
+                            paint.color = Color.argb((weatherAlpha * 255).toInt(), 0, 0, 100)
+                            paint.style = Paint.Style.FILL
+                            canvas.drawRect(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat(), paint)
+                        }
+                        WeatherState.CLOUDY -> {
+                            // Efecto nublado
+                            paint.color = Color.argb((weatherAlpha * 100).toInt(), 128, 128, 128)
+                            paint.style = Paint.Style.FILL
+                            canvas.drawRect(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat(), paint)
+                        }
+                        WeatherState.SUNNY -> {
+                            // Sin efectos adicionales
+                        }
+                    }
                 }
             })
         }
@@ -341,6 +451,9 @@ class SalidaMetro : AppCompatActivity(),
         
         // Check for collisions with player
         checkPlayerCarCollisions()
+        
+        // Update weather effects
+        updateWeather()
         
         // Request redraw
         mapView.invalidate()
@@ -881,6 +994,7 @@ class SalidaMetro : AppCompatActivity(),
         // Stop all animations when activity is paused
         handler.removeCallbacks(carUpdateRunnable)
         handler.removeCallbacks(trafficLightRunnable)
+        handler.removeCallbacks(weatherChangeRunnable)
         movementManager.stopMovement()
     }
 
@@ -889,6 +1003,7 @@ class SalidaMetro : AppCompatActivity(),
         // Make sure to remove all callbacks to prevent memory leaks
         handler.removeCallbacks(carUpdateRunnable)
         handler.removeCallbacks(trafficLightRunnable)
+        handler.removeCallbacks(weatherChangeRunnable)
         bluetoothManager.cleanup()
     }
     companion object {
