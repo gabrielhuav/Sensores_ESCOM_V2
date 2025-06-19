@@ -2,7 +2,10 @@ package ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.
 
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
+import android.net.Uri // <-- Importar Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.MotionEvent
 import android.widget.Button
@@ -16,15 +19,12 @@ import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.BuildingNumber2
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.GameplayActivity
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.Zacatenco
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
-import android.net.Uri // <-- Importar Uri
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
-import android.os.Handler
-import android.os.Looper
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.Zacatenco
 import kotlin.math.min
 
 class SalidaMetro : AppCompatActivity(),
@@ -58,6 +58,82 @@ class SalidaMetro : AppCompatActivity(),
             handler.postDelayed(this, 16) // ~60fps
         }
     }
+      // Sistema de semáforos mejorado
+    private val trafficLights = mutableListOf<TrafficLight>()
+    private var trafficLightCycle = 0
+    private val TRAFFIC_LIGHT_CYCLE_DURATION = 3000L // 3 segundos por fase
+    private val trafficLightRunnable = object : Runnable {
+        override fun run() {
+            updateTrafficLights()
+            handler.postDelayed(this, TRAFFIC_LIGHT_CYCLE_DURATION)
+        }
+    }
+      // Clase para manejar semáforos simplificada
+    inner class TrafficLight(
+        val x: Float,
+        val y: Float,
+        val isVertical: Boolean // true para norte-sur, false para este-oeste
+    ) {
+        var isGreen = true // Empezar en verde
+        val rect = RectF(x, y, x + 25f, y + 35f) // Hacer más grande
+        
+        fun shouldStopCar(car: Car): Boolean {
+            val distance = if (isVertical) {
+                kotlin.math.abs(car.x - x)
+            } else {
+                kotlin.math.abs(car.y - y)
+            }
+            return !isGreen && distance < 80f // Aumentar distancia de detección
+        }
+    }
+      // Nuevo: Sistema de peatones con IA - ELIMINADO
+    // private val pedestrians = mutableListOf<Pedestrian>()
+    // private val pedestrianColors = listOf(Color.MAGENTA, Color.YELLOW, Color.CYAN, Color.GREEN)    // ELIMINADO: Clase Pedestrian
+      private fun initializeTrafficLights() {
+        // Colocar semáforos en intersecciones críticas
+        val mapBitmap = mapView.mapState.backgroundBitmap ?: return
+        
+        // Limpiar semáforos existentes
+        trafficLights.clear()
+        
+        // Semáforo principal cerca del metro
+        trafficLights.add(TrafficLight(
+            mapBitmap.width * 0.8f,
+            mapBitmap.height * 0.75f,
+            false // horizontal
+        ))
+        
+        // Semáforo secundario
+        trafficLights.add(TrafficLight(
+            mapBitmap.width * 0.4f,
+            mapBitmap.height * 0.8f,
+            true // vertical
+        ))
+        
+        // Semáforo adicional para más realismo
+        trafficLights.add(TrafficLight(
+            mapBitmap.width * 0.6f,
+            mapBitmap.height * 0.85f,
+            false // horizontal
+        ))
+    }
+    
+    private fun updateTrafficLights() {
+        trafficLightCycle = (trafficLightCycle + 1) % 4 // Ciclo de 4 fases
+        
+        trafficLights.forEachIndexed { index, light ->
+            // Alternar entre verde y rojo de manera más natural
+            when (trafficLightCycle) {
+                0 -> light.isGreen = (index % 2 == 0) // Semáforos pares en verde
+                1 -> light.isGreen = true // Todos en verde (fase de transición)
+                2 -> light.isGreen = (index % 2 == 1) // Semáforos impares en verde
+                3 -> light.isGreen = false // Todos en rojo (fase de parada)
+            }
+        }
+        
+        Log.d("TrafficLight", "Updated lights - Cycle: $trafficLightCycle")
+    }
+
     // Car class to represent each moving car - update to use map coordinates
     inner class Car(
         var x: Float,
@@ -89,7 +165,12 @@ class SalidaMetro : AppCompatActivity(),
                 rect.bottom = y + height
             }
         }
-    }
+    }    // Sistema de clima dinámico - ELIMINADO
+    // private enum class WeatherState { SUNNY, CLOUDY, RAINY, NIGHT }
+    // private var currentWeather = WeatherState.SUNNY
+    // private val rainDrops = mutableListOf<RainDrop>()
+    // private val WEATHER_CHANGE_INTERVAL = 30000L
+    // private var weatherAlpha = 0f    // ELIMINADO: Clases RainDrop y Pedestrian
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -117,10 +198,11 @@ class SalidaMetro : AppCompatActivity(),
                 // Importante: Enviar un update inmediato para que otros jugadores sepan dónde estamos
                 if (gameState.isConnected) {
                     serverConnectionManager.sendUpdateMessage(playerName, gameState.playerPosition, MapMatrixProvider.MAP_SALIDAMETRO)
-                }
-                // Initialize cars after mapView is created
+                }                // Initialize enhanced systems after mapView is created (solo autos y semáforos)
                 initializeCars()
+                initializeTrafficLights()
                 startCarAnimation()
+                startTrafficLightCycle()
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error en onCreate: ${e.message}")
@@ -182,17 +264,49 @@ class SalidaMetro : AppCompatActivity(),
                 val x = mapWidth * (i / 5f) + (Math.random().toFloat() * mapWidth * 0.2f)
                 val color = carColors[i % carColors.size]
                 carList.add(Car(x, y, 40f, 20f, speed, color))
-            }
-            // Set the custom renderer for MapView
+            }            // Set the enhanced renderer for MapView (solo autos y semáforos)
             mapView.setCarRenderer(object : MapView.CarRenderer {
                 override fun drawCars(canvas: Canvas) {
                     val paint = Paint().apply {
                         style = Paint.Style.FILL
+                        isAntiAlias = true
                     }
-                    // Draw each car
+                    
+                    // Draw cars
                     for (car in carList) {
                         paint.color = car.color
                         canvas.drawRect(car.rect, paint)
+                        
+                        // Añadir un borde para mejor visualización
+                        paint.color = Color.BLACK
+                        paint.style = Paint.Style.STROKE
+                        paint.strokeWidth = 2f
+                        canvas.drawRect(car.rect, paint)
+                        paint.style = Paint.Style.FILL
+                    }
+                    
+                    // Draw traffic lights
+                    for (light in trafficLights) {
+                        // Dibujar el semáforo más visible
+                        paint.color = if (light.isGreen) Color.GREEN else Color.RED
+                        canvas.drawRect(light.rect, paint)
+                        
+                        // Añadir borde al semáforo
+                        paint.color = Color.BLACK
+                        paint.style = Paint.Style.STROKE
+                        paint.strokeWidth = 3f
+                        canvas.drawRect(light.rect, paint)
+                        paint.style = Paint.Style.FILL
+                        
+                        // Draw light pole
+                        paint.color = Color.GRAY
+                        canvas.drawRect(
+                            light.rect.centerX() - 3f,
+                            light.rect.bottom,
+                            light.rect.centerX() + 3f,
+                            light.rect.bottom + 25f,
+                            paint
+                        )
                     }
                 }
             })
@@ -202,14 +316,27 @@ class SalidaMetro : AppCompatActivity(),
     private fun startCarAnimation() {
         handler.post(carUpdateRunnable)
     }
-
-    private fun updateCars() {
+    
+    private fun startTrafficLightCycle() {
+        handler.post(trafficLightRunnable)
+    }    private fun updateCars() {
         // Update car positions
         for (car in carList) {
-            car.update()
+            // Verificar semáforos antes de actualizar
+            var shouldStop = false
+            for (light in trafficLights) {
+                if (light.shouldStopCar(car)) {
+                    shouldStop = true
+                    break
+                }
+            }
+            
+            if (!shouldStop) {
+                car.update()
+            }
         }
         
-        // Apply collision prevention
+        // Apply collision prevention between cars
         preventCollisions()
         
         // Check for collisions with player
@@ -390,33 +517,94 @@ class SalidaMetro : AppCompatActivity(),
             handleButtonAPress()
         }
     }
-    
-    // Método para manejar la pulsación del botón A
+      // Método para manejar la pulsación del botón A
     private fun handleButtonAPress() {
         val position = gameState.playerPosition
         when {
+            // Puntos de interés principales
             position.first == 35 && position.second == 5 -> {
-                // Mostrar información del Metro y enlace
                 showInfoDialog(
-                    "Metro",
-                    "Línea 6 del Metro - Estación Instituto del Petróleo\n\nHorario: 5:00 - 24:00\nTarifa: $5.00 MXN",
-                    "https://www.metro.cdmx.gob.mx/" // <-- URL del Metro CDMX
+                    "Metro CDMX",
+                    "Línea 6 - Estación Instituto del Petróleo\n\n" +
+                    "🚇 Horario: 5:00 - 24:00\n" +
+                    "💰 Tarifa: $5.00 MXN\n" +
+                    "📍 Conexiones: Línea 6 completa",
+                    "https://www.metro.cdmx.gob.mx/"
                 )
             }
             position.first == 31 && position.second == 27 -> {
-                // Mostrar información del Trolebús y enlace
                 showInfoDialog(
                     "Trolebús",
-                    "Línea K del Trolebús - Estación Politécnico\n\nHorario: 5:30 - 23:30\nTarifa: $4.00 MXN",
-                    "https://www.ste.cdmx.gob.mx/trolebus" // <-- URL del Trolebús CDMX
+                    "Línea K - Estación Politécnico\n\n" +
+                    "🚌 Horario: 5:30 - 23:30\n" +
+                    "💰 Tarifa: $4.00 MXN\n" +
+                    "🗺️ Ruta: Politécnico - Metro Indios Verdes",
+                    "https://www.ste.cdmx.gob.mx/trolebus"
                 )
             }
             position.first == 17 && position.second == 22 -> {
-                // Mostrar información de la Ford y enlace
                 showInfoDialog(
-                    "Ford",
-                    "Agencia Ford Lindavista\n\nHorario: 9:00 - 18:00\nServicio de ventas y mantenimiento",
-                    "https://www.fordmylsa.mx/" // <-- URL de Ford Lindavista
+                    "Ford Lindavista",
+                    "Agencia Automotriz Ford\n\n" +
+                    "🚗 Horario: 9:00 - 18:00\n" +
+                    "🔧 Servicios: Ventas y mantenimiento\n" +
+                    "📞 Atención al cliente disponible",
+                    "https://www.fordmylsa.mx/"
+                )
+            }
+            // Nuevos puntos de interés
+            position.first == 28 && position.second == 8 -> {
+                showInfoDialog(
+                    "Farmacia San Pablo",
+                    "Farmacia 24 horas\n\n" +
+                    "💊 Horario: 24/7\n" +
+                    "🏥 Servicios: Medicamentos, consultas médicas\n" +
+                    "💳 Acepta tarjetas y efectivo"
+                )
+            }
+            position.first == 35 && position.second == 15 -> {
+                showInfoDialog(
+                    "Cajero Automático",
+                    "BBVA Bancomer\n\n" +
+                    "💳 Disponible 24/7\n" +
+                    "💰 Retiros, consultas, depósitos\n" +
+                    "🏦 Sin comisión para clientes BBVA"
+                )
+            }
+            position.first == 25 && position.second == 30 -> {
+                showInfoDialog(
+                    "Restaurante El Buen Sazón",
+                    "Comida mexicana tradicional\n\n" +
+                    "🍽️ Horario: 8:00 - 22:00\n" +
+                    "🌮 Especialidad: Tacos y quesadillas\n" +
+                    "💰 Precios accesibles"
+                )
+            }
+            position.first == 8 && position.second == 12 -> {
+                showInfoDialog(
+                    "OXXO",
+                    "Tienda de conveniencia\n\n" +
+                    "🏪 Horario: 24/7\n" +
+                    "🛒 Productos: Comida, bebidas, servicios\n" +
+                    "💳 Pago de servicios disponible"
+                )
+            }
+            position.first == 12 && position.second == 25 -> {
+                showInfoDialog(
+                    "Parada de Autobús",
+                    "Transporte público urbano\n\n" +
+                    "🚌 Rutas: 1, 15, 42, 108\n" +
+                    "⏰ Cada 10-15 minutos\n" +
+                    "💰 Tarifa: $5.50 MXN"
+                )
+            }
+            position.first == 30 && position.second == 18 -> {
+                showInfoDialog(
+                    "Plaza Lindavista",
+                    "Centro comercial\n\n" +
+                    "🛍️ Horario: 10:00 - 22:00\n" +
+                    "🏪 Tiendas: Ropa, electrónicos, comida\n" +
+                    "🍕 Área de comidas en planta alta"
                 )
             }
         }
@@ -444,24 +632,30 @@ class SalidaMetro : AppCompatActivity(),
 
         builder.show()
     }
+    
+    // Sobrecarga para diálogos sin URL
+    private fun showInfoDialog(title: String, message: String) {
+        showInfoDialog(title, message, null)
+    }
 
     private fun checkPositionForMapChange(position: Pair<Int, Int>) {
-        // Comprobar múltiples ubicaciones de transición
-        when {
-            position.first == 35 && position.second == 5 -> {
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para ver datos del Metro", Toast.LENGTH_SHORT).show()
-                }
-            }
-            position.first == 31 && position.second == 27 -> {
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para ver datos del Trolebus", Toast.LENGTH_SHORT).show()
-                }
-            }
-            position.first == 17 && position.second == 22 -> {
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para ver datos de la Ford", Toast.LENGTH_SHORT).show()
-                }
+        // Definir mensajes específicos para cada punto de interés
+        val message = when {
+            position.first == 35 && position.second == 5 -> "🚇 Presiona A para ver información del Metro"
+            position.first == 31 && position.second == 27 -> "🚌 Presiona A para ver información del Trolebús"
+            position.first == 17 && position.second == 22 -> "🚗 Presiona A para ver información de Ford"
+            position.first == 28 && position.second == 8 -> "💊 Presiona A para ver información de la Farmacia"
+            position.first == 35 && position.second == 15 -> "💳 Presiona A para usar el Cajero Automático"
+            position.first == 25 && position.second == 30 -> "🍽️ Presiona A para ver menú del Restaurante"
+            position.first == 8 && position.second == 12 -> "🏪 Presiona A para ver servicios de OXXO"
+            position.first == 12 && position.second == 25 -> "🚌 Presiona A para ver horarios de Autobús"
+            position.first == 30 && position.second == 18 -> "🛍️ Presiona A para ver tiendas de la Plaza"
+            else -> null
+        }
+        
+        message?.let {
+            runOnUiThread {
+                Toast.makeText(this, it, Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -682,19 +876,19 @@ class SalidaMetro : AppCompatActivity(),
         }
         // Restart car animation
         startCarAnimation()
-    }
-
-    override fun onPause() {
+    }    override fun onPause() {
         super.onPause()
-        // Stop car animation when activity is paused
+        // Stop all animations when activity is paused
         handler.removeCallbacks(carUpdateRunnable)
+        handler.removeCallbacks(trafficLightRunnable)
         movementManager.stopMovement()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        // Make sure to remove callbacks to prevent memory leaks
+        // Make sure to remove all callbacks to prevent memory leaks
         handler.removeCallbacks(carUpdateRunnable)
+        handler.removeCallbacks(trafficLightRunnable)
         bluetoothManager.cleanup()
     }
     companion object {
