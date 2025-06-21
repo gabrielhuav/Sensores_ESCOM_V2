@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.widget.Button
 import android.widget.FrameLayout
@@ -67,8 +68,7 @@ class SalidaMetro : AppCompatActivity(),
             updateTrafficLights()
             handler.postDelayed(this, TRAFFIC_LIGHT_CYCLE_DURATION)
         }
-    }
-      // Clase para manejar semáforos simplificada
+    }    // Clase para manejar semáforos simplificada
     inner class TrafficLight(
         val x: Float,
         val y: Float,
@@ -76,18 +76,47 @@ class SalidaMetro : AppCompatActivity(),
     ) {
         var isGreen = true // Empezar en verde
         val rect = RectF(x, y, x + 25f, y + 35f) // Hacer más grande
-        
-        fun shouldStopCar(car: Car): Boolean {
+          fun shouldStopCar(car: Car): Boolean {
+            if (isGreen) return false // Si está en verde, no detener
+            
+            // Los autos se mueven hacia la izquierda (x decrece)
+            // Solo detener si el semáforo está ADELANTE del auto
+            val isTrafficLightAhead = car.x > x
+            
+            if (!isTrafficLightAhead) return false // Si ya pasó el semáforo, no detener
+            
             val distance = if (isVertical) {
                 kotlin.math.abs(car.x - x)
             } else {
                 kotlin.math.abs(car.y - y)
             }
-            return !isGreen && distance < 80f // Aumentar distancia de detección
+            
+            // Solo detener si está cerca Y el semáforo está adelante
+            return distance < 80f
+        }
+        
+        fun shouldStopCar(fordCar: FordCar): Boolean {
+            if (isGreen) return false // Si está en verde, no detener
+            
+            // El auto de la Ford también se mueve hacia la izquierda cuando está en la carretera
+            if (fordCar.movingDown) return false // Si está bajando, no verificar semáforos
+            
+            // Solo detener si el semáforo está ADELANTE del auto de la Ford
+            val isTrafficLightAhead = fordCar.x > x
+            
+            if (!isTrafficLightAhead) return false // Si ya pasó el semáforo, no detener
+            
+            val distance = if (isVertical) {
+                kotlin.math.abs(fordCar.x - x)
+            } else {
+                kotlin.math.abs(fordCar.y - y)
+            }
+            
+            // Solo detener si está cerca Y el semáforo está adelante
+            return distance < 80f
         }
     }
-    
-    private fun initializeTrafficLights() {
+      private fun initializeTrafficLights() {
         // Colocar semáforos en intersecciones críticas
         val mapBitmap = mapView.mapState.backgroundBitmap ?: return
         
@@ -107,28 +136,23 @@ class SalidaMetro : AppCompatActivity(),
             mapBitmap.height * 0.8f,
             true // vertical
         ))
-        
-        // Semáforo adicional para más realismo
-        trafficLights.add(TrafficLight(
-            mapBitmap.width * 0.6f,
-            mapBitmap.height * 0.85f,
-            false // horizontal
-        ))
-    }
-    
-    private fun updateTrafficLights() {
-        trafficLightCycle = (trafficLightCycle + 1) % 4 // Ciclo de 4 fases
+    }    private fun updateTrafficLights() {
+        trafficLightCycle = (trafficLightCycle + 1) % 4 // Ciclo de 4 fases para más variación
         
         trafficLights.forEachIndexed { index, light ->
-            // Alternar entre verde y rojo de manera más natural
+            // Alternar los semáforos de manera más visible
             when (trafficLightCycle) {
-                0 -> light.isGreen = (index % 2 == 0) // Semáforos pares en verde
-                1 -> light.isGreen = true // Todos en verde (fase de transición)
-                2 -> light.isGreen = (index % 2 == 1) // Semáforos impares en verde
-                3 -> light.isGreen = false // Todos en rojo (fase de parada)
+                0 -> light.isGreen = (index == 0) // Solo el primer semáforo en verde
+                1 -> light.isGreen = true         // Todos en verde
+                2 -> light.isGreen = (index == 1) // Solo el segundo semáforo en verde
+                3 -> light.isGreen = false        // Todos en rojo
             }
         }
-          Log.d("TrafficLight", "Updated lights - Cycle: $trafficLightCycle")
+        
+        Log.d("TrafficLight", "Updated lights - Cycle: $trafficLightCycle")
+        Log.d("TrafficLight", "Light states: ${trafficLights.mapIndexed { index, light -> 
+            "Light $index at (${light.x.toInt()}, ${light.y.toInt()}): ${if (light.isGreen) "GREEN" else "RED"}" 
+        }}")
     }
     
     // Funciones del sistema de clima
@@ -171,9 +195,18 @@ class SalidaMetro : AppCompatActivity(),
             }
         }
     }
-    
-    private fun startWeatherSystem() {
+      private fun startWeatherSystem() {
         handler.post(weatherChangeRunnable)
+    }
+    
+    // Método para resetear el estado del easter egg al entrar al mapa
+    private fun resetEasterEggState() {
+        easterEggTriggered = false
+        timeAtEasterEggPosition = 0L
+        isAtEasterEggPosition = false
+        fordCarAnimation = null
+        showingEasterEggMessage = false
+        Log.d(TAG, "Easter egg state reset para nueva entrada al mapa")
     }
 
     // Car class to represent each moving car - update to use map coordinates
@@ -206,16 +239,22 @@ class SalidaMetro : AppCompatActivity(),
                 rect.top = y
                 rect.bottom = y + height
             }
-        }    }
-
-    // Sistema de clima dinámico 
+        }    }    // Sistema de clima dinámico 
     private enum class WeatherState { SUNNY, CLOUDY, RAINY, NIGHT }
     private var currentWeather = WeatherState.SUNNY
     private val rainDrops = mutableListOf<RainDrop>()
     private val WEATHER_CHANGE_INTERVAL = 30000L
     private var weatherAlpha = 0f
     
-    // Clase para gotas de lluvia
+    // Easter Egg del auto de la Ford
+    private var easterEggTriggered = false
+    private var timeAtEasterEggPosition = 0L
+    private var isAtEasterEggPosition = false
+    private val EASTER_EGG_POSITION = Pair(7, 22)
+    private val EASTER_EGG_TIME_REQUIRED = 5000L // 5 segundos
+    private var fordCarAnimation: FordCar? = null
+    private var showingEasterEggMessage = false
+      // Clase para gotas de lluvia
     inner class RainDrop(
         var x: Float,
         var y: Float,
@@ -233,13 +272,89 @@ class SalidaMetro : AppCompatActivity(),
                 x = Math.random().toFloat() * mapBitmap.width
             }
         }
+    }    // Clase para el auto de la Ford del easter egg
+    inner class FordCar(
+        var x: Float,
+        var y: Float
+    ) {
+        val width = 60f
+        val height = 30f
+        val speed = 3f // Velocidad más lenta
+        var completed = false
+        val rect = RectF(x, y, x + width, y + height)
+          // Estados del movimiento
+        var movingDown = true
+        private val targetRoadY: Float
+        
+        init {
+            // Calcular la Y de la carretera (70% del mapa hacia abajo)
+            val mapBitmap = mapView.mapState.backgroundBitmap
+            targetRoadY = if (mapBitmap != null) {
+                mapBitmap.height * 0.75f // Ir hacia el área de la carretera
+            } else {
+                y + 100f
+            }
+        }
+        
+        fun update() {
+            if (completed) return
+            
+            if (movingDown) {
+                // Fase 1: Moverse hacia abajo hasta llegar a la carretera
+                y += speed
+                
+                // Verificar si llegó a la carretera
+                if (y >= targetRoadY) {
+                    movingDown = false
+                    y = targetRoadY // Ajustar posición exacta
+                }
+            } else {
+                // Fase 2: Moverse hacia la izquierda como los demás autos
+                x -= speed
+                
+                // Obtener dimensiones del mapa
+                val mapBitmap = mapView.mapState.backgroundBitmap
+                if (mapBitmap != null) {
+                    // Si el auto sale de la pantalla por la izquierda, marcarlo como completado
+                    if (x < -width) {
+                        completed = true
+                        // Quitar de la lista después de un tiempo
+                        handler.postDelayed({
+                            fordCarAnimation = null
+                        }, 1000L)
+                    }
+                }
+            }
+            
+            // Actualizar rectángulo
+            rect.left = x
+            rect.right = x + width
+            rect.top = y
+            rect.bottom = y + height
+        }
     }
-    
-    // Runnable para cambios de clima
-    private val weatherChangeRunnable = object : Runnable {
+      private val weatherChangeRunnable = object : Runnable {
         override fun run() {
             changeWeather()
             handler.postDelayed(this, WEATHER_CHANGE_INTERVAL)
+        }
+    }
+    
+    // Método para mostrar el mensaje del easter egg
+    private fun showEasterEggMessage() {
+        if (showingEasterEggMessage) return
+        showingEasterEggMessage = true
+          runOnUiThread {
+            val builder = androidx.appcompat.app.AlertDialog.Builder(this)
+            builder.setTitle("easter egg xd")
+            builder.setMessage("te atropello el que se robo el auto de la ford!!")
+            builder.setPositiveButton("ok") { dialog, _ -> 
+                dialog.dismiss()
+                showingEasterEggMessage = false
+                fordCarAnimation = null
+            }
+            builder.setCancelable(false)
+            builder.show()
         }
     }
 
@@ -273,6 +388,8 @@ class SalidaMetro : AppCompatActivity(),
                 initializeCars()
                 initializeTrafficLights()
                 initializeWeather()
+                // Reset easter egg state for new map entry
+                resetEasterEggState()
                 startCarAnimation()
                 startTrafficLightCycle()
                 startWeatherSystem()
@@ -314,30 +431,30 @@ class SalidaMetro : AppCompatActivity(),
     }
 
     private fun initializeCars() {
-        // Wait until map is fully loaded
+        // espera a que cargue el mapa
         mapView.post {
             val mapBitmap = mapView.mapState.backgroundBitmap ?: return@post            
-            // Create 5 cars with different speeds and positions
+            // crea 5 carros
             val mapWidth = mapBitmap.width.toFloat()
             val mapHeight = mapBitmap.height.toFloat()
-            // Only use bottom 30% of map for cars (road area)
+            // solo usa el 30% inferior del mapa para las carreteras
             val minY = mapHeight * 0.7f
             val maxY = mapHeight * 0.95f
-            // Clear any existing cars
+            // limpiar la lista de carros
             carList.clear()
-            // Create cars with different positions, speeds and colors
+            // diferenciar los colores de los carros
             for (i in 0 until 5) {
-                val speed = 2f + (Math.random().toFloat() * 4f) // Random speed between 2-6
-                // Create more distinct lanes for cars
+                val speed = 2f + (Math.random().toFloat() * 4f) // velcidad aleatoria entre 2 y 6
+                // Distribuir los carros en 3 carriles
                 val laneCount = 3
                 val laneHeight = (maxY - minY) / laneCount
                 val lane = i % laneCount
                 val y = minY + (lane * laneHeight) + (Math.random().toFloat() * (laneHeight * 0.6f))
-                // Distribute cars horizontally with more spacing
+                // distribuir los carros en el ancho del mapa
                 val x = mapWidth * (i / 5f) + (Math.random().toFloat() * mapWidth * 0.2f)
                 val color = carColors[i % carColors.size]
                 carList.add(Car(x, y, 40f, 20f, speed, color))
-            }            // Set the enhanced renderer for MapView (autos, semáforos y clima)
+            }            // Configurar el renderer de carros
             mapView.setCarRenderer(object : MapView.CarRenderer {
                 override fun drawCars(canvas: Canvas) {
                     val paint = Paint().apply {
@@ -345,12 +462,12 @@ class SalidaMetro : AppCompatActivity(),
                         isAntiAlias = true
                     }
                     
-                    // Draw cars
+                    // dibujar cada carro
                     for (car in carList) {
                         paint.color = car.color
                         canvas.drawRect(car.rect, paint)
                         
-                        // Añadir un borde para mejor visualización
+                        // bordear carro
                         paint.color = Color.BLACK
                         paint.style = Paint.Style.STROKE
                         paint.strokeWidth = 2f
@@ -358,20 +475,59 @@ class SalidaMetro : AppCompatActivity(),
                         paint.style = Paint.Style.FILL
                     }
                     
-                    // Draw traffic lights
+                    // Dibujar el auto de la Ford del easter egg
+                    fordCarAnimation?.let { fordCar ->
+                        // Auto de la Ford especial - más grande y distintivo
+                        paint.color = Color.parseColor("#1E3A8A") // Azul Ford
+                        canvas.drawRect(fordCar.rect, paint)
+                        
+                        // Borde especial para el auto de la Ford
+                        paint.color = Color.WHITE
+                        paint.style = Paint.Style.STROKE
+                        paint.strokeWidth = 4f
+                        canvas.drawRect(fordCar.rect, paint)
+                        paint.style = Paint.Style.FILL
+                        
+                        // Agregar logo "FORD" en el auto
+                        paint.color = Color.WHITE
+                        paint.textSize = 12f
+                        paint.textAlign = Paint.Align.CENTER
+                        canvas.drawText(
+                            "FORD", 
+                            fordCar.rect.centerX(), 
+                            fordCar.rect.centerY() + 4f, 
+                            paint
+                        )
+                        
+                        // Efectos de velocidad (líneas de movimiento)
+                        paint.color = Color.LTGRAY
+                        paint.strokeWidth = 2f
+                        paint.style = Paint.Style.STROKE
+                        for (i in 1..3) {
+                            canvas.drawLine(
+                                fordCar.x - (i * 15f),
+                                fordCar.y + (i * 3f),
+                                fordCar.x - (i * 10f),
+                                fordCar.y + (i * 3f),
+                                paint
+                            )
+                        }
+                        paint.style = Paint.Style.FILL
+                    }
+                    
+                    // semaforos
                     for (light in trafficLights) {
-                        // Dibujar el semáforo más visible
                         paint.color = if (light.isGreen) Color.GREEN else Color.RED
                         canvas.drawRect(light.rect, paint)
                         
-                        // Añadir borde al semáforo
+                        // borde al semáforo
                         paint.color = Color.BLACK
                         paint.style = Paint.Style.STROKE
                         paint.strokeWidth = 3f
                         canvas.drawRect(light.rect, paint)
                         paint.style = Paint.Style.FILL
                         
-                        // Draw light pole
+                        // dibujar la barra de espera
                         paint.color = Color.GRAY
                         canvas.drawRect(
                             light.rect.centerX() - 3f,
@@ -382,14 +538,14 @@ class SalidaMetro : AppCompatActivity(),
                         )
                     }
                     
-                    // Draw weather effects
+                    // efectos del clima
                     drawWeatherEffects(canvas, paint)
                 }
                 
                 private fun drawWeatherEffects(canvas: Canvas, paint: Paint) {
                     when (currentWeather) {
                         WeatherState.RAINY -> {
-                            // Dibujar gotas de lluvia
+                            // dibujar gotas de lluvia
                             paint.color = Color.argb(150, 200, 200, 255)
                             paint.strokeWidth = 2f
                             paint.style = Paint.Style.STROKE
@@ -403,19 +559,19 @@ class SalidaMetro : AppCompatActivity(),
                             }
                         }
                         WeatherState.NIGHT -> {
-                            // Oscurecer la pantalla
+                            // oscurecer la pantalla
                             paint.color = Color.argb((weatherAlpha * 255).toInt(), 0, 0, 100)
                             paint.style = Paint.Style.FILL
                             canvas.drawRect(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat(), paint)
                         }
                         WeatherState.CLOUDY -> {
-                            // Efecto nublado
+                            // efecto nublado
                             paint.color = Color.argb((weatherAlpha * 100).toInt(), 128, 128, 128)
                             paint.style = Paint.Style.FILL
                             canvas.drawRect(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat(), paint)
                         }
                         WeatherState.SUNNY -> {
-                            // Sin efectos adicionales
+                            // sin efectos adicionales
                         }
                     }
                 }
@@ -430,9 +586,9 @@ class SalidaMetro : AppCompatActivity(),
     private fun startTrafficLightCycle() {
         handler.post(trafficLightRunnable)
     }    private fun updateCars() {
-        // Update car positions
+        // actualizar cada carro
         for (car in carList) {
-            // Verificar semáforos antes de actualizar
+            // verificar semáforos antes de actualizar
             var shouldStop = false
             for (light in trafficLights) {
                 if (light.shouldStopCar(car)) {
@@ -445,40 +601,58 @@ class SalidaMetro : AppCompatActivity(),
                 car.update()
             }
         }
+          // Actualizar el auto de la Ford del easter egg
+        fordCarAnimation?.let { fordCar ->
+            // Solo verificar semáforos si ya está en la carretera (moviendo hacia la izquierda)
+            if (!fordCar.movingDown) {
+                var shouldStop = false
+                for (light in trafficLights) {
+                    if (light.shouldStopCar(fordCar)) {
+                        shouldStop = true
+                        break
+                    }
+                }
+                
+                if (!shouldStop) {
+                    fordCar.update()
+                }
+            } else {
+                // Si está bajando, actualizar sin verificar semáforos
+                fordCar.update()
+            }
+        }
         
-        // Apply collision prevention between cars
+        // hacer que no choquen los carros entre sí
         preventCollisions()
         
-        // Check for collisions with player
+        // verificar colisiones con el jugador
         checkPlayerCarCollisions()
         
-        // Update weather effects
+        // efectos del clima
         updateWeather()
         
-        // Request redraw
+        // volver a dibujar el mapa
         mapView.invalidate()
     }
 
     private fun checkPlayerCarCollisions() {
-        // Get player position in map coordinates
+        // posicion del jugador en el mapa
         val playerPosition = gameState.playerPosition
         val playerRect = getPlayerRect(playerPosition)
         
         if (playerRect != null) {
-            // Check collision with each car
+            // verificar colisiones con los carros
             for (car in carList) {
                 if (RectF.intersects(car.rect, playerRect)) {
-                    // Collision detected! Show dialog
+                    // dialogo de colision
                     showCarCollisionDialog(car)
                     
-                    // Move player back slightly to avoid continuous collisions
+                    // efecto de colisión con el jugador
                     val newPosition = Pair(
                         playerPosition.first - 1,
                         playerPosition.second - 1
                     )
                     updatePlayerPosition(newPosition)
-                    
-                    // Only handle one collision at a time
                     break
                 }
             }
@@ -509,8 +683,6 @@ class SalidaMetro : AppCompatActivity(),
     
     // Dialog to show when player collides with a car
     private fun showCarCollisionDialog(car: Car) {
-        // Check if we already have a dialog showing to prevent multiple dialogs
-        if (isShowingCollisionDialog) return
         
         isShowingCollisionDialog = true
         
@@ -525,9 +697,7 @@ class SalidaMetro : AppCompatActivity(),
         runOnUiThread {
             builder.show()
         }
-    }
-
-    private fun preventCollisions() {
+    }    private fun preventCollisions() {
         // Check each pair of cars for potential collisions
         for (i in carList.indices) {
             for (j in carList.indices) {
@@ -547,6 +717,26 @@ class SalidaMetro : AppCompatActivity(),
                             car2.rect.right = car2.x + car2.width
                             car2.rect.top = car2.y
                             car2.rect.bottom = car2.y + car2.height
+                        }
+                    }
+                }
+            }
+        }
+          // Verificar colisiones entre el auto de la Ford y los demás autos (solo cuando esté en la carretera)
+        fordCarAnimation?.let { fordCar ->
+            if (!fordCar.movingDown) { // Solo verificar colisiones cuando esté en la carretera
+                for (car in carList) {
+                    // Verificar si están en el mismo carril
+                    if (Math.abs(fordCar.y - car.y) < fordCar.height * 1.2f) {
+                        // Verificar si el auto normal está delante del auto de la Ford
+                        if (car.x < fordCar.x && fordCar.x - (car.x + car.width) < fordCar.width * 1.5f) {
+                            // El auto de la Ford se ralentiza para evitar chocar
+                            fordCar.x += fordCar.speed * 0.5f
+                            // Actualizar rectángulo del auto de la Ford
+                            fordCar.rect.left = fordCar.x
+                            fordCar.rect.right = fordCar.x + fordCar.width
+                            fordCar.rect.top = fordCar.y
+                            fordCar.rect.bottom = fordCar.y + fordCar.height
                         }
                     }
                 }
@@ -629,10 +819,20 @@ class SalidaMetro : AppCompatActivity(),
         findViewById<Button?>(R.id.button_a)?.setOnClickListener {
             handleButtonAPress()
         }
-    }
-      // Método para manejar la pulsación del botón A
+    }    // Método para manejar la pulsación del botón A
     private fun handleButtonAPress() {
         val position = gameState.playerPosition
+        
+        // Verificar easter egg PRIMERO
+        if (position == EASTER_EGG_POSITION && !easterEggTriggered && isAtEasterEggPosition) {
+            val currentTime = System.currentTimeMillis()
+            if (currentTime - timeAtEasterEggPosition >= EASTER_EGG_TIME_REQUIRED) {
+                triggerEasterEgg()
+                return
+            }
+        }
+        
+        // Continuar con puntos de interés normales
         when {
             // Puntos de interés principales
             position.first == 35 && position.second == 5 -> {
@@ -640,8 +840,8 @@ class SalidaMetro : AppCompatActivity(),
                     "Metro CDMX",
                     "Línea 6 - Estación Instituto del Petróleo\n\n" +
                     "🚇 Horario: 5:00 - 24:00\n" +
-                    "💰 Tarifa: $5.00 MXN\n" +
-                    "📍 Conexiones: Línea 6 completa",
+                    "Tarifa: $5.00 MXN\n" +
+                    "Conexiones: Línea 6 completa",
                     "https://www.metro.cdmx.gob.mx/"
                 )
             }
@@ -650,8 +850,8 @@ class SalidaMetro : AppCompatActivity(),
                     "Trolebús",
                     "Línea K - Estación Politécnico\n\n" +
                     "🚌 Horario: 5:30 - 23:30\n" +
-                    "💰 Tarifa: $4.00 MXN\n" +
-                    "🗺️ Ruta: Politécnico - Metro Indios Verdes",
+                    "Tarifa: $4.00 MXN\n" +
+                    "Ruta: Politécnico - Metro Indios Verdes",
                     "https://www.ste.cdmx.gob.mx/trolebus"
                 )
             }
@@ -659,9 +859,9 @@ class SalidaMetro : AppCompatActivity(),
                 showInfoDialog(
                     "Ford Lindavista",
                     "Agencia Automotriz Ford\n\n" +
-                    "🚗 Horario: 9:00 - 18:00\n" +
-                    "🔧 Servicios: Ventas y mantenimiento\n" +
-                    "📞 Atención al cliente disponible",
+                    "Horario: 9:00 - 18:00\n" +
+                    "Servicios: Ventas y mantenimiento\n" +
+                    "Atención al cliente disponible",
                     "https://www.fordmylsa.mx/"
                 )
             }
@@ -670,57 +870,84 @@ class SalidaMetro : AppCompatActivity(),
                 showInfoDialog(
                     "Farmacia San Pablo",
                     "Farmacia 24 horas\n\n" +
-                    "💊 Horario: 24/7\n" +
-                    "🏥 Servicios: Medicamentos, consultas médicas\n" +
-                    "💳 Acepta tarjetas y efectivo"
+                    "Horario: 24/7\n" +
+                    "Servicios: Medicamentos, consultas médicas\n" +
+                    "Acepta tarjetas y efectivo"
                 )
             }
             position.first == 35 && position.second == 15 -> {
                 showInfoDialog(
-                    "Cajero Automático",
+                    "Cajero Automático (pq no?)",
                     "BBVA Bancomer\n\n" +
-                    "💳 Disponible 24/7\n" +
-                    "💰 Retiros, consultas, depósitos\n" +
-                    "🏦 Sin comisión para clientes BBVA"
+                    "Disponible 24/7\n" +
+                    "Retiros, consultas, depósitos\n" +
+                    "Sin comisión para clientes BBVA"
                 )
             }
             position.first == 25 && position.second == 30 -> {
                 showInfoDialog(
-                    "Restaurante El Buen Sazón",
+                    "Restaurante El Buen Sazón (inventado)",
                     "Comida mexicana tradicional\n\n" +
-                    "🍽️ Horario: 8:00 - 22:00\n" +
-                    "🌮 Especialidad: Tacos y quesadillas\n" +
-                    "💰 Precios accesibles"
+                    "Horario: 8:00 - 22:00\n" +
+                    "Especialidad: Tacos y quesadillas\n" +
+                    "Precios accesibles"
                 )
             }
             position.first == 8 && position.second == 12 -> {
                 showInfoDialog(
-                    "OXXO",
+                    "OXXO (más a la derecha)",
                     "Tienda de conveniencia\n\n" +
-                    "🏪 Horario: 24/7\n" +
-                    "🛒 Productos: Comida, bebidas, servicios\n" +
-                    "💳 Pago de servicios disponible"
+                    "Horario: 24/7\n" +
+                    "Productos: Comida, bebidas, servicios\n" +
+                    "Pago de servicios disponible"
                 )
             }
             position.first == 12 && position.second == 25 -> {
                 showInfoDialog(
                     "Parada de Autobús",
                     "Transporte público urbano\n\n" +
-                    "🚌 Rutas: 1, 15, 42, 108\n" +
-                    "⏰ Cada 10-15 minutos\n" +
-                    "💰 Tarifa: $5.50 MXN"
+                    "Rutas: 1, 15, 42, 108\n" +
+                    "Cada 10-15 minutos\n" +
+                    "Tarifa: $5.50 MXN"
                 )
             }
             position.first == 30 && position.second == 18 -> {
                 showInfoDialog(
-                    "Plaza Lindavista",
+                    "Plaza Lindavista (ya se que no existe aqui xd)",
                     "Centro comercial\n\n" +
-                    "🛍️ Horario: 10:00 - 22:00\n" +
-                    "🏪 Tiendas: Ropa, electrónicos, comida\n" +
-                    "🍕 Área de comidas en planta alta"
+                    "Horario: 10:00 - 22:00\n" +
+                    "Tiendas: Ropa, electrónicos, comida\n" +
+                    "Área de comidas en planta alta"
                 )
             }
         }
+    }
+      // Método para activar el easter egg
+    private fun triggerEasterEgg() {
+        if (easterEggTriggered) return
+        
+        easterEggTriggered = true
+        Log.d(TAG, "auto de la Ford apareciendo...")
+        
+        // Obtener coordenadas de la posición (7, 20) en píxeles
+        val mapBitmap = mapView.mapState.backgroundBitmap ?: return
+        val cellWidth = mapBitmap.width / MapMatrixProvider.MAP_WIDTH.toFloat()
+        val cellHeight = mapBitmap.height / MapMatrixProvider.MAP_HEIGHT.toFloat()
+        
+        // Posición inicial del auto de la Ford en (7, 20)
+        val startX = 7 * cellWidth
+        val startY = 20 * cellHeight
+        
+        // Crear el auto de la Ford en la coordenada (7, 20)
+        fordCarAnimation = FordCar(startX, startY)
+          // Mostrar mensaje de aviso
+        Toast.makeText(this, "Se robaron un auto de la ford!", Toast.LENGTH_SHORT).show()
+          // Programar el mensaje del atropello después de 3 segundos
+        handler.postDelayed({
+            if (!showingEasterEggMessage) {
+                showEasterEggMessage()
+            }
+        }, 3000L)
     }
 
     // Método para mostrar un diálogo con información y opcionalmente un enlace web
@@ -749,26 +976,59 @@ class SalidaMetro : AppCompatActivity(),
     // Sobrecarga para diálogos sin URL
     private fun showInfoDialog(title: String, message: String) {
         showInfoDialog(title, message, null)
-    }
-
-    private fun checkPositionForMapChange(position: Pair<Int, Int>) {
-        // Definir mensajes específicos para cada punto de interés
+    }    private fun checkPositionForMapChange(position: Pair<Int, Int>) {
+        // Verificar easter egg position
+        checkEasterEggPosition(position)
+          // Definir mensajes específicos para cada punto de interés
         val message = when {
-            position.first == 35 && position.second == 5 -> "🚇 Presiona A para ver información del Metro"
-            position.first == 31 && position.second == 27 -> "🚌 Presiona A para ver información del Trolebús"
-            position.first == 17 && position.second == 22 -> "🚗 Presiona A para ver información de Ford"
-            position.first == 28 && position.second == 8 -> "💊 Presiona A para ver información de la Farmacia"
-            position.first == 35 && position.second == 15 -> "💳 Presiona A para usar el Cajero Automático"
-            position.first == 25 && position.second == 30 -> "🍽️ Presiona A para ver menú del Restaurante"
-            position.first == 8 && position.second == 12 -> "🏪 Presiona A para ver servicios de OXXO"
-            position.first == 12 && position.second == 25 -> "🚌 Presiona A para ver horarios de Autobús"
-            position.first == 30 && position.second == 18 -> "🛍️ Presiona A para ver tiendas de la Plaza"
+            position.first == 35 && position.second == 5 -> "Presiona A para ver información del Metro"
+            position.first == 31 && position.second == 27 -> "Presiona A para ver información del Trolebús"
+            position.first == 17 && position.second == 22 -> "Presiona A para ver información de Ford"
+            position.first == 28 && position.second == 8 -> "Presiona A para ver información de la Farmacia"
+            position.first == 35 && position.second == 15 -> "Presiona A para usar el Cajero Automático"
+            position.first == 25 && position.second == 30 -> "Presiona A para ver menú del Restaurante"
+            position.first == 8 && position.second == 12 -> "Presiona A para ver servicios de OXXO"
+            position.first == 12 && position.second == 25 -> "Presiona A para ver horarios de Autobús"
+            position.first == 30 && position.second == 18 -> "Presiona A para ver tiendas de la Plaza"
+            // Easter egg hint
+            position == EASTER_EGG_POSITION && !easterEggTriggered -> {
+                if (isAtEasterEggPosition) {
+                    val timeElapsed = (System.currentTimeMillis() - timeAtEasterEggPosition) / 1000
+                    val timeRemaining = 5 - timeElapsed
+                    if (timeRemaining > 0) {
+                        "quédate ${timeRemaining}s más y presiona A..."
+                    } else {
+                        "Presiona A!"
+                    }
+                } else null
+            }
             else -> null
         }
         
         message?.let {
             runOnUiThread {
                 Toast.makeText(this, it, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+    
+    // Método para verificar la posición del easter egg
+    private fun checkEasterEggPosition(position: Pair<Int, Int>) {
+        if (easterEggTriggered) return
+        
+        if (position == EASTER_EGG_POSITION) {
+            if (!isAtEasterEggPosition) {                // Jugador acaba de llegar a la posición
+                isAtEasterEggPosition = true
+                timeAtEasterEggPosition = System.currentTimeMillis()
+                Log.d(TAG, "Jugador llegó a la posición del easter egg: $position")
+                Toast.makeText(this, "Lugar extraño...", Toast.LENGTH_LONG).show()
+            }
+        } else {
+            if (isAtEasterEggPosition) {
+                // Jugador se movió de la posición
+                isAtEasterEggPosition = false
+                timeAtEasterEggPosition = 0L
+                Log.d(TAG, "Jugador se movió de la posición del easter egg")
             }
         }
     }
@@ -985,11 +1245,14 @@ class SalidaMetro : AppCompatActivity(),
                 playerName,
                 gameState.playerPosition,
                 MapMatrixProvider.MAP_SALIDAMETRO
-            )
-        }
+            )        }
         // Restart car animation
         startCarAnimation()
-    }    override fun onPause() {
+        // Restart traffic light cycle
+        startTrafficLightCycle()
+        // Restart weather system
+        startWeatherSystem()
+    }override fun onPause() {
         super.onPause()
         // Stop all animations when activity is paused
         handler.removeCallbacks(carUpdateRunnable)

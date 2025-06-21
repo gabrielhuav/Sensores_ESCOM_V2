@@ -842,12 +842,15 @@ class MapMatrixProvider {
             matrix[20][32] = INTERACTIVO
 
             return matrix
-        }        private fun createSalidaMetroMatrix(): Array<Array<Int>> {
+        }
+
+        private fun createSalidaMetroMatrix(): Array<Array<Int>> {
             val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
 
             // Constantes
             val PARED = WALL
             val BANCA = INACCESSIBLE
+
 
             // Bordes exteriores
             for (i in 0 until MAP_HEIGHT) {
@@ -858,36 +861,26 @@ class MapMatrixProvider {
                 }
             }
 
-            // Puntos de interés principales
-            matrix[5][35] = INTERACTIVE   // Metro
-            matrix[27][31] = INTERACTIVE  // Trolebús  
-            matrix[22][17] = INTERACTIVE  // Ford
-            
-            // Nuevos puntos de interés
-            matrix[8][28] = INTERACTIVE   // Farmacia
-            matrix[15][35] = INTERACTIVE  // Banco/ATM
-            matrix[30][25] = INTERACTIVE  // Restaurante
-            matrix[12][8] = INTERACTIVE   // Tienda de conveniencia
-            matrix[25][12] = INTERACTIVE  // Parada de autobús
-            matrix[18][30] = INTERACTIVE  // Centro comercial pequeño
-            
-            // Área de edificios (zona central no transitable)
-            for (i in 1..21) {
-                for (j in 6..29) {
-                    matrix[i][j] = BANCA
-                }
-            }
-            
-            // Crear calles más definidas
-            // Calle principal horizontal (zona inferior)
+            matrix[5][35] = INTERACTIVE
+            matrix[22][17] = INTERACTIVE
+            matrix[27][31] = INTERACTIVE            // Pared al 70% de la altura desde arriba (equivale a 30% desde abajo)
             val alturaPared = (MAP_HEIGHT * 0.7).toInt() // 28 en un mapa 40x40
             for (j in 0 until MAP_WIDTH) {
                 matrix[alturaPared][j] = PARED
             }
             
-            // Calle secundaria vertical
-            for (i in alturaPared until MAP_HEIGHT) {
-                matrix[i][MAP_WIDTH / 2] = PATH
+            // Crear una pequeña abertura en el centro de la pared para que el jugador pueda entrar a la avenida
+            val aperturaInicio = MAP_WIDTH / 2 - 2  // Posición 18
+            val aperturaFin = MAP_WIDTH / 2 + 2     // Posición 22
+            for (j in aperturaInicio..aperturaFin) {
+                matrix[alturaPared][j] = PATH
+            }
+
+            // Rectángulo inaccesible (cuadro) con esquinas en (6,1), (6,21), (29,21) y (29,1)
+            for (i in 1..21) {
+                for (j in 6..29) {
+                    matrix[i][j] = BANCA
+                }
             }
 
             return matrix
