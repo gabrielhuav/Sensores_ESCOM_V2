@@ -863,11 +863,17 @@ class MapMatrixProvider {
 
             matrix[5][35] = INTERACTIVE
             matrix[22][17] = INTERACTIVE
-            matrix[27][31] = INTERACTIVE
-            // Pared al 70% de la altura desde arriba (equivale a 30% desde abajo)
+            matrix[27][31] = INTERACTIVE            // Pared al 70% de la altura desde arriba (equivale a 30% desde abajo)
             val alturaPared = (MAP_HEIGHT * 0.7).toInt() // 28 en un mapa 40x40
             for (j in 0 until MAP_WIDTH) {
                 matrix[alturaPared][j] = PARED
+            }
+            
+            // Crear una pequeña abertura en el centro de la pared para que el jugador pueda entrar a la avenida
+            val aperturaInicio = MAP_WIDTH / 2 - 2  // Posición 18
+            val aperturaFin = MAP_WIDTH / 2 + 2     // Posición 22
+            for (j in aperturaInicio..aperturaFin) {
+                matrix[alturaPared][j] = PATH
             }
 
             // Rectángulo inaccesible (cuadro) con esquinas en (6,1), (6,21), (29,21) y (29,1)
