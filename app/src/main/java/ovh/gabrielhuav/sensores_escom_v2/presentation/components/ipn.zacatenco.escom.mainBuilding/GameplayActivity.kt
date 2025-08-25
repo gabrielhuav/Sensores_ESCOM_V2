@@ -255,7 +255,6 @@ class GameplayActivity : AppCompatActivity(),
                         "cafeteria" -> startCafeteriaActivity()
                         "salon1212" -> startSalonPacmanActivity()
                         "Estacionamiento" -> startEstacionamientoEscomActivity()
-                        "estacionamientos" -> startEstacionamientoActivity()
                         "zacatenco" -> startZacatencoActivity()
                         "Edificioiabajo" -> startEdificioIABajoActivity()
                         "palapas_ia" -> startPalapasIAActivity()
@@ -352,18 +351,6 @@ class GameplayActivity : AppCompatActivity(),
         finish()
     }
 
-    private fun startEstacionamientoActivity() {
-        val intent = Intent(this, Estacionamiento::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(1, 1))
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        startActivity(intent)
-        finish()
-    }
-
     private var canChangeMap = false  // Variable para controlar si se puede cambiar de mapa
     private var targetDestination: String? = null  // Variable para almacenar el destino
 
@@ -382,14 +369,6 @@ class GameplayActivity : AppCompatActivity(),
                 targetDestination = "zacatenco"
                 runOnUiThread {
                     Toast.makeText(this, "Presiona A para salir a Zacatenco", Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            position.first == 11 && position.second == 5 -> {
-                canChangeMap = true
-                targetDestination = "estacionamientos"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para entrar al estacionamiento", Toast.LENGTH_SHORT).show()
                 }
             }
             position.first == 33 && position.second == 34 -> {
