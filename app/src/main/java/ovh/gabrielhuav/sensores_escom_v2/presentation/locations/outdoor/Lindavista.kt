@@ -1,8 +1,11 @@
-package ovh.gabrielhuav.sensores_escom_v2.presentation.components
+package ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor
 
+import android.Manifest
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -12,6 +15,7 @@ import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import org.json.JSONObject
 import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
@@ -21,13 +25,12 @@ import ovh.gabrielhuav.sensores_escom_v2.domain.bluetooth.BluetoothManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.components.UIManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.MovementManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.ServerConnectionManager
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2009
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2010
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
-import ovh.gabrielhuav.sensores_escom_v2.presentation.common.base.GameplayActivity
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.transportation.Cablebus
+import kotlin.collections.iterator
 
-class BuildingNumber2 : AppCompatActivity(),
+class Lindavista : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,
     BluetoothGameManager.ConnectionListener,
     OnlineServerManager.WebSocketListener,
@@ -47,7 +50,7 @@ class BuildingNumber2 : AppCompatActivity(),
     data class GameState(
         var isServer: Boolean = false,
         var isConnected: Boolean = false,
-        var playerPosition: Pair<Int, Int> = Pair(1, 1),
+        var playerPosition: Pair<Int, Int> = Pair(10, 12),
         var remotePlayerPositions: Map<String, PlayerInfo> = emptyMap(),
         var remotePlayerName: String? = null
     ) {
@@ -69,13 +72,13 @@ class BuildingNumber2 : AppCompatActivity(),
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_building2)
+        setContentView(R.layout.activity_lindavista)
 
         try {
             // Primero inicializamos el mapView
             mapView = MapView(
                 context = this,
-                mapResourceId = R.drawable.escom_edificio_2_planta_baja
+                mapResourceId = R.drawable.lindavista
             )
             findViewById<FrameLayout>(R.id.map_container).addView(mapView)
 
@@ -85,8 +88,8 @@ class BuildingNumber2 : AppCompatActivity(),
             // Esperar a que el mapView esté listo
             mapView.post {
                 // Configurar el mapa
-                val normalizedMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_BUILDING2)
-                mapView.setCurrentMap(normalizedMap, R.drawable.escom_edificio_2_planta_baja)
+                val normalizedMap = MapMatrixProvider.Companion.normalizeMapName(MapMatrixProvider.Companion.MAP_LINDAVISTA)
+                mapView.setCurrentMap(normalizedMap, R.drawable.lindavista)
 
                 // Después configurar el playerManager
                 mapView.playerManager.apply {
@@ -95,7 +98,7 @@ class BuildingNumber2 : AppCompatActivity(),
                     updateLocalPlayerPosition(gameState.playerPosition)
                 }
 
-                Log.d("BuildingNumber2", "Set map to: $normalizedMap")
+                Log.d("Lindavista", "Set map to: $normalizedMap")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error en onCreate: ${e.message}")
@@ -115,7 +118,7 @@ class BuildingNumber2 : AppCompatActivity(),
         if (savedInstanceState == null) {
             // Inicializar el estado del juego desde el Intent
             gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
-            gameState.playerPosition = intent.getParcelableExtra("INITIAL_POSITION") ?: Pair(1, 1)
+            gameState.playerPosition = (intent.getParcelableExtra("INITIAL_POSITION") ?: Pair(1, 6)) as Pair<Int, Int>
         } else {
             restoreState(savedInstanceState)
         }
@@ -142,15 +145,15 @@ class BuildingNumber2 : AppCompatActivity(),
     }
 
     private fun initializeManagers() {
-        bluetoothManager = BluetoothManager.getInstance(this, uiManager.tvBluetoothStatus).apply {
-            setCallback(this@BuildingNumber2)
+        bluetoothManager = BluetoothManager.Companion.getInstance(this, uiManager.tvBluetoothStatus).apply {
+            setCallback(this@Lindavista)
         }
 
-        bluetoothBridge = BluetoothWebSocketBridge.getInstance()
+        bluetoothBridge = BluetoothWebSocketBridge.Companion.getInstance()
 
         // Configurar OnlineServerManager con el listener
-        val onlineServerManager = OnlineServerManager.getInstance(this).apply {
-            setListener(this@BuildingNumber2)
+        val onlineServerManager = OnlineServerManager.Companion.getInstance(this).apply {
+            setListener(this@Lindavista)
         }
 
         serverConnectionManager = ServerConnectionManager(
@@ -175,77 +178,15 @@ class BuildingNumber2 : AppCompatActivity(),
     // Actualiza el método onMapTransitionRequested para manejar la transición al salón 2009
     override fun onMapTransitionRequested(targetMap: String, initialPosition: Pair<Int, Int>) {
         when (targetMap) {
-            MapMatrixProvider.MAP_MAIN -> {
+            MapMatrixProvider.Companion.MAP_ZACATENCO -> {
                 // Transición al mapa principal
-                returnToMainActivity()
-            }
-            MapMatrixProvider.MAP_SALON2009 -> {
-                // Transición al salón 2009
-                //startSalon2009Activity()
-            }
-            MapMatrixProvider.MAP_SALON2010 -> {
-                // Transición al salón 2010
-                //startSalon2010Activity()
-            }
-            MapMatrixProvider.MAP_BUILDING2_PISO1 -> {
-                // Transición al edificio 2 primera planta
-                startPrimerPisoActivity()
+                returnToZacatencoActivity()
             }
             // Añadir más casos según sea necesario para otros mapas
             else -> {
                 Log.d(TAG, "Mapa destino no reconocido: $targetMap")
             }
         }
-    }
-
-    // Método para iniciar la Activity del salón 2010
-    private fun startSalon2010Activity() {
-        val intent = Intent(this, Salon2010::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(20, 20)) // Posición inicial en el salón
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guardar la posición actual para regresar
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-
-        // Limpiar datos antes de cambiar de activity
-        mapView.playerManager.cleanup()
-        startActivity(intent)
-        finish()
-    }
-
-    private fun startPrimerPisoActivity() {
-
-        val previousPosition = intent.getSerializableExtra("PREVIOUS_POSITION") as? Pair<Int, Int>
-            ?: Pair(17, 20) // Posición por defecto si no hay previa
-        val intent = Intent(this, BuildingNumber2Piso1::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", previousPosition) // Posición inicial en el salón
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guardar la posición actual para regresar
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-
-        // Limpiar datos antes de cambiar de activity
-        mapView.playerManager.cleanup()
-        startActivity(intent)
-        finish()
-    }
-
-    // Método para iniciar la Activity del salón 2009
-    private fun startSalon2009Activity() {
-        val intent = Intent(this, Salon2009::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(20, 20)) // Posición inicial en el salón
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guardar la posición actual para regresar
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-
-        // Limpiar datos antes de cambiar de activity
-        mapView.playerManager.cleanup()
-        startActivity(intent)
-        finish()
     }
 
     private fun restoreState(savedInstanceState: Bundle) {
@@ -328,34 +269,54 @@ class BuildingNumber2 : AppCompatActivity(),
     }
 
     private var canChangeMap = false  // Variable para controlar si se puede cambiar de mapa
-    private var targetMapId: String? = null  // Añadir esta variable para almacenar el mapa destino
-    private var interactivePosition: Pair<Int, Int>? = null  // Coordenadas del punto interactivo
+    private var targetDestination: String? = null  // Variable para almacenar el destino
 
     private fun checkPositionForMapChange(position: Pair<Int, Int>) {
-        // Verificar si estamos en un punto interactivo que puede ser una transición
-        targetMapId = mapView.getMapTransitionPoint(position.first, position.second)
-        interactivePosition = if (targetMapId != null) position else null
-        canChangeMap = targetMapId != null
 
-        if (canChangeMap) {
-            runOnUiThread {
-                when (targetMapId) {
-                    MapMatrixProvider.MAP_MAIN -> {
-                        Toast.makeText(this, "Presiona A para volver al mapa principal", Toast.LENGTH_SHORT).show()
-                    }
-                    MapMatrixProvider.MAP_SALON2009 -> {
-                        Toast.makeText(this, "Presiona A para entrar al salón 2009", Toast.LENGTH_SHORT).show()
-                    }
-                    MapMatrixProvider.MAP_SALON2010 -> {
-                        Toast.makeText(this, "Presiona A para entrar al salón 2010", Toast.LENGTH_SHORT).show()
-                    }
-                    MapMatrixProvider.MAP_BUILDING2_PISO1 -> {
-                        Toast.makeText(this, "Presiona A para entrar al edificio 2 primera planta", Toast.LENGTH_SHORT).show()
-                    }
-                    else -> {
-                        Toast.makeText(this, "Presiona A para interactuar", Toast.LENGTH_SHORT).show()
-                    }
+        when {
+            position.first == 1 && position.second == 6 -> {
+                canChangeMap = true
+                targetDestination = "zacatenco"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para entrar a Zacatenco", Toast.LENGTH_SHORT)
+                        .show()
                 }
+            }
+            position.first == 33 && position.second == 34 -> {
+                canChangeMap = true
+                targetDestination = "indios"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para ver Indios Verdes", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+            position.first == 30 && position.second == 9 -> {
+                canChangeMap = true
+                targetDestination = "plaza"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para ver Plaza Vista Norte", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+            position.first == 30 && position.second == 23 -> {
+                canChangeMap = true
+                targetDestination = "talleres"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para ver los Talleres Ticoman", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+            position.first == 26 && position.second == 29 -> {
+                canChangeMap = true
+                targetDestination = "cablebus"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para subir al cablebus", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+            else -> {
+                canChangeMap = false
+                targetDestination = null
             }
         }
     }
@@ -369,7 +330,7 @@ class BuildingNumber2 : AppCompatActivity(),
 
             // Añadir el listener para el botón de regreso
             btnConnectDevice.setOnClickListener {
-                returnToMainActivity()
+                returnToZacatencoActivity()
             }
 
             btnNorth.setOnTouchListener { _, event -> handleMovement(event, 0, -1); true }
@@ -379,9 +340,15 @@ class BuildingNumber2 : AppCompatActivity(),
 
             // Modificar el botón A para manejar las transiciones de mapa
             buttonA.setOnClickListener {
-                if (canChangeMap && targetMapId != null) {
-                    // En lugar de hacer la lógica aquí directamente, usa el método en MapView
-                    mapView.initiateMapTransition(targetMapId!!)
+                if (canChangeMap) {
+                    when (targetDestination) {
+                        "zacatenco" -> returnToZacatencoActivity()
+                        "indios" -> viewIndiosVerdes()
+                        "plaza" -> viewPlazaVistaNorte()
+                        "talleres" -> viewTalleresTicoman()
+                        "cablebus" -> enterCablebus()
+                        else -> showToast("No hay interacción disponible en esta posición")
+                    }
                 } else {
                     showToast("No hay interacción disponible en esta posición")
                 }
@@ -389,12 +356,46 @@ class BuildingNumber2 : AppCompatActivity(),
         }
     }
 
-    private fun returnToMainActivity() {
+    private fun viewIndiosVerdes() {
+        val intent =
+            Intent(Intent.ACTION_VIEW, Uri.parse("https://maps.app.goo.gl/r7pcPXFPxNbGcviV8"))
+        startActivity(intent)
+    }
+    private fun viewPlazaVistaNorte() {
+        val intent =
+            Intent(Intent.ACTION_VIEW, Uri.parse("https://maps.app.goo.gl/yuDsYdMcNgQiLfJX9"))
+        startActivity(intent)
+    }
+    private fun viewTalleresTicoman() {
+        val intent =
+            Intent(Intent.ACTION_VIEW, Uri.parse("https://maps.app.goo.gl/g6mWn6vzEZJZsbeb7"))
+        startActivity(intent)
+    }
+
+    private fun returnToZacatencoActivity() {
         // Obtener la posición previa del intent
         val previousPosition = intent.getSerializableExtra("PREVIOUS_POSITION") as? Pair<Int, Int>
-            ?: Pair(15, 10) // Posición por defecto si no hay previa
+            ?: Pair(34, 17) // Posición por defecto si no hay previa
 
-        val intent = Intent(this, GameplayActivity::class.java).apply {
+        val intent = Intent(this, Zacatenco::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", previousPosition) // Usar la posición previa
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+
+        // Limpiar datos antes de cambiar de activity
+        mapView.playerManager.cleanup()
+        startActivity(intent)
+        finish()
+    }
+
+    private fun enterCablebus() {
+        // Obtener la posición previa del intent
+        val previousPosition = intent.getSerializableExtra("PREVIOUS_POSITION") as? Pair<Int, Int>
+            ?: Pair(34, 17) // Posición por defecto si no hay previa
+
+        val intent = Intent(this, Cablebus::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_POSITION", previousPosition) // Usar la posición previa
@@ -416,7 +417,7 @@ class BuildingNumber2 : AppCompatActivity(),
                 mapView.updateLocalPlayerPosition(position, forceCenter = true)
 
                 if (gameState.isConnected) {
-                    serverConnectionManager.sendUpdateMessage(playerName, position, "escom_building2")
+                    serverConnectionManager.sendUpdateMessage(playerName, position, "escom_lindavista")
                 }
 
                 checkPositionForMapChange(position)
@@ -442,6 +443,20 @@ class BuildingNumber2 : AppCompatActivity(),
 
     // Bluetooth Callbacks
     override fun onBluetoothDeviceConnected(device: BluetoothDevice) {
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return
+        }
         gameState.remotePlayerName = device.name
         uiManager.updateBluetoothStatus("Conectado a ${device.name}")
     }
@@ -460,6 +475,20 @@ class BuildingNumber2 : AppCompatActivity(),
     }
 
     override fun onDeviceConnected(device: BluetoothDevice) {
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return
+        }
         gameState.remotePlayerName = device.name
     }
 
@@ -559,9 +588,25 @@ class BuildingNumber2 : AppCompatActivity(),
 
     override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
         runOnUiThread {
-            val deviceName = device.name ?: "Unknown"
+            val deviceName = if (ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.BLUETOOTH_CONNECT
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+                return@runOnUiThread
+            } else {
+
+            }
+            device.name ?: "Unknown"
             val currentMap = mapView.playerManager.getCurrentMap()
-            mapView.updateRemotePlayerPosition(deviceName, Pair(x, y), currentMap)
+            mapView.updateRemotePlayerPosition(deviceName.toString(), Pair(x, y), currentMap)
             Log.d("GameplayActivity", "Recibida posición del dispositivo $deviceName: ($x, $y)")
             mapView.invalidate()
         }

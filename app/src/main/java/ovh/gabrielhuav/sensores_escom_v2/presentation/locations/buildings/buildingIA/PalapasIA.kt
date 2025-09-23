@@ -1,4 +1,4 @@
-package ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings
+package ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.buildingIA
 
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
@@ -23,9 +23,9 @@ import ovh.gabrielhuav.sensores_escom_v2.presentation.common.base.GameplayActivi
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.MovementManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.ServerConnectionManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.BuildingNumber2
-import ovh.gabrielhuav.sensores_escom_v2.presentation.game.zombie.PalapasIAZombieController
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.zombie.PalapasIAZombieController
 
 class PalapasIA : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,

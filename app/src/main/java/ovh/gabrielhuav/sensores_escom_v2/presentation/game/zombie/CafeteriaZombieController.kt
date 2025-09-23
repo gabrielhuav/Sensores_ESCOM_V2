@@ -1,9 +1,11 @@
-package ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.cafeteria
+package ovh.gabrielhuav.sensores_escom_v2.presentation.game.zombie
 
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
+import kotlin.collections.get
+import kotlin.collections.iterator
 import kotlin.math.abs
 import kotlin.math.sqrt
 import kotlin.random.Random
@@ -11,7 +13,7 @@ import kotlin.random.Random
 /**
  * Controlador para gestionar los zombies en el minijuego de la cafetería
  */
-class ZombieController(
+class CafeteriaZombieController(
     private val onZombiePositionChanged: (String, Pair<Int, Int>) -> Unit,
     private val onPlayerCaught: () -> Unit
 ) {

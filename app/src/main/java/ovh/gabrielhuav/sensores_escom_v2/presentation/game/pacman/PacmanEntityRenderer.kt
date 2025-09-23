@@ -1,8 +1,9 @@
-package ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber3.pacman
+package ovh.gabrielhuav.sensores_escom_v2.presentation.game.pacman
 
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.RectF
 import android.util.Log
 
@@ -154,7 +155,7 @@ class PacmanEntityRenderer {
             )
 
             // Dibujar la parte inferior ondulada
-            val wavePath = android.graphics.Path()
+            val wavePath = Path()
             wavePath.moveTo(centerX - radius, centerY + radius * 0.5f)
 
             // Crear una parte inferior ondulada con 3 semicírculos

@@ -26,7 +26,7 @@ import ovh.gabrielhuav.sensores_escom_v2.domain.bluetooth.BluetoothManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.MovementManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.ServerConnectionManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.BuildingNumber2
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.Zacatenco
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.Zacatenco
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.base.GameplayActivity

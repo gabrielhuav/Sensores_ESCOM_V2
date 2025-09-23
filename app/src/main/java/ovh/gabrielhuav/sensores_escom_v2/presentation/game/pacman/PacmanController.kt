@@ -1,4 +1,4 @@
-package ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber3.pacman
+package ovh.gabrielhuav.sensores_escom_v2.presentation.game.pacman
 
 import android.os.Handler
 import android.os.Looper

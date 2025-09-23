@@ -6,8 +6,8 @@ import android.graphics.Paint
 import android.graphics.Typeface
 import android.util.Log
 import org.json.JSONObject
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber3.pacman.PacmanEntityRenderer
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber3.pacman.PacmanController
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.pacman.PacmanEntityRenderer
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.pacman.PacmanController
 
 class PlayerManager {
     private var localPlayerPosition: Pair<Int, Int>? = null

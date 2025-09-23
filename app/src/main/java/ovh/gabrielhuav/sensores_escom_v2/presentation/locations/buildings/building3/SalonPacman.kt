@@ -1,4 +1,4 @@
-package ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber3
+package ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.building3
 
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
@@ -21,11 +21,11 @@ import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManag
 import ovh.gabrielhuav.sensores_escom_v2.domain.bluetooth.BluetoothManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.MovementManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.ServerConnectionManager
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.BuildingNumber4
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber3.pacman.PacmanController
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber3.pacman.PacmanGameStatus
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.building4.BuildingNumber4
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.pacman.PacmanController
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.pacman.PacmanGameStatus
 
 class SalonPacman : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,
@@ -95,19 +95,19 @@ class SalonPacman : AppCompatActivity(),
             // Esperar a que el mapView esté listo
             mapView.post {
                 // Configurar el mapa para el salón 1212
-                val normalizedMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_SALON1212)
+                val normalizedMap = MapMatrixProvider.Companion.normalizeMapName(MapMatrixProvider.Companion.MAP_SALON1212)
                 mapView.setCurrentMap(normalizedMap, R.drawable.escom_salon1212)
 
                 // Configurar el playerManager
                 mapView.playerManager.apply {
-                    setCurrentMap(MapMatrixProvider.MAP_SALON1212)
+                    setCurrentMap(MapMatrixProvider.Companion.MAP_SALON1212)
                     localPlayerId = playerName
                     updateLocalPlayerPosition(gameState.playerPosition)
                 }
 
                 // Importante: Enviar un update inmediato para que otros jugadores sepan dónde estamos
                 if (gameState.isConnected) {
-                    serverConnectionManager.sendUpdateMessage(playerName, gameState.playerPosition, MapMatrixProvider.MAP_SALON1212)
+                    serverConnectionManager.sendUpdateMessage(playerName, gameState.playerPosition, MapMatrixProvider.Companion.MAP_SALON1212)
                 }
 
                 // Mostrar diálogo de introducción al juego Pacman
@@ -169,11 +169,13 @@ class SalonPacman : AppCompatActivity(),
                             tvBluetoothStatus.text = "Jugando Pac-Man - ¡Buena suerte!"
                         }
                     }
+
                     PacmanGameStatus.PAUSED -> {
                         runOnUiThread {
                             tvBluetoothStatus.text = "Juego en pausa"
                         }
                     }
+
                     else -> {
                         runOnUiThread {
                             tvBluetoothStatus.text = "MINIJUEGO ACTIVO - Pac-Man"
@@ -192,7 +194,11 @@ class SalonPacman : AppCompatActivity(),
                 } else {
                     // Regular entity update
                     runOnUiThread {
-                        mapView.updateSpecialEntity(entityId, position, MapMatrixProvider.MAP_SALON1212)
+                        mapView.updateSpecialEntity(
+                            entityId,
+                            position,
+                            MapMatrixProvider.Companion.MAP_SALON1212
+                        )
                         mapView.invalidate()
                     }
                 }
@@ -335,7 +341,7 @@ class SalonPacman : AppCompatActivity(),
                 put("type", "pacman_game_update")
                 put("action", action)
                 put("player", playerName)
-                put("map", MapMatrixProvider.MAP_SALON1212)
+                put("map", MapMatrixProvider.Companion.MAP_SALON1212)
 
                 if (action == "complete") {
                     put("won", won)
@@ -365,7 +371,7 @@ class SalonPacman : AppCompatActivity(),
                     serverConnectionManager.sendUpdateMessage(
                         playerName,
                         gameState.playerPosition,
-                        MapMatrixProvider.MAP_SALON1212
+                        MapMatrixProvider.Companion.MAP_SALON1212
                     )
 
                     // Solicitar actualizaciones de posición
@@ -396,13 +402,13 @@ class SalonPacman : AppCompatActivity(),
     }
 
     private fun initializeManagers() {
-        bluetoothManager = BluetoothManager.getInstance(this, tvBluetoothStatus).apply {
+        bluetoothManager = BluetoothManager.Companion.getInstance(this, tvBluetoothStatus).apply {
             setCallback(this@SalonPacman)
         }
 
-        bluetoothBridge = BluetoothWebSocketBridge.getInstance()
+        bluetoothBridge = BluetoothWebSocketBridge.Companion.getInstance()
 
-        val onlineServerManager = OnlineServerManager.getInstance(this).apply {
+        val onlineServerManager = OnlineServerManager.Companion.getInstance(this).apply {
             setListener(this@SalonPacman)
         }
 
@@ -426,7 +432,7 @@ class SalonPacman : AppCompatActivity(),
             if (pacmanGameActive && event.action == MotionEvent.ACTION_DOWN) {
                 // Log to verify direction changes
                 Log.d(TAG, "Setting Pacman direction to UP")
-                pacmanController.setDirection(PacmanController.DIRECTION_UP)
+                pacmanController.setDirection(PacmanController.Companion.DIRECTION_UP)
                 return@setOnTouchListener true
             } else {
                 handleMovement(event, 0, -1)
@@ -437,7 +443,7 @@ class SalonPacman : AppCompatActivity(),
         btnSouth.setOnTouchListener { _, event ->
             if (pacmanGameActive && event.action == MotionEvent.ACTION_DOWN) {
                 Log.d(TAG, "Setting Pacman direction to BOTTOM")
-                pacmanController.setDirection(PacmanController.DIRECTION_BOTTOM)
+                pacmanController.setDirection(PacmanController.Companion.DIRECTION_BOTTOM)
                 return@setOnTouchListener true
             } else {
                 handleMovement(event, 0, 1)
@@ -448,7 +454,7 @@ class SalonPacman : AppCompatActivity(),
         btnEast.setOnTouchListener { _, event ->
             if (pacmanGameActive && event.action == MotionEvent.ACTION_DOWN) {
                 Log.d(TAG, "Setting Pacman direction to RIGHT")
-                pacmanController.setDirection(PacmanController.DIRECTION_RIGHT)
+                pacmanController.setDirection(PacmanController.Companion.DIRECTION_RIGHT)
                 return@setOnTouchListener true
             } else {
                 handleMovement(event, 1, 0)
@@ -459,7 +465,7 @@ class SalonPacman : AppCompatActivity(),
         btnWest.setOnTouchListener { _, event ->
             if (pacmanGameActive && event.action == MotionEvent.ACTION_DOWN) {
                 Log.d(TAG, "Setting Pacman direction to LEFT")
-                pacmanController.setDirection(PacmanController.DIRECTION_LEFT)
+                pacmanController.setDirection(PacmanController.Companion.DIRECTION_LEFT)
                 return@setOnTouchListener true
             } else {
                 handleMovement(event, -1, 0)
@@ -535,7 +541,7 @@ class SalonPacman : AppCompatActivity(),
 
             // Enviar actualización a otros jugadores con el mapa específico
             if (gameState.isConnected) {
-                serverConnectionManager.sendUpdateMessage(playerName, position, MapMatrixProvider.MAP_SALON1212)
+                serverConnectionManager.sendUpdateMessage(playerName, position, MapMatrixProvider.Companion.MAP_SALON1212)
             }
         }
     }
@@ -571,7 +577,7 @@ class SalonPacman : AppCompatActivity(),
     // Implementación MapTransitionListener
     override fun onMapTransitionRequested(targetMap: String, initialPosition: Pair<Int, Int>) {
         when (targetMap) {
-            MapMatrixProvider.MAP_BUILDING2 -> {
+            MapMatrixProvider.Companion.MAP_BUILDING2 -> {
                 returnToBuilding()
             }
             else -> {
@@ -606,7 +612,7 @@ class SalonPacman : AppCompatActivity(),
     override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
         runOnUiThread {
             val deviceName = device.name ?: "Unknown"
-            mapView.updateRemotePlayerPosition(deviceName, Pair(x, y), MapMatrixProvider.MAP_SALON1212)
+            mapView.updateRemotePlayerPosition(deviceName, Pair(x, y), MapMatrixProvider.Companion.MAP_SALON1212)
             mapView.invalidate()
         }
     }
@@ -630,7 +636,7 @@ class SalonPacman : AppCompatActivity(),
 
                                 // Obtener el mapa y normalizarlo
                                 val mapStr = playerData.optString("map", playerData.optString("currentMap", "main"))
-                                val normalizedMap = MapMatrixProvider.normalizeMapName(mapStr)
+                                val normalizedMap = MapMatrixProvider.Companion.normalizeMapName(mapStr)
 
                                 // Guardar en el estado del juego
                                 gameState.remotePlayerPositions = gameState.remotePlayerPositions +
@@ -640,8 +646,8 @@ class SalonPacman : AppCompatActivity(),
                                         ))
 
                                 // Obtener el mapa actual normalizado para comparar
-                                val currentMap = MapMatrixProvider.normalizeMapName(
-                                    MapMatrixProvider.MAP_SALON1212)
+                                val currentMap = MapMatrixProvider.Companion.normalizeMapName(
+                                    MapMatrixProvider.Companion.MAP_SALON1212)
 
                                 // Solo mostrar jugadores en el mismo mapa
                                 if (normalizedMap == currentMap) {
@@ -660,7 +666,7 @@ class SalonPacman : AppCompatActivity(),
 
                             // Obtener y normalizar el mapa
                             val mapStr = jsonObject.optString("map", jsonObject.optString("currentmap", "main"))
-                            val normalizedMap = MapMatrixProvider.normalizeMapName(mapStr)
+                            val normalizedMap = MapMatrixProvider.Companion.normalizeMapName(mapStr)
 
                             // Guardar en el estado
                             gameState.remotePlayerPositions = gameState.remotePlayerPositions +
@@ -670,7 +676,8 @@ class SalonPacman : AppCompatActivity(),
                                     ))
 
                             // Obtener el mapa actual normalizado para comparar
-                            val currentMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_SALON1212)
+                            val currentMap = MapMatrixProvider.Companion.normalizeMapName(
+                                MapMatrixProvider.Companion.MAP_SALON1212)
 
                             // Solo mostrar jugadores en el mismo mapa
                             if (normalizedMap == currentMap) {
@@ -701,7 +708,7 @@ class SalonPacman : AppCompatActivity(),
                         serverConnectionManager.sendUpdateMessage(
                             playerName,
                             gameState.playerPosition,
-                            MapMatrixProvider.MAP_SALON1212
+                            MapMatrixProvider.Companion.MAP_SALON1212
                         )
                     }
                     "disconnect" -> {
@@ -760,7 +767,7 @@ class SalonPacman : AppCompatActivity(),
             serverConnectionManager.sendUpdateMessage(
                 playerName,
                 gameState.playerPosition,
-                MapMatrixProvider.MAP_SALON1212
+                MapMatrixProvider.Companion.MAP_SALON1212
             )
         }
     }

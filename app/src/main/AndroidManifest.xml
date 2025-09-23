@@ -54,18 +54,18 @@
 
         <!-- Building4 Activity -->
         <activity
-            android:name=".presentation.components.BuildingNumber4"
+            android:name=".presentation.locations.buildings.building4.BuildingNumber4"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
         <activity
-            android:name=".presentation.components.Zacatenco"
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
-
-        <activity
-            android:name=".presentation.components.Lindavista"
+            android:name=".presentation.locations.outdoor.Zacatenco"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
-            android:name=".presentation.components.EstacionamientoEscom"
+            android:name=".presentation.locations.outdoor.Lindavista"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+
+        <activity
+            android:name=".presentation.locations.outdoor.EstacionamientoEscom"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
@@ -90,11 +90,11 @@
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
-            android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber3.SalonPacman"
+            android:name=".presentation.locations.buildings.building3.SalonPacman"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
-            android:name=".presentation.components.Cafeteria"
+            android:name=".presentation.locations.buildings.cafeteria.Cafeteria"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
@@ -110,7 +110,7 @@
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
-            android:name=".presentation.locations.buildings.PalapasIA"
+            android:name=".presentation.locations.buildings.buildingIA.PalapasIA"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <!-- DeviceList Activity -->

@@ -15,7 +15,7 @@ import android.view.MotionEvent
 import android.view.View
 import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.cafeteria.FogOfWarRenderer
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.zombie.FogOfWarRenderer
 import kotlin.math.min
 
 class MapView @JvmOverloads constructor(

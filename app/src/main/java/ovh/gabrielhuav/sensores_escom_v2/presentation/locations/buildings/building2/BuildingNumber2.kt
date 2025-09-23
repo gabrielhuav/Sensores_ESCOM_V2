@@ -27,7 +27,7 @@ import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProv
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.base.GameplayActivity
 
-class BuildingNumber4 : AppCompatActivity(),
+class BuildingNumber2 : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,
     BluetoothGameManager.ConnectionListener,
     OnlineServerManager.WebSocketListener,
@@ -75,7 +75,7 @@ class BuildingNumber4 : AppCompatActivity(),
             // Primero inicializamos el mapView
             mapView = MapView(
                 context = this,
-                mapResourceId = R.drawable.escom_edificio_4_piso_2
+                mapResourceId = R.drawable.escom_edificio_2_planta_baja
             )
             findViewById<FrameLayout>(R.id.map_container).addView(mapView)
 
@@ -86,7 +86,7 @@ class BuildingNumber4 : AppCompatActivity(),
             mapView.post {
                 // Configurar el mapa
                 val normalizedMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_BUILDING2)
-                mapView.setCurrentMap(normalizedMap, R.drawable.escom_edificio_4_piso_2)
+                mapView.setCurrentMap(normalizedMap, R.drawable.escom_edificio_2_planta_baja)
 
                 // Después configurar el playerManager
                 mapView.playerManager.apply {
@@ -115,7 +115,7 @@ class BuildingNumber4 : AppCompatActivity(),
         if (savedInstanceState == null) {
             // Inicializar el estado del juego desde el Intent
             gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
-            gameState.playerPosition = intent.getParcelableExtra("INITIAL_POSITION") ?: Pair(1, 1)
+            gameState.playerPosition = (intent.getParcelableExtra("INITIAL_POSITION") ?: Pair(1, 1)) as Pair<Int, Int>
         } else {
             restoreState(savedInstanceState)
         }
@@ -143,14 +143,14 @@ class BuildingNumber4 : AppCompatActivity(),
 
     private fun initializeManagers() {
         bluetoothManager = BluetoothManager.getInstance(this, uiManager.tvBluetoothStatus).apply {
-            setCallback(this@BuildingNumber4)
+            setCallback(this@BuildingNumber2)
         }
 
         bluetoothBridge = BluetoothWebSocketBridge.getInstance()
 
         // Configurar OnlineServerManager con el listener
         val onlineServerManager = OnlineServerManager.getInstance(this).apply {
-            setListener(this@BuildingNumber4)
+            setListener(this@BuildingNumber2)
         }
 
         serverConnectionManager = ServerConnectionManager(
@@ -181,11 +181,15 @@ class BuildingNumber4 : AppCompatActivity(),
             }
             MapMatrixProvider.MAP_SALON2009 -> {
                 // Transición al salón 2009
-                startSalon2009Activity()
+                //startSalon2009Activity()
             }
             MapMatrixProvider.MAP_SALON2010 -> {
                 // Transición al salón 2010
-                startSalon2010Activity()
+                //startSalon2010Activity()
+            }
+            MapMatrixProvider.MAP_BUILDING2_PISO1 -> {
+                // Transición al edificio 2 primera planta
+                startPrimerPisoActivity()
             }
             // Añadir más casos según sea necesario para otros mapas
             else -> {
@@ -200,6 +204,24 @@ class BuildingNumber4 : AppCompatActivity(),
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_POSITION", Pair(20, 20)) // Posición inicial en el salón
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guardar la posición actual para regresar
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+
+        // Limpiar datos antes de cambiar de activity
+        mapView.playerManager.cleanup()
+        startActivity(intent)
+        finish()
+    }
+
+    private fun startPrimerPisoActivity() {
+
+        val previousPosition = intent.getSerializableExtra("PREVIOUS_POSITION") as? Pair<Int, Int>
+            ?: Pair(17, 20) // Posición por defecto si no hay previa
+        val intent = Intent(this, BuildingNumber2Piso1::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", previousPosition) // Posición inicial en el salón
             putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guardar la posición actual para regresar
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
@@ -327,6 +349,9 @@ class BuildingNumber4 : AppCompatActivity(),
                     MapMatrixProvider.MAP_SALON2010 -> {
                         Toast.makeText(this, "Presiona A para entrar al salón 2010", Toast.LENGTH_SHORT).show()
                     }
+                    MapMatrixProvider.MAP_BUILDING2_PISO1 -> {
+                        Toast.makeText(this, "Presiona A para entrar al edificio 2 primera planta", Toast.LENGTH_SHORT).show()
+                    }
                     else -> {
                         Toast.makeText(this, "Presiona A para interactuar", Toast.LENGTH_SHORT).show()
                     }
@@ -382,17 +407,6 @@ class BuildingNumber4 : AppCompatActivity(),
         finish()
     }
 
-    private fun startBuildingActivity() {
-        val intent = Intent(this, BuildingNumber4::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(1, 1))
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        startActivity(intent)
-        finish()
-    }
-
     private fun updatePlayerPosition(position: Pair<Int, Int>) {
         runOnUiThread {
             try {
@@ -402,7 +416,7 @@ class BuildingNumber4 : AppCompatActivity(),
                 mapView.updateLocalPlayerPosition(position, forceCenter = true)
 
                 if (gameState.isConnected) {
-                    serverConnectionManager.sendUpdateMessage(playerName, position, "escom_building4_floor_2")
+                    serverConnectionManager.sendUpdateMessage(playerName, position, "escom_building2")
                 }
 
                 checkPositionForMapChange(position)
