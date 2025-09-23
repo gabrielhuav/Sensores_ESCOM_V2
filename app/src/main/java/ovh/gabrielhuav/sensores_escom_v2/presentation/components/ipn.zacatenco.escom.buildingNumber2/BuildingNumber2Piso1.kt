@@ -17,9 +17,14 @@ import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
+import ovh.gabrielhuav.sensores_escom_v2.domain.bluetooth.BluetoothManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.common.components.UIManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.MovementManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.ServerConnectionManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2009
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2010
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
+import ovh.gabrielhuav.sensores_escom_v2.presentation.common.base.GameplayActivity
 
 class BuildingNumber2Piso1 : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,

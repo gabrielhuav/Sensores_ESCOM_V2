@@ -1,4 +1,4 @@
-package ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.cablebus
+package ovh.gabrielhuav.sensores_escom_v2.presentation.locations.transportation
 
 import android.Manifest
 import android.bluetooth.BluetoothDevice
@@ -21,13 +21,14 @@ import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
+import ovh.gabrielhuav.sensores_escom_v2.domain.bluetooth.BluetoothManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.MovementManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.ServerConnectionManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.Lindavista
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.BluetoothManager
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.MapMatrixProvider
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.MapView
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.MovementManager
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.ServerConnectionManager
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.UIManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.common.components.UIManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
+import kotlin.collections.iterator
 
 class Cablebus : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,
@@ -87,7 +88,7 @@ class Cablebus : AppCompatActivity(),
             // Esperar a que el mapView esté listo
             mapView.post {
                 // Configurar el mapa
-                val normalizedMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_CABLEBUS)
+                val normalizedMap = MapMatrixProvider.Companion.normalizeMapName(MapMatrixProvider.Companion.MAP_CABLEBUS)
                 mapView.setCurrentMap(normalizedMap, R.drawable.cablebus)
 
                 // Después configurar el playerManager
@@ -117,7 +118,7 @@ class Cablebus : AppCompatActivity(),
         if (savedInstanceState == null) {
             // Inicializar el estado del juego desde el Intent
             gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
-            gameState.playerPosition = intent.getParcelableExtra("INITIAL_POSITION") ?: Pair(1, 6)
+            gameState.playerPosition = intent.getSerializableExtra("INITIAL_POSITION") as? Pair<Int, Int> ?: Pair(1, 6)
         } else {
             restoreState(savedInstanceState)
         }
@@ -144,14 +145,14 @@ class Cablebus : AppCompatActivity(),
     }
 
     private fun initializeManagers() {
-        bluetoothManager = BluetoothManager.getInstance(this, uiManager.tvBluetoothStatus).apply {
+        bluetoothManager = BluetoothManager.Companion.getInstance(this, uiManager.tvBluetoothStatus).apply {
             setCallback(this@Cablebus)
         }
 
-        bluetoothBridge = BluetoothWebSocketBridge.getInstance()
+        bluetoothBridge = BluetoothWebSocketBridge.Companion.getInstance()
 
         // Configurar OnlineServerManager con el listener
-        val onlineServerManager = OnlineServerManager.getInstance(this).apply {
+        val onlineServerManager = OnlineServerManager.Companion.getInstance(this).apply {
             setListener(this@Cablebus)
         }
 
@@ -177,7 +178,7 @@ class Cablebus : AppCompatActivity(),
     // Actualiza el metodo onMapTransitionRequested para manejar la transición al salón 2009
     override fun onMapTransitionRequested(targetMap: String, initialPosition: Pair<Int, Int>) {
         when (targetMap) {
-            MapMatrixProvider.MAP_LINDAVISTA -> {
+            MapMatrixProvider.Companion.MAP_LINDAVISTA -> {
                 // Transición al mapa principal
                 returnToLindavistaActivity()
             }
@@ -324,7 +325,8 @@ class Cablebus : AppCompatActivity(),
     }
 
     private fun viewTalleresTicoman() {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://maps.app.goo.gl/g6mWn6vzEZJZsbeb7"))
+        val intent =
+            Intent(Intent.ACTION_VIEW, Uri.parse("https://maps.app.goo.gl/g6mWn6vzEZJZsbeb7"))
         startActivity(intent)
     }
 

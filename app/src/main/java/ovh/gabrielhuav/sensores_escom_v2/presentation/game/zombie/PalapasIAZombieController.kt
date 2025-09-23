@@ -1,8 +1,10 @@
-package ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.palapas_ia
+package ovh.gabrielhuav.sensores_escom_v2.presentation.game.zombie
 
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import kotlin.collections.get
+import kotlin.collections.iterator
 import kotlin.math.abs
 import kotlin.math.sqrt
 import kotlin.random.Random
@@ -10,7 +12,7 @@ import kotlin.random.Random
 /**
  * Controlador para gestionar los zombies en el minijuego de la palapas IA
  */
-class ZombieController(
+class PalapasIAZombieController(
     private val onZombiePositionChanged: (String, Pair<Int, Int>) -> Unit,
     private val onPlayerCaught: () -> Unit
 ) {
@@ -119,7 +121,7 @@ class ZombieController(
             // Solo cambiar de objetivo si encontramos uno más cercano o no teníamos ninguno
             if (nearestPlayer != null) {
                 targetPlayerId = nearestPlayer
-            } else if (Random.nextDouble() < 0.1) {
+            } else if (Random.Default.nextDouble() < 0.1) {
                 // 10% de probabilidad de cambiar a un objetivo aleatorio si no hay uno cercano
                 targetPlayerId = players.keys.randomOrNull()
             }
@@ -146,7 +148,7 @@ class ZombieController(
             }
 
             // En dificultad difícil, hay probabilidad de movimiento diagonal
-            if (currentDifficulty == DIFFICULTY_HARD && Random.nextDouble() < 0.4) {
+            if (currentDifficulty == DIFFICULTY_HARD && Random.Default.nextDouble() < 0.4) {
                 position = Pair(
                     position.first + if (dx > 0) 1 else -1,
                     position.second + if (dy > 0) 1 else -1
@@ -162,7 +164,7 @@ class ZombieController(
 
         private fun moveRandomly() {
             // Seleccionar dirección aleatoria
-            val direction = Random.nextInt(4)
+            val direction = Random.Default.nextInt(4)
 
             // Moverse según la dirección
             position = when (direction) {
@@ -272,8 +274,8 @@ class ZombieController(
         // Crear zombies
         for (i in 0 until count) {
             // Posiciones iniciales alejadas de los jugadores
-            val xPos = Random.nextInt(10, 30)
-            val yPos = Random.nextInt(10, 30)
+            val xPos = Random.Default.nextInt(10, 30)
+            val yPos = Random.Default.nextInt(10, 30)
 
             val zombie = Zombie(
                 id = "zombie_$i",

@@ -3,7 +3,7 @@ package ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.MapMatrixProvider
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
 import kotlin.math.abs
 import kotlin.math.sqrt
 import kotlin.random.Random

@@ -1,4 +1,4 @@
-package ovh.gabrielhuav.sensores_escom_v2.presentation.components
+package ovh.gabrielhuav.sensores_escom_v2.presentation.common.base
 
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
@@ -17,8 +17,21 @@ import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
+import ovh.gabrielhuav.sensores_escom_v2.domain.bluetooth.BluetoothManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.common.components.UIManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.MovementManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.ServerConnectionManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.BuildingEdificioIA
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.BuildingNumber2
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.BuildingNumber4
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.Cafeteria
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.EstacionamientoEscom
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.Zacatenco
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber3.SalonPacman
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.PalapasIA
+import kotlin.collections.iterator
 
 class GameplayActivity : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,
@@ -120,14 +133,14 @@ class GameplayActivity : AppCompatActivity(),
     }
 
     private fun initializeManagers() {
-        bluetoothManager = BluetoothManager.getInstance(this, uiManager.tvBluetoothStatus).apply {
+        bluetoothManager = BluetoothManager.Companion.getInstance(this, uiManager.tvBluetoothStatus).apply {
             setCallback(this@GameplayActivity)
         }
 
-        bluetoothBridge = BluetoothWebSocketBridge.getInstance()
+        bluetoothBridge = BluetoothWebSocketBridge.Companion.getInstance()
 
         // Configurar OnlineServerManager con el listener
-        val onlineServerManager = OnlineServerManager.getInstance(this).apply {
+        val onlineServerManager = OnlineServerManager.Companion.getInstance(this).apply {
             setListener(this@GameplayActivity)
         }
 
@@ -537,7 +550,7 @@ class GameplayActivity : AppCompatActivity(),
                                 )
 
                                 // Obtener el mapa del jugador, con 'main' como valor predeterminado
-                                val map = playerData.optString("map", MapMatrixProvider.MAP_MAIN)
+                                val map = playerData.optString("map", MapMatrixProvider.Companion.MAP_MAIN)
 
                                 // Actualizar el estado del juego
                                 gameState.remotePlayerPositions = gameState.remotePlayerPositions +
@@ -564,7 +577,7 @@ class GameplayActivity : AppCompatActivity(),
                             } else if (jsonObject.has("currentmap")) {
                                 jsonObject.getString("currentmap")
                             } else {
-                                MapMatrixProvider.MAP_MAIN // Valor predeterminado
+                                MapMatrixProvider.Companion.MAP_MAIN // Valor predeterminado
                             }
 
                             // Actualizar el estado del juego

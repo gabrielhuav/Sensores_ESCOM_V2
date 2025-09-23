@@ -1,19 +1,19 @@
-package ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview
+package ovh.gabrielhuav.sensores_escom_v2.domain.bluetooth
 
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
-import androidx.core.app.ActivityCompat
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 
 class BluetoothManager private constructor(
@@ -100,7 +100,7 @@ class BluetoothManager private constructor(
             connectionState = ConnectionState.CONNECTING
             updateStatus("Iniciando servidor Bluetooth...")
 
-            BluetoothGameManager.getInstance(activity).apply {
+            BluetoothGameManager.Companion.getInstance(activity).apply {
                 setConnectionListener(createConnectionListener())
                 startServer()
             }
@@ -132,7 +132,7 @@ class BluetoothManager private constructor(
                 updateStatus("Conectando a ${device.name}...")
             }
 
-            BluetoothGameManager.getInstance(activity).apply {
+            BluetoothGameManager.Companion.getInstance(activity).apply {
                 setConnectionListener(createConnectionListener())
                 connectToDevice(device)
             }
@@ -179,7 +179,7 @@ class BluetoothManager private constructor(
     }
 
     private fun checkPermissions() {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (!hasRequiredPermissions()) {
                 ActivityCompat.requestPermissions(
                     activity,
@@ -236,7 +236,7 @@ class BluetoothManager private constructor(
 
     fun cleanup() {
         try {
-            BluetoothGameManager.getInstance(activity).stopConnection()
+            BluetoothGameManager.Companion.getInstance(activity).stopConnection()
             connectionState = ConnectionState.DISCONNECTED
             connectedDevice = null
             callback = null

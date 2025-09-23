@@ -1,30 +1,35 @@
-package ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.salidaMetro
+package ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor
 
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.RectF
+import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.MotionEvent
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import org.json.JSONObject
 import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
+import ovh.gabrielhuav.sensores_escom_v2.domain.bluetooth.BluetoothManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.MovementManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.ServerConnectionManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.BuildingNumber2
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.GameplayActivity
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
-import android.net.Uri // <-- Importar Uri
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.RectF
-import android.os.Handler
-import android.os.Looper
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.Zacatenco
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
+import ovh.gabrielhuav.sensores_escom_v2.presentation.common.base.GameplayActivity
 import kotlin.math.min
 
 class SalidaMetro : AppCompatActivity(),
@@ -68,14 +73,14 @@ class SalidaMetro : AppCompatActivity(),
         val color: Int
     ) {
         val rect = RectF(x, y, x + width, y + height)
-        
+
         fun update() {
             x -= speed
             // Get map bitmap dimensions for proper positioning
             val mapBitmap = mapView.mapState.backgroundBitmap
             if (mapBitmap != null) {
                 val mapWidth = mapBitmap.width.toFloat()
-                
+
                 // If car goes off left side, reset to right side
                 if (x < -width) {
                     x = mapWidth
@@ -106,17 +111,17 @@ class SalidaMetro : AppCompatActivity(),
             // Esperar a que el mapView esté listo
             mapView.post {
                 // Configurar el mapa para la salida del metro
-                mapView.setCurrentMap(MapMatrixProvider.MAP_SALIDAMETRO, R.drawable.escom_salidametro)
+                mapView.setCurrentMap(MapMatrixProvider.Companion.MAP_SALIDAMETRO, R.drawable.escom_salidametro)
                 // Configurar el playerManager
                 mapView.playerManager.apply {
-                    setCurrentMap(MapMatrixProvider.MAP_SALIDAMETRO)
+                    setCurrentMap(MapMatrixProvider.Companion.MAP_SALIDAMETRO)
                     localPlayerId = playerName
                     updateLocalPlayerPosition(gameState.playerPosition)
                 }
-                Log.d(TAG, "Set map to: " + MapMatrixProvider.MAP_SALIDAMETRO)
+                Log.d(TAG, "Set map to: " + MapMatrixProvider.Companion.MAP_SALIDAMETRO)
                 // Importante: Enviar un update inmediato para que otros jugadores sepan dónde estamos
                 if (gameState.isConnected) {
-                    serverConnectionManager.sendUpdateMessage(playerName, gameState.playerPosition, MapMatrixProvider.MAP_SALIDAMETRO)
+                    serverConnectionManager.sendUpdateMessage(playerName, gameState.playerPosition, MapMatrixProvider.Companion.MAP_SALIDAMETRO)
                 }
                 // Initialize cars after mapView is created
                 initializeCars()
@@ -161,7 +166,7 @@ class SalidaMetro : AppCompatActivity(),
     private fun initializeCars() {
         // Wait until map is fully loaded
         mapView.post {
-            val mapBitmap = mapView.mapState.backgroundBitmap ?: return@post            
+            val mapBitmap = mapView.mapState.backgroundBitmap ?: return@post
             // Create 5 cars with different speeds and positions
             val mapWidth = mapBitmap.width.toFloat()
             val mapHeight = mapBitmap.height.toFloat()
@@ -208,13 +213,13 @@ class SalidaMetro : AppCompatActivity(),
         for (car in carList) {
             car.update()
         }
-        
+
         // Apply collision prevention
         preventCollisions()
-        
+
         // Check for collisions with player
         checkPlayerCarCollisions()
-        
+
         // Request redraw
         mapView.invalidate()
     }
@@ -223,40 +228,40 @@ class SalidaMetro : AppCompatActivity(),
         // Get player position in map coordinates
         val playerPosition = gameState.playerPosition
         val playerRect = getPlayerRect(playerPosition)
-        
+
         if (playerRect != null) {
             // Check collision with each car
             for (car in carList) {
                 if (RectF.intersects(car.rect, playerRect)) {
                     // Collision detected! Show dialog
                     showCarCollisionDialog(car)
-                    
+
                     // Move player back slightly to avoid continuous collisions
                     val newPosition = Pair(
                         playerPosition.first - 1,
                         playerPosition.second - 1
                     )
                     updatePlayerPosition(newPosition)
-                    
+
                     // Only handle one collision at a time
                     break
                 }
             }
         }
     }
-    
+
     // Helper method to get player rectangle in map coordinates
     private fun getPlayerRect(position: Pair<Int, Int>): RectF? {
         val bitmap = mapView.mapState.backgroundBitmap ?: return null
-        
+
         // Calculate the cell size based on the bitmap dimensions and matrix size
-        val cellWidth = bitmap.width / MapMatrixProvider.MAP_WIDTH.toFloat()
-        val cellHeight = bitmap.height / MapMatrixProvider.MAP_HEIGHT.toFloat()
-        
+        val cellWidth = bitmap.width / MapMatrixProvider.Companion.MAP_WIDTH.toFloat()
+        val cellHeight = bitmap.height / MapMatrixProvider.Companion.MAP_HEIGHT.toFloat()
+
         // Calculate player position in pixels
         val playerX = position.first * cellWidth
         val playerY = position.second * cellHeight
-        
+
         // Create a rectangle for the player (make it slightly smaller than a cell)
         val playerSize = min(cellWidth, cellHeight) * 0.8f
         return RectF(
@@ -266,22 +271,22 @@ class SalidaMetro : AppCompatActivity(),
             playerY + (cellHeight + playerSize) / 2
         )
     }
-    
+
     // Dialog to show when player collides with a car
     private fun showCarCollisionDialog(car: Car) {
         // Check if we already have a dialog showing to prevent multiple dialogs
         if (isShowingCollisionDialog) return
-        
+
         isShowingCollisionDialog = true
-        
-        val builder = androidx.appcompat.app.AlertDialog.Builder(this)
+
+        val builder = AlertDialog.Builder(this)
         builder.setTitle("¡Cuidado!")
         builder.setMessage("Has chocado con un vehículo. Ten más cuidado al cruzar la calle.")
-        builder.setPositiveButton("OK") { dialog, _ -> 
+        builder.setPositiveButton("OK") { dialog, _ ->
             dialog.dismiss()
             isShowingCollisionDialog = false
         }
-        
+
         runOnUiThread {
             builder.show()
         }
@@ -327,7 +332,7 @@ class SalidaMetro : AppCompatActivity(),
                     serverConnectionManager.sendUpdateMessage(
                         playerName,
                         gameState.playerPosition,
-                        MapMatrixProvider.MAP_SALIDAMETRO
+                        MapMatrixProvider.Companion.MAP_SALIDAMETRO
                     )
                     // Solicitar actualizaciones de posición
                     serverConnectionManager.onlineServerManager.requestPositionsUpdate()
@@ -350,10 +355,10 @@ class SalidaMetro : AppCompatActivity(),
     }
 
     private fun initializeManagers() {
-        bluetoothManager = BluetoothManager.getInstance(this, tvBluetoothStatus).apply {
+        bluetoothManager = BluetoothManager.Companion.getInstance(this, tvBluetoothStatus).apply {
             setCallback(this@SalidaMetro)
         }
-        val onlineServerManager = OnlineServerManager.getInstance(this).apply {
+        val onlineServerManager = OnlineServerManager.Companion.getInstance(this).apply {
             setListener(this@SalidaMetro)
         }
 
@@ -390,7 +395,7 @@ class SalidaMetro : AppCompatActivity(),
             handleButtonAPress()
         }
     }
-    
+
     // Método para manejar la pulsación del botón A
     private fun handleButtonAPress() {
         val position = gameState.playerPosition
@@ -424,7 +429,7 @@ class SalidaMetro : AppCompatActivity(),
 
     // Método para mostrar un diálogo con información y opcionalmente un enlace web
     private fun showInfoDialog(title: String, message: String, url: String? = null) {
-        val builder = androidx.appcompat.app.AlertDialog.Builder(this)
+        val builder = AlertDialog.Builder(this)
         builder.setTitle(title)
         builder.setMessage(message)
         builder.setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
@@ -506,9 +511,9 @@ class SalidaMetro : AppCompatActivity(),
             // Enviar actualización a otros jugadores con el mapa específico
             if (gameState.isConnected) {
                 // Enviar la posición con el nombre del mapa correcto
-                serverConnectionManager.sendUpdateMessage(playerName, position, MapMatrixProvider.MAP_SALIDAMETRO)
+                serverConnectionManager.sendUpdateMessage(playerName, position, MapMatrixProvider.Companion.MAP_SALIDAMETRO)
                 // Log de debug para confirmar
-                Log.d(TAG, "Sending update: Player $playerName at $position in map ${MapMatrixProvider.MAP_SALIDAMETRO}")
+                Log.d(TAG, "Sending update: Player $playerName at $position in map ${MapMatrixProvider.Companion.MAP_SALIDAMETRO}")
             }
         }
     }
@@ -534,7 +539,7 @@ class SalidaMetro : AppCompatActivity(),
     // Implementación MapTransitionListener
     override fun onMapTransitionRequested(targetMap: String, initialPosition: Pair<Int, Int>) {
         when (targetMap) {
-            MapMatrixProvider.MAP_MAIN -> {
+            MapMatrixProvider.Companion.MAP_MAIN -> {
                 returnToMainActivity()
             }
             else -> {
@@ -569,7 +574,7 @@ class SalidaMetro : AppCompatActivity(),
     override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
         runOnUiThread {
             val deviceName = device.name ?: "Unknown"
-            mapView.updateRemotePlayerPosition(deviceName, Pair(x, y), MapMatrixProvider.MAP_SALIDAMETRO)
+            mapView.updateRemotePlayerPosition(deviceName, Pair(x, y), MapMatrixProvider.Companion.MAP_SALIDAMETRO)
             mapView.invalidate()
         }
     }
@@ -598,7 +603,7 @@ class SalidaMetro : AppCompatActivity(),
                                             map
                                         ))
                                 // Solo mostrar jugadores que estén en el mismo mapa
-                                if (map == MapMatrixProvider.MAP_CAFETERIA) {
+                                if (map == MapMatrixProvider.Companion.MAP_CAFETERIA) {
                                     mapView.updateRemotePlayerPosition(playerId, position, map)
                                     Log.d(TAG, "Updated remote player $playerId position to $position in map $map")
                                 }
@@ -620,7 +625,7 @@ class SalidaMetro : AppCompatActivity(),
                                         map
                                     ))
                             // Solo mostrar jugadores que estén en el mismo mapa
-                            if (map == MapMatrixProvider.MAP_SALIDAMETRO) {
+                            if (map == MapMatrixProvider.Companion.MAP_SALIDAMETRO) {
                                 mapView.updateRemotePlayerPosition(playerId, position, map)
                                 Log.d(TAG, "Updated remote player $playerId position to $position in map $map")
                             }
@@ -633,7 +638,7 @@ class SalidaMetro : AppCompatActivity(),
                         serverConnectionManager.sendUpdateMessage(
                             playerName,
                             gameState.playerPosition,
-                            MapMatrixProvider.MAP_SALIDAMETRO
+                            MapMatrixProvider.Companion.MAP_SALIDAMETRO
                         )
                     }
                 }
@@ -677,7 +682,7 @@ class SalidaMetro : AppCompatActivity(),
             serverConnectionManager.sendUpdateMessage(
                 playerName,
                 gameState.playerPosition,
-                MapMatrixProvider.MAP_SALIDAMETRO
+                MapMatrixProvider.Companion.MAP_SALIDAMETRO
             )
         }
         // Restart car animation

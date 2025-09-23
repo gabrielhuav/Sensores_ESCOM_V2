@@ -1,10 +1,11 @@
-package ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview
+package ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers
 
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
-import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
 import android.util.Log
+import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
 
 // ServerConnectionManager.kt
 class ServerConnectionManager(
@@ -67,7 +68,7 @@ class ServerConnectionManager(
     fun sendUpdateMessage(playerId: String, position: Pair<Int, Int>, map: String) {
         try {
             // Asegúrate de que 'map' tiene un valor válido
-            val mapToSend = if (map.isBlank()) MapMatrixProvider.MAP_MAIN else map
+            val mapToSend = if (map.isBlank()) MapMatrixProvider.Companion.MAP_MAIN else map
 
             onlineServerManager.sendUpdateMessage(
                 playerId = playerId,

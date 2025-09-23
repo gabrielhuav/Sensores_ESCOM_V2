@@ -17,7 +17,12 @@ import org.json.JSONObject
 import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
+import ovh.gabrielhuav.sensores_escom_v2.domain.bluetooth.BluetoothManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.MovementManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.ServerConnectionManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
+import ovh.gabrielhuav.sensores_escom_v2.presentation.common.base.GameplayActivity
 
 class BuildingEdificioIA_Alto : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,

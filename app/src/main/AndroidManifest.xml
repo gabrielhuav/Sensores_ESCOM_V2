@@ -43,7 +43,7 @@
 
         <!-- Gameplay Activity -->
         <activity
-            android:name=".presentation.components.GameplayActivity"
+            android:name=".presentation.common.base.GameplayActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
 
@@ -69,7 +69,7 @@
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
-            android:name=".presentation.components.TramoAtrasPlaza"
+            android:name=".presentation.locations.outdoor.TramoAtrasPlaza"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
         <activity
             android:name=".presentation.components.BuildingEdificioIA"
@@ -98,7 +98,7 @@
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
-            android:name=".presentation.components.ipn.zacatenco.escom.salidaMetro.SalidaMetro"
+            android:name=".presentation.locations.outdoor.SalidaMetro"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
@@ -106,11 +106,11 @@
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
-            android:name=".presentation.components.ipn.zacatenco.escom.cablebus.Cablebus"
+            android:name=".presentation.locations.transportation.Cablebus"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
-            android:name=".presentation.components.PalapasIA"
+            android:name=".presentation.locations.buildings.PalapasIA"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <!-- DeviceList Activity -->

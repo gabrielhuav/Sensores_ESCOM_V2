@@ -9,14 +9,19 @@ import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import org.json.JSONObject
 import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
+import ovh.gabrielhuav.sensores_escom_v2.domain.bluetooth.BluetoothManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.MovementManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.ServerConnectionManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
+import ovh.gabrielhuav.sensores_escom_v2.presentation.common.base.GameplayActivity
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.TramoAtrasPlaza
 
 /**
  * Activity para el mapa del Estacionamiento de ESCOM
@@ -398,7 +403,8 @@ class EstacionamientoEscom : AppCompatActivity(),
                                         (playerId to BuildingNumber2.GameState.PlayerInfo(position, normalizedMap))
 
                                 // Obtener el mapa actual normalizado para comparar
-                                val currentMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_ESTACIONAMIENTO)
+                                val currentMap = MapMatrixProvider.normalizeMapName(
+                                    MapMatrixProvider.MAP_ESTACIONAMIENTO)
 
                                 // Solo mostrar jugadores en el mismo mapa
                                 if (normalizedMap == currentMap) {

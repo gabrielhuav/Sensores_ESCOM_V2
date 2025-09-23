@@ -1,13 +1,14 @@
-package ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview
+package ovh.gabrielhuav.sensores_escom_v2.presentation.common.components
 
 import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.widget.Button
-import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
 import ovh.gabrielhuav.sensores_escom_v2.R
+import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.MovementManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
 
 // UIManager.kt
 class UIManager(

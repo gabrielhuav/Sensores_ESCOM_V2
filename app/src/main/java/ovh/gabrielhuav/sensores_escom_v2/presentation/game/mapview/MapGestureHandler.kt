@@ -1,4 +1,4 @@
-package ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview
+package ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -7,8 +7,6 @@ import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
-import kotlin.math.max
-import kotlin.math.min
 
 class MapGestureHandler(private val view: View) {
     private lateinit var gestureDetector: GestureDetector

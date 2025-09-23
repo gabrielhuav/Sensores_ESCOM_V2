@@ -1,4 +1,4 @@
-package ovh.gabrielhuav.sensores_escom_v2.presentation.components
+package ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings
 
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
@@ -15,11 +15,17 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import org.json.JSONObject
 import ovh.gabrielhuav.sensores_escom_v2.R
-import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
+import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.palapas_ia.ZombieController
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
+import ovh.gabrielhuav.sensores_escom_v2.domain.bluetooth.BluetoothManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.common.base.GameplayActivity
+import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.MovementManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.ServerConnectionManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.BuildingNumber2
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.zombie.PalapasIAZombieController
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
 
 class PalapasIA : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,
@@ -50,18 +56,18 @@ class PalapasIA : AppCompatActivity(),
     private var gameState = BuildingNumber2.GameState()
 
     // Controlador para el minijuego del zombie
-    private lateinit var zombieController: ZombieController
+    private lateinit var zombieController: PalapasIAZombieController
 
     // Estado del minijuego
     private var zombieGameActive = false
     private var playerScore = 0
     private var gameStartTime = 0L
     private val GAME_DURATION_MS = 60000L // 60 segundos de duración del juego
-    private var selectedDifficulty = ZombieController.DIFFICULTY_EASY
+    private var selectedDifficulty = PalapasIAZombieController.Companion.DIFFICULTY_EASY
     private val difficultyNames = mapOf(
-        ZombieController.DIFFICULTY_EASY to "Fácil",
-        ZombieController.DIFFICULTY_MEDIUM to "Medio",
-        ZombieController.DIFFICULTY_HARD to "Difícil"
+        PalapasIAZombieController.Companion.DIFFICULTY_EASY to "Fácil",
+        PalapasIAZombieController.Companion.DIFFICULTY_MEDIUM to "Medio",
+        PalapasIAZombieController.Companion.DIFFICULTY_HARD to "Difícil"
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -82,20 +88,20 @@ class PalapasIA : AppCompatActivity(),
             // Esperar a que el mapView esté listo
             mapView.post {
                 // Configurar el mapa para palapas de IA
-                mapView.setCurrentMap(MapMatrixProvider.MAP_PALAPAS_IA, R.drawable.escom_palapas_ia)
+                mapView.setCurrentMap(MapMatrixProvider.Companion.MAP_PALAPAS_IA, R.drawable.escom_palapas_ia)
 
                 // Configurar el playerManager
                 mapView.playerManager.apply {
-                    setCurrentMap(MapMatrixProvider.MAP_PALAPAS_IA)
+                    setCurrentMap(MapMatrixProvider.Companion.MAP_PALAPAS_IA)
                     localPlayerId = playerName
                     updateLocalPlayerPosition(gameState.playerPosition)
                 }
 
-                Log.d(TAG, "Set map to: " + MapMatrixProvider.MAP_PALAPAS_IA)
+                Log.d(TAG, "Set map to: " + MapMatrixProvider.Companion.MAP_PALAPAS_IA)
 
                 // Importante: Enviar un update inmediato para que otros jugadores sepan dónde estamos
                 if (gameState.isConnected) {
-                    serverConnectionManager.sendUpdateMessage(playerName, gameState.playerPosition, MapMatrixProvider.MAP_PALAPAS_IA)
+                    serverConnectionManager.sendUpdateMessage(playerName, gameState.playerPosition, MapMatrixProvider.Companion.MAP_PALAPAS_IA)
                 }
 
                 // Mostrar diálogo de bienvenida al minijuego
@@ -128,9 +134,9 @@ class PalapasIA : AppCompatActivity(),
             .setPositiveButton("Cambiar") { dialog, _ ->
                 // Actualizar dificultad
                 selectedDifficulty = when(selectedOption) {
-                    1 -> ZombieController.DIFFICULTY_MEDIUM
-                    2 -> ZombieController.DIFFICULTY_HARD
-                    else -> ZombieController.DIFFICULTY_EASY
+                    1 -> PalapasIAZombieController.Companion.DIFFICULTY_MEDIUM
+                    2 -> PalapasIAZombieController.Companion.DIFFICULTY_HARD
+                    else -> PalapasIAZombieController.Companion.DIFFICULTY_EASY
                 }
 
                 // Reiniciar el juego con la nueva dificultad
@@ -173,11 +179,15 @@ class PalapasIA : AppCompatActivity(),
         updatePlayerPosition(gameState.playerPosition)
 
         // Inicializar el controlador del zombie
-        zombieController = ZombieController(
+        zombieController = PalapasIAZombieController(
             onZombiePositionChanged = { zombieId, position ->
                 // Cuando el zombie cambia de posición, lo dibujamos en el mapa
                 runOnUiThread {
-                    mapView.updateSpecialEntity(zombieId, position, MapMatrixProvider.MAP_PALAPAS_IA)
+                    mapView.updateSpecialEntity(
+                        zombieId,
+                        position,
+                        MapMatrixProvider.Companion.MAP_PALAPAS_IA
+                    )
                     mapView.invalidate()
                 }
             },
@@ -205,9 +215,9 @@ class PalapasIA : AppCompatActivity(),
             .setSingleChoiceItems(options, selectedOption) { _, which ->
                 selectedOption = which
                 selectedDifficulty = when(which) {
-                    1 -> ZombieController.DIFFICULTY_MEDIUM
-                    2 -> ZombieController.DIFFICULTY_HARD
-                    else -> ZombieController.DIFFICULTY_EASY
+                    1 -> PalapasIAZombieController.Companion.DIFFICULTY_MEDIUM
+                    2 -> PalapasIAZombieController.Companion.DIFFICULTY_HARD
+                    else -> PalapasIAZombieController.Companion.DIFFICULTY_EASY
                 }
             }
             .setPositiveButton("¡Entendido!") { dialog, _ ->
@@ -323,13 +333,13 @@ class PalapasIA : AppCompatActivity(),
         sendZombieGameUpdate("complete", survived, secondsSurvived.toInt(), playerScore)
     }
 
-    private fun sendZombieGameUpdate(action: String, survived: Boolean = false, time: Int = 0, score: Int = 0, difficulty: Int = ZombieController.DIFFICULTY_EASY) {
+    private fun sendZombieGameUpdate(action: String, survived: Boolean = false, time: Int = 0, score: Int = 0, difficulty: Int = PalapasIAZombieController.Companion.DIFFICULTY_EASY) {
         try {
             val message = JSONObject().apply {
                 put("type", "zombie_game_update")
                 put("action", action)
                 put("player", playerName)
-                put("map", MapMatrixProvider.MAP_PALAPAS_IA)
+                put("map", MapMatrixProvider.Companion.MAP_PALAPAS_IA)
 
                 if (action == "start") {
                     put("difficulty", difficulty)
@@ -358,7 +368,7 @@ class PalapasIA : AppCompatActivity(),
             // Actualizar las posiciones de jugadores remotos
             gameState.remotePlayerPositions.forEach { (playerId, playerInfo) ->
                 // Solo considerar jugadores en el mismo mapa (la cafetería)
-                if (MapMatrixProvider.normalizeMapName(playerInfo.map) == MapMatrixProvider.MAP_PALAPAS_IA) {
+                if (MapMatrixProvider.Companion.normalizeMapName(playerInfo.map) == MapMatrixProvider.Companion.MAP_PALAPAS_IA) {
                     zombieController.updatePlayerPosition(playerId, playerInfo.position)
                 }
             }
@@ -415,9 +425,9 @@ class PalapasIA : AppCompatActivity(),
             .setSingleChoiceItems(options, selectedOption) { _, which ->
                 selectedOption = which
                 selectedDifficulty = when(which) {
-                    1 -> ZombieController.DIFFICULTY_MEDIUM
-                    2 -> ZombieController.DIFFICULTY_HARD
-                    else -> ZombieController.DIFFICULTY_EASY
+                    1 -> PalapasIAZombieController.Companion.DIFFICULTY_MEDIUM
+                    2 -> PalapasIAZombieController.Companion.DIFFICULTY_HARD
+                    else -> PalapasIAZombieController.Companion.DIFFICULTY_EASY
                 }
             }
             .setPositiveButton("Aceptar") { dialog, _ ->
@@ -446,7 +456,7 @@ class PalapasIA : AppCompatActivity(),
                     serverConnectionManager.sendUpdateMessage(
                         playerName,
                         gameState.playerPosition,
-                        MapMatrixProvider.MAP_PALAPAS_IA
+                        MapMatrixProvider.Companion.MAP_PALAPAS_IA
                     )
 
                     // Solicitar actualizaciones de posición
@@ -477,13 +487,13 @@ class PalapasIA : AppCompatActivity(),
     }
 
     private fun initializeManagers() {
-        bluetoothManager = BluetoothManager.getInstance(this, tvBluetoothStatus).apply {
+        bluetoothManager = BluetoothManager.Companion.getInstance(this, tvBluetoothStatus).apply {
             setCallback(this@PalapasIA)
         }
 
-        bluetoothBridge = BluetoothWebSocketBridge.getInstance()
+        bluetoothBridge = BluetoothWebSocketBridge.Companion.getInstance()
 
-        val onlineServerManager = OnlineServerManager.getInstance(this).apply {
+        val onlineServerManager = OnlineServerManager.Companion.getInstance(this).apply {
             setListener(this@PalapasIA)
         }
 
@@ -595,7 +605,7 @@ class PalapasIA : AppCompatActivity(),
             // Enviar actualización a otros jugadores con el mapa específico
             if (gameState.isConnected) {
                 // Enviar la posición con el nombre del mapa correcto
-                serverConnectionManager.sendUpdateMessage(playerName, position, MapMatrixProvider.MAP_PALAPAS_IA)
+                serverConnectionManager.sendUpdateMessage(playerName, position, MapMatrixProvider.Companion.MAP_PALAPAS_IA)
             }
 
             // Si el minijuego está activo, actualizar la posición del jugador para el zombie
@@ -684,7 +694,7 @@ class PalapasIA : AppCompatActivity(),
     // Implementación MapTransitionListener
     override fun onMapTransitionRequested(targetMap: String, initialPosition: Pair<Int, Int>) {
         when (targetMap) {
-            MapMatrixProvider.MAP_MAIN -> {
+            MapMatrixProvider.Companion.MAP_MAIN -> {
                 returnToMainMap()
             }
             else -> {
@@ -719,7 +729,7 @@ class PalapasIA : AppCompatActivity(),
     override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
         runOnUiThread {
             val deviceName = device.name ?: "Unknown"
-            mapView.updateRemotePlayerPosition(deviceName, Pair(x, y), MapMatrixProvider.MAP_PALAPAS_IA)
+            mapView.updateRemotePlayerPosition(deviceName, Pair(x, y), MapMatrixProvider.Companion.MAP_PALAPAS_IA)
             mapView.invalidate()
         }
     }
@@ -729,7 +739,7 @@ class PalapasIA : AppCompatActivity(),
         val debugPosition = Pair(20, 20)
 
         // Actualizar la entidad en el PlayerManager directamente
-        mapView.playerManager.updateSpecialEntity("zombie", debugPosition, MapMatrixProvider.MAP_PALAPAS_IA)
+        mapView.playerManager.updateSpecialEntity("zombie", debugPosition, MapMatrixProvider.Companion.MAP_PALAPAS_IA)
 
         // Forzar el redibujado
         mapView.invalidate()
@@ -780,7 +790,7 @@ class PalapasIA : AppCompatActivity(),
         zombieController.setZombiePosition("zombie", zombiePosition)
 
         // 6. Actualizar la entidad especial en el mapa (esto debe llamar a updateSpecialEntity del PlayerManager)
-        mapView.playerManager.updateSpecialEntity("zombie", zombiePosition, MapMatrixProvider.MAP_PALAPAS_IA)
+        mapView.playerManager.updateSpecialEntity("zombie", zombiePosition, MapMatrixProvider.Companion.MAP_PALAPAS_IA)
 
         // 7. Forzar un redibujado inmediato
         mapView.invalidate()
@@ -817,14 +827,15 @@ class PalapasIA : AppCompatActivity(),
 
                                 // Obtener el mapa y normalizarlo
                                 val mapStr = playerData.optString("map", playerData.optString("currentMap", "main"))
-                                val normalizedMap = MapMatrixProvider.normalizeMapName(mapStr)
+                                val normalizedMap = MapMatrixProvider.Companion.normalizeMapName(mapStr)
 
                                 // Guardar en el estado del juego
                                 gameState.remotePlayerPositions = gameState.remotePlayerPositions +
                                         (playerId to BuildingNumber2.GameState.PlayerInfo(position, normalizedMap))
 
                                 // Obtener el mapa actual normalizado para comparar
-                                val currentMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_PALAPAS_IA)
+                                val currentMap = MapMatrixProvider.Companion.normalizeMapName(
+                                    MapMatrixProvider.Companion.MAP_PALAPAS_IA)
 
                                 // Solo mostrar jugadores en el mismo mapa
                                 if (normalizedMap == currentMap) {
@@ -844,14 +855,15 @@ class PalapasIA : AppCompatActivity(),
 
                             // Obtener y normalizar el mapa
                             val mapStr = jsonObject.optString("map", jsonObject.optString("currentmap", "main"))
-                            val normalizedMap = MapMatrixProvider.normalizeMapName(mapStr)
+                            val normalizedMap = MapMatrixProvider.Companion.normalizeMapName(mapStr)
 
                             // Guardar en el estado
                             gameState.remotePlayerPositions = gameState.remotePlayerPositions +
                                     (playerId to BuildingNumber2.GameState.PlayerInfo(position, normalizedMap))
 
                             // Obtener el mapa actual normalizado para comparar
-                            val currentMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_PALAPAS_IA)
+                            val currentMap = MapMatrixProvider.Companion.normalizeMapName(
+                                MapMatrixProvider.Companion.MAP_PALAPAS_IA)
 
                             // IMPORTANTE: Loggear para depuración
                             Log.d(TAG, "Jugador remoto $playerId en mapa '$normalizedMap', mapa actual es '$currentMap'")
@@ -878,7 +890,7 @@ class PalapasIA : AppCompatActivity(),
                         }
 
                         // IMPORTANTE: Actualizar la entidad especial en el mapa
-                        mapView.updateSpecialEntity(zombieId, zombiePosition, MapMatrixProvider.MAP_PALAPAS_IA)
+                        mapView.updateSpecialEntity(zombieId, zombiePosition, MapMatrixProvider.Companion.MAP_PALAPAS_IA)
                         mapView.invalidate() // Forzar redibujado
                     }
 
@@ -937,7 +949,7 @@ class PalapasIA : AppCompatActivity(),
                         serverConnectionManager.sendUpdateMessage(
                             playerName,
                             gameState.playerPosition,
-                            MapMatrixProvider.MAP_CAFETERIA
+                            MapMatrixProvider.Companion.MAP_CAFETERIA
                         )
                     }
                     "disconnect" -> {
@@ -959,12 +971,12 @@ class PalapasIA : AppCompatActivity(),
     private fun normalizeMapId(mapId: String): String {
         // Casos específicos conocidos
         return when {
-            mapId.contains("cafeteria") -> MapMatrixProvider.MAP_CAFETERIA
-            mapId.contains("salon2009") -> MapMatrixProvider.MAP_SALON2009
-            mapId.contains("salon2010") -> MapMatrixProvider.MAP_SALON2010
-            mapId.contains("building2") -> MapMatrixProvider.MAP_BUILDING2
-            mapId.contains("palapas_ia") -> MapMatrixProvider.MAP_PALAPAS_IA
-            mapId.contains("main") -> MapMatrixProvider.MAP_MAIN
+            mapId.contains("cafeteria") -> MapMatrixProvider.Companion.MAP_CAFETERIA
+            mapId.contains("salon2009") -> MapMatrixProvider.Companion.MAP_SALON2009
+            mapId.contains("salon2010") -> MapMatrixProvider.Companion.MAP_SALON2010
+            mapId.contains("building2") -> MapMatrixProvider.Companion.MAP_BUILDING2
+            mapId.contains("palapas_ia") -> MapMatrixProvider.Companion.MAP_PALAPAS_IA
+            mapId.contains("main") -> MapMatrixProvider.Companion.MAP_MAIN
             else -> mapId
         }
     }
@@ -1010,7 +1022,7 @@ class PalapasIA : AppCompatActivity(),
             serverConnectionManager.sendUpdateMessage(
                 playerName,
                 gameState.playerPosition,
-                MapMatrixProvider.MAP_CAFETERIA
+                MapMatrixProvider.Companion.MAP_CAFETERIA
             )
         }
     }

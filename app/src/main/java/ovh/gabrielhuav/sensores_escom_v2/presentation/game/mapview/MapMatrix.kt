@@ -1,4 +1,4 @@
-package ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview
+package ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview
 
 import android.graphics.Canvas
 import android.graphics.Color

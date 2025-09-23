@@ -1,4 +1,4 @@
-package ovh.gabrielhuav.sensores_escom_v2.presentation.components
+package ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor
 
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
@@ -16,7 +16,13 @@ import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview.*
+import ovh.gabrielhuav.sensores_escom_v2.domain.bluetooth.BluetoothManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.MovementManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.ServerConnectionManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.BuildingNumber2
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.EstacionamientoEscom
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
 
 /**
  * Activity para el mapa del Tramo Atrás Plaza
@@ -65,20 +71,20 @@ class TramoAtrasPlaza : AppCompatActivity(),
             // Esperar a que el mapView esté listo
             mapView.post {
                 // Configurar el mapa para el Tramo Atrás Plaza
-                mapView.setCurrentMap(MapMatrixProvider.MAP_TRAS_PLAZA, R.drawable.tramo_atras_plaza)
+                mapView.setCurrentMap(MapMatrixProvider.Companion.MAP_TRAS_PLAZA, R.drawable.tramo_atras_plaza)
 
                 // Configurar el playerManager
                 mapView.playerManager.apply {
-                    setCurrentMap(MapMatrixProvider.MAP_TRAS_PLAZA)
+                    setCurrentMap(MapMatrixProvider.Companion.MAP_TRAS_PLAZA)
                     localPlayerId = playerName
                     updateLocalPlayerPosition(gameState.playerPosition)
                 }
 
-                Log.d(TAG, "Set map to: " + MapMatrixProvider.MAP_TRAS_PLAZA)
+                Log.d(TAG, "Set map to: " + MapMatrixProvider.Companion.MAP_TRAS_PLAZA)
 
                 // Importante: Enviar un update inmediato para que otros jugadores sepan dónde estamos
                 if (gameState.isConnected) {
-                    serverConnectionManager.sendUpdateMessage(playerName, gameState.playerPosition, MapMatrixProvider.MAP_TRAS_PLAZA)
+                    serverConnectionManager.sendUpdateMessage(playerName, gameState.playerPosition, MapMatrixProvider.Companion.MAP_TRAS_PLAZA)
                 }
             }
         } catch (e: Exception) {
@@ -135,7 +141,7 @@ class TramoAtrasPlaza : AppCompatActivity(),
                     serverConnectionManager.sendUpdateMessage(
                         playerName,
                         gameState.playerPosition,
-                        MapMatrixProvider.MAP_TRAS_PLAZA
+                        MapMatrixProvider.Companion.MAP_TRAS_PLAZA
                     )
 
                     // Solicitar actualizaciones de posición
@@ -164,13 +170,13 @@ class TramoAtrasPlaza : AppCompatActivity(),
     }
 
     private fun initializeManagers() {
-        bluetoothManager = BluetoothManager.getInstance(this, tvBluetoothStatus).apply {
+        bluetoothManager = BluetoothManager.Companion.getInstance(this, tvBluetoothStatus).apply {
             setCallback(this@TramoAtrasPlaza)
         }
 
-        bluetoothBridge = BluetoothWebSocketBridge.getInstance()
+        bluetoothBridge = BluetoothWebSocketBridge.Companion.getInstance()
 
-        val onlineServerManager = OnlineServerManager.getInstance(this).apply {
+        val onlineServerManager = OnlineServerManager.Companion.getInstance(this).apply {
             setListener(this@TramoAtrasPlaza)
         }
 
@@ -274,7 +280,7 @@ class TramoAtrasPlaza : AppCompatActivity(),
             // Enviar actualización a otros jugadores con el mapa específico
             if (gameState.isConnected) {
                 // Enviar la posición con el nombre del mapa correcto
-                serverConnectionManager.sendUpdateMessage(playerName, position, MapMatrixProvider.MAP_TRAS_PLAZA)
+                serverConnectionManager.sendUpdateMessage(playerName, position, MapMatrixProvider.Companion.MAP_TRAS_PLAZA)
             }
 
             // Comprobar si estamos en un punto de transición
@@ -288,7 +294,7 @@ class TramoAtrasPlaza : AppCompatActivity(),
         if (transitionMap != null) {
             // Mostrar información sobre la transición disponible
             when (transitionMap) {
-                MapMatrixProvider.MAP_ESTACIONAMIENTO -> {
+                MapMatrixProvider.Companion.MAP_ESTACIONAMIENTO -> {
                     Toast.makeText(this, "Presiona A para volver al Estacionamiento", Toast.LENGTH_SHORT).show()
                 }
 
@@ -317,7 +323,7 @@ class TramoAtrasPlaza : AppCompatActivity(),
     // Implementación MapTransitionListener
     override fun onMapTransitionRequested(targetMap: String, initialPosition: Pair<Int, Int>) {
         when (targetMap) {
-            MapMatrixProvider.MAP_ESTACIONAMIENTO -> {
+            MapMatrixProvider.Companion.MAP_ESTACIONAMIENTO -> {
                 returnToPreviousMap()
             }
 
@@ -353,7 +359,7 @@ class TramoAtrasPlaza : AppCompatActivity(),
     override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
         runOnUiThread {
             val deviceName = device.name ?: "Unknown"
-            mapView.updateRemotePlayerPosition(deviceName, Pair(x, y), MapMatrixProvider.MAP_TRAS_PLAZA)
+            mapView.updateRemotePlayerPosition(deviceName, Pair(x, y), MapMatrixProvider.Companion.MAP_TRAS_PLAZA)
             mapView.invalidate()
         }
     }
@@ -378,14 +384,15 @@ class TramoAtrasPlaza : AppCompatActivity(),
 
                                 // Obtener y normalizar el mapa
                                 val mapStr = playerData.optString("map", playerData.optString("currentMap", "main"))
-                                val normalizedMap = MapMatrixProvider.normalizeMapName(mapStr)
+                                val normalizedMap = MapMatrixProvider.Companion.normalizeMapName(mapStr)
 
                                 // Actualizar el estado
                                 gameState.remotePlayerPositions = gameState.remotePlayerPositions +
                                         (playerId to BuildingNumber2.GameState.PlayerInfo(position, normalizedMap))
 
                                 // Obtener el mapa actual normalizado para comparar
-                                val currentMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_TRAS_PLAZA)
+                                val currentMap = MapMatrixProvider.Companion.normalizeMapName(
+                                    MapMatrixProvider.Companion.MAP_TRAS_PLAZA)
 
                                 // Solo mostrar jugadores en el mismo mapa
                                 if (normalizedMap == currentMap) {
@@ -405,14 +412,15 @@ class TramoAtrasPlaza : AppCompatActivity(),
 
                             // Obtener y normalizar el mapa
                             val mapStr = jsonObject.optString("map", jsonObject.optString("currentmap", "main"))
-                            val normalizedMap = MapMatrixProvider.normalizeMapName(mapStr)
+                            val normalizedMap = MapMatrixProvider.Companion.normalizeMapName(mapStr)
 
                             // Actualizar el estado
                             gameState.remotePlayerPositions = gameState.remotePlayerPositions +
                                     (playerId to BuildingNumber2.GameState.PlayerInfo(position, normalizedMap))
 
                             // Obtener el mapa actual normalizado para comparar
-                            val currentMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_TRAS_PLAZA)
+                            val currentMap = MapMatrixProvider.Companion.normalizeMapName(
+                                MapMatrixProvider.Companion.MAP_TRAS_PLAZA)
 
                             // Solo mostrar jugadores en el mismo mapa
                             if (normalizedMap == currentMap) {
@@ -429,7 +437,7 @@ class TramoAtrasPlaza : AppCompatActivity(),
                         serverConnectionManager.sendUpdateMessage(
                             playerName,
                             gameState.playerPosition,
-                            MapMatrixProvider.MAP_TRAS_PLAZA
+                            MapMatrixProvider.Companion.MAP_TRAS_PLAZA
                         )
                     }
                     "disconnect" -> {
@@ -484,7 +492,7 @@ class TramoAtrasPlaza : AppCompatActivity(),
             serverConnectionManager.sendUpdateMessage(
                 playerName,
                 gameState.playerPosition,
-                MapMatrixProvider.MAP_TRAS_PLAZA
+                MapMatrixProvider.Companion.MAP_TRAS_PLAZA
             )
         }
     }

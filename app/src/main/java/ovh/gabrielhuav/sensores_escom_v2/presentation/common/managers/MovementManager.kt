@@ -1,9 +1,11 @@
-package ovh.gabrielhuav.sensores_escom_v2.presentation.components.mapview
+package ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers
 
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.MotionEvent
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
 
 class MovementManager(
     private val mapView: MapView,
@@ -48,8 +50,8 @@ class MovementManager(
 
     private fun movePlayer(deltaX: Int, deltaY: Int) {
         try {
-            val newX = (localPlayerPosition.first + deltaX).coerceIn(0, MapMatrixProvider.MAP_WIDTH - 1)
-            val newY = (localPlayerPosition.second + deltaY).coerceIn(0, MapMatrixProvider.MAP_HEIGHT - 1)
+            val newX = (localPlayerPosition.first + deltaX).coerceIn(0, MapMatrixProvider.Companion.MAP_WIDTH - 1)
+            val newY = (localPlayerPosition.second + deltaY).coerceIn(0, MapMatrixProvider.Companion.MAP_HEIGHT - 1)
 
             if (mapView.isValidPosition(newX, newY)) {
                 // Solo actualizamos si la posición es diferente (para evitar actualizaciones innecesarias)
