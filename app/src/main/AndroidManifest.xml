@@ -43,7 +43,7 @@
 
         <!-- Gameplay Activity -->
         <activity
-            android:name=".presentation.components.GameplayActivity"
+            android:name=".presentation.common.base.GameplayActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
 
@@ -54,22 +54,22 @@
 
         <!-- Building4 Activity -->
         <activity
-            android:name=".presentation.components.BuildingNumber4"
+            android:name=".presentation.locations.buildings.building4.BuildingNumber4"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
         <activity
-            android:name=".presentation.components.Zacatenco"
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
-
-        <activity
-            android:name=".presentation.components.Lindavista"
+            android:name=".presentation.locations.outdoor.Zacatenco"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
-            android:name=".presentation.components.EstacionamientoEscom"
+            android:name=".presentation.locations.outdoor.Lindavista"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
-            android:name=".presentation.components.TramoAtrasPlaza"
+            android:name=".presentation.locations.outdoor.EstacionamientoEscom"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+
+        <activity
+            android:name=".presentation.locations.outdoor.TramoAtrasPlaza"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
         <activity
             android:name=".presentation.components.BuildingEdificioIA"
@@ -90,15 +90,15 @@
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
-            android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber3.SalonPacman"
+            android:name=".presentation.locations.buildings.building3.SalonPacman"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
-            android:name=".presentation.components.Cafeteria"
+            android:name=".presentation.locations.buildings.cafeteria.Cafeteria"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
-            android:name=".presentation.components.ipn.zacatenco.escom.salidaMetro.SalidaMetro"
+            android:name=".presentation.locations.outdoor.SalidaMetro"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
@@ -106,11 +106,11 @@
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
-            android:name=".presentation.components.ipn.zacatenco.escom.cablebus.Cablebus"
+            android:name=".presentation.locations.transportation.Cablebus"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
-            android:name=".presentation.components.PalapasIA"
+            android:name=".presentation.locations.buildings.buildingIA.PalapasIA"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <!-- DeviceList Activity -->
@@ -118,6 +118,12 @@
             android:name=".data.map.Bluetooth.DeviceListActivity"
             android:exported="true"
             android:theme="@style/Theme.Sensores_ESCOM_V2" />
+
+        <activity
+            android:name=".presentation.locations.outdoor.OSMMapActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:screenOrientation="sensorLandscape"
+            android:exported="false" />
     </application>
 
 </manifest>

@@ -12,7 +12,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.DeviceListActivity
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.GameplayActivity
+import ovh.gabrielhuav.sensores_escom_v2.presentation.common.base.GameplayActivity
 
 class MainActivity : AppCompatActivity() {
 
