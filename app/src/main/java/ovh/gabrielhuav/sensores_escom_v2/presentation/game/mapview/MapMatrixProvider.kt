@@ -37,11 +37,13 @@ class MapMatrixProvider {
         const val MAP_CABLEBUS = "cablebus"
         const val MAP_SALIDAMETRO = "escom_salidametro"
         const val MAP_PALAPAS_IA = "escom_palapas_ia"
+        const val MAP_ESIME = "esime_zacatenco"
 
         fun normalizeMapName(mapName: String?): String {
             if (mapName.isNullOrBlank()) return MAP_MAIN
 
             val lowerMap = mapName.lowercase()
+
 
             return when {
                 // Mapa principal
@@ -74,6 +76,10 @@ class MapMatrixProvider {
                 lowerMap.contains("ia_alto") || lowerMap.contains("edificio_ia_alto") -> MAP_EDIFICIO_IA_ALTO
                 lowerMap.contains("cable") || lowerMap.contains("cablebus") -> MAP_CABLEBUS
                 lowerMap.contains("palapas_ia") -> MAP_PALAPAS_IA
+
+                //ESIME
+                lowerMap.contains("esime") || lowerMap.contains("esime_zacatenco") -> MAP_ESIME
+
 
                 // Si no coincide con ninguno de los anteriores, devolver el original
                 else -> mapName
@@ -132,6 +138,7 @@ class MapMatrixProvider {
                 MAP_EDIFICIO_IA_MEDIO-> createEdificioIAMedioMatrix()
                 MAP_EDIFICIO_IA_ALTO -> createEdificioIAAltoMatrix()
                 MAP_PALAPAS_IA -> createPalapasIAMapMatrix()
+                MAP_ESIME -> createEsimeMatrix()
                 else -> createDefaultMatrix() // Por defecto, un mapa básico
             }
         }
@@ -257,6 +264,10 @@ class MapMatrixProvider {
                     }
                     else if (i == 19 && j == 4) {
                         matrix[i][j] = INTERACTIVE // Entrada a ESCOM
+                    }
+                    // ESIME:
+                    else if (i == 24 && j == 28) { // Cambiado a (24, 28)
+                        matrix[i][j] = INTERACTIVE // F de ESIME
                     }
                     // Obstáculos (árboles, bancas, etc)
                     /**else if (i % 7 == 0 && j % 8 == 0) {
@@ -1000,6 +1011,52 @@ class MapMatrixProvider {
 
             return matrix
         }
+
+        private fun createEsimeMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Configuración de bordes
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    // Bordes exteriores
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = WALL
+                    }
+                }
+            }
+
+            // CREAR EDIFICIOS COMO OBSTÁCULOS (INACCESSIBLE)
+            // Suponiendo que los edificios están distribuidos en el mapa
+            // Ajusta estas coordenadas según tu imagen del mapa
+
+            // Ejemplo de distribución de edificios (ajusta según tu mapa real)
+            for (buildingNum in 1..50) { // Para los primeros 50 edificios
+                val buildingX = (buildingNum % 8) * 5 + 3  // Distribución en grid
+                val buildingY = (buildingNum / 8) * 5 + 3
+
+                if (buildingX < MAP_WIDTH - 3 && buildingY < MAP_HEIGHT - 3) {
+                    // Crear edificio como área inaccesible (3x3)
+                    for (i in buildingY until buildingY + 3) {
+                        for (j in buildingX until buildingX + 3) {
+                            matrix[i][j] = INACCESSIBLE
+                        }
+                    }
+
+                    // Hacer solo el EDIFICIO 3 interactivo
+                    if (buildingNum == 3) {
+                        // Poner la entrada del edificio 3 como INTERACTIVE
+                        matrix[buildingY + 1][buildingX + 1] = INTERACTIVE
+                    }
+                }
+            }
+
+            // Punto de salida/entrada al mapa de Zacatenco
+            matrix[35][5] = INTERACTIVE // Cambiado a una posición más accesible
+
+            return matrix
+        }
+
+
 
 
         /**

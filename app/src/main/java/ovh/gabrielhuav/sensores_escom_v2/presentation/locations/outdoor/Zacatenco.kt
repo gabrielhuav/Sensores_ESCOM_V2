@@ -30,6 +30,7 @@ import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.Lindavis
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
 import kotlin.collections.iterator
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.Esime
 
 class Zacatenco : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,
@@ -308,6 +309,13 @@ class Zacatenco : AppCompatActivity(),
                         .show()
                 }
             }
+            position.first == 28 && position.second == 24 -> { // Cambiado a (28, 24)
+                canChangeMap = true
+                targetDestination = "esime"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para entrar a ESIME", Toast.LENGTH_SHORT).show()
+                }
+            }
             position.first == 8 && position.second == 18 -> {
                 canChangeMap = true
                 targetDestination = "cidetec"
@@ -368,6 +376,7 @@ class Zacatenco : AppCompatActivity(),
                         "cidetec" -> viewCIDETEC()
                         "cic" -> viewCIC()
                         "ford" -> startFordActivity()
+                        "esime" -> startEsimeActivity()
 
                         else -> showToast("No hay interacción disponible en esta posición")
                     }
@@ -386,6 +395,17 @@ class Zacatenco : AppCompatActivity(),
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.esfm.ipn.mx/"))
         startActivity(intent)
 
+    }
+    private fun startEsimeActivity() {
+        val intent = Intent(this, Esime::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(2, 2)) // Posición inicial dentro de ESIME
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
     }
     private fun viewCIDETEC(){
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.cidetec.ipn.mx/"))
