@@ -434,17 +434,7 @@ class GameplayActivity : AppCompatActivity(),
                     Toast.makeText(this, "Presiona A para entrar al salón 1212", Toast.LENGTH_SHORT).show()
                 }
             }
-            position.first == 25 && position.second == 5 -> {
-                canChangeMap = true
-                targetDestination = "Estacionamiento"
-                runOnUiThread {
-                    Toast.makeText(
-                        this,
-                        "Presiona A para entrar al estacionamiento",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
+
             position.first == 31 && position.second == 21 -> {
                 canChangeMap = true
                 targetDestination = "Edificioiabajo"

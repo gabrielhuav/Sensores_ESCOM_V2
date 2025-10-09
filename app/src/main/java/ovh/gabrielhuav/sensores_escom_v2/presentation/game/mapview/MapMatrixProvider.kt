@@ -171,6 +171,9 @@ class MapMatrixProvider {
                     else if (i == 10 && j == 23) {
                         matrix[i][j] = INTERACTIVE // Entrada al edificio 4
                     }
+                    else if (i == 18 && j == 10) {
+                        matrix[i][j] = INTERACTIVE // Entrada al edificio 4
+                    }
                     else if (i == 4 && j == 11) {
                         matrix[i][j] = INTERACTIVE // Entrada a Zacatenco
                     }
