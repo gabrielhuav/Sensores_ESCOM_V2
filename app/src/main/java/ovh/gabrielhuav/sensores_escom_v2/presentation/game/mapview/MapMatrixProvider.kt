@@ -1020,42 +1020,299 @@ class MapMatrixProvider {
         /**
          * NUEVO MAPA: Edificio Gobierno
          */
+        /**
+         * NUEVO MAPA: Edificio Gobierno
+         */
         private fun createEdificioGobiernoMatrix(): Array<Array<Int>> {
-            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
+            // Empezar con todo como PATH (caminable) en lugar de WALL
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
 
-            // Área principal del edificio (caminable)
-            for (i in 5 until MAP_HEIGHT - 5) {
-                for (j in 5 until MAP_WIDTH - 5) {
-                    matrix[i][j] = PATH
-                }
+            // Solo los bordes exteriores son muros
+            for (i in 0 until MAP_HEIGHT) {
+                matrix[i][0] = WALL
+                matrix[i][MAP_WIDTH - 1] = WALL
+            }
+            for (j in 0 until MAP_WIDTH) {
+                matrix[0][j] = WALL
+                matrix[MAP_HEIGHT - 1][j] = WALL
             }
 
-            // Oficinas (obstáculos)
-            for (i in 12..12) {
-                for (j in 8..15) {
-                    matrix[i][j] = INACCESSIBLE // Oficina 1
-                }
-            }
+            // Oficinas y obstáculos basados en la imagen
+            // Oficina superior izquierda
+            // Sala superior izquierda - 6 mesas separadas (ejemplo)
 
-            for (i in 8..12) {
-                for (j in 20..27) {
-                    matrix[i][j] = INACCESSIBLE // Oficina 2
-                }
-            }
-
-            // Recepción central
-            for (i in 15..18) {
-                for (j in 15..20) {
+// Mesa 1 (arriba-izquierda)
+            for (i in 2..4) {
+                for (j in 2..4) {
                     matrix[i][j] = INACCESSIBLE
                 }
             }
 
-            // Salón de juntas
-            for (i in 22..28) {
-                for (j in 10..25) {
+// Mesa 2 (arriba-centro)
+            for (i in 2..4) {
+                for (j in 6..8) {
                     matrix[i][j] = INACCESSIBLE
                 }
             }
+
+// Mesa 3 (arriba-derecha)
+            for (i in 2..4) {
+                for (j in 10..12) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+// Mesa 4 (abajo-izquierda)
+            for (i in 9..11) {
+                for (j in 2..4) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+// Mesa 5 (abajo-centro)
+            for (i in 9..11) {
+                for (j in 6..8) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+// Mesa 6 (abajo-derecha)
+            for (i in 9..11) {
+                for (j in 10..12) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            //Colision de auditorio,gestion y enfermeria
+            for (i in 14..38) {
+                for (j in 1..23) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            //recepcion
+            for (i in 11..12) {
+                for (j in 17..23) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            //mochilas
+            for (i in 18..20) {
+                for (j in 17..23) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            //mesa
+            for (i in 24..27) {
+                for (j in 30..38) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            for (i in 33..36) {
+                for (j in 31..38) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            //
+            for (i in 1..3) {
+                for (j in 21..23) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+//mesas sillon
+            for (i in 4..5) {
+                for (j in 33..37) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            for (i in 7..7) {
+                for (j in 33..35) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            for (i in 6..8) {
+                for (j in 36..38) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            for (i in 7..9) {
+                for (j in 28..29) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            for (i in 28..29) {
+                for (j in 25..26) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            for (i in 36..37) {
+                for (j in 25..26) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            for (i in 30..30) {
+                for (j in 33..33) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            for (i in 30..30) {
+                for (j in 35..35) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            for (i in 30..30) {
+                for (j in 37..37) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            for (i in 16..16) {
+                for (j in 25..25) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            for (i in 19..19) {
+                for (j in 25..25) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            for (i in 21..21) {
+                for (j in 25..25) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            for (i in 38..38) {
+                for (j in 35..35) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            for (i in 38..38) {
+                for (j in 37..37) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            for (i in 38..38) {
+                for (j in 38..38) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            for (i in 13..13) {
+                for (j in 32..32) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            for (i in 13..13) {
+                for (j in 37..37) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            for (i in 10..10) {
+                for (j in 37..37) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            for (i in 10..10) {
+                for (j in 36..36) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            for (i in 10..10) {
+                for (j in 34..34) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            for (i in 15..22) {
+                for (j in 29..30) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+//paredes
+            for (i in 23..23) {
+                for (j in 24..27) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            for (i in 6..13) {
+                for (j in 17..17) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            for (i in 14..22) {
+                for (j in 27..27) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            for (i in 27..32) {
+                for (j in 27..27) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            for (i in 32..32) {
+                for (j in 24..27) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            for (i in 36..38) {
+                for (j in 27..27) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            for (i in 4..4) {
+                for (j in 26..28) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            for (i in 1..4) {
+                for (j in 27..27) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            for (i in 11..11) {
+                for (j in 30..34) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            for (i in 11..14) {
+                for (j in 34..34) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            for (i in 14..14) {
+                for (j in 31..38) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            for (i in 11..11) {
+                for (j in 37..38) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+
+
+
+
 
             // Punto interactivo para salir al mapa principal
             matrix[2][20] = INTERACTIVE
