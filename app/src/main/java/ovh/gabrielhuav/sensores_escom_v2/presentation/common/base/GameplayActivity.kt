@@ -289,7 +289,7 @@ class GameplayActivity : AppCompatActivity(),
         val intent = Intent(this, EdificioGobierno::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(20, 16)) // Posición inicial dentro del edificio
+            putExtra("INITIAL_POSITION", Pair(5, 20)) // Posición inicial dentro del edificio
             putExtra("PREVIOUS_POSITION", gameState.playerPosition)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
