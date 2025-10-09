@@ -115,8 +115,8 @@ class EdificioGobierno : AppCompatActivity(),
         if (savedInstanceState == null) {
             // Inicializar el estado del juego desde el Intent
             gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
-            gameState.playerPosition = (intent.getSerializableExtra("INITIAL_POSITION") as? Pair<Int, Int>)
-                ?: MapMatrixProvider.getInitialPositionForMap(MapMatrixProvider.MAP_EDIFICIO_GOBIERNO)
+            // Cambiamos la posición inicial a (16,5) para el Edificio Gobierno
+            gameState.playerPosition = Pair(16, 5)
         } else {
             restoreState(savedInstanceState)
         }

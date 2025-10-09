@@ -384,6 +384,7 @@ class GameplayActivity : AppCompatActivity(),
     private var targetDestination: String? = null  // Variable para almacenar el destino
 
     private fun checkPositionForMapChange(position: Pair<Int, Int>) {
+        Log.d(TAG, "Checking position for map change: $position")
         // Comprobar múltiples ubicaciones de transición
         when {
             position.first == 15 && position.second == 10 -> {

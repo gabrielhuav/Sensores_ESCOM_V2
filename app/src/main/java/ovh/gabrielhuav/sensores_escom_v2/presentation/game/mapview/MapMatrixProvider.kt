@@ -1031,7 +1031,7 @@ class MapMatrixProvider {
             }
 
             // Oficinas (obstáculos)
-            for (i in 8..12) {
+            for (i in 12..12) {
                 for (j in 8..15) {
                     matrix[i][j] = INACCESSIBLE // Oficina 1
                 }
@@ -1255,8 +1255,8 @@ class MapMatrixProvider {
                 MAP_EDIFICIO_IA_MEDIO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
                 MAP_EDIFICIO_IA_ALTO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
                 MAP_PALAPAS_IA -> Pair(2, 2)
-                MAP_EDIFICIO_GOBIERNO -> Pair(20, 5)  // Posición cerca de la entrada
-                MAP_BIBLIOTECA -> Pair(20, 5)  // Posición cerca de la entrada
+                MAP_EDIFICIO_GOBIERNO -> Pair(17, 5)  // Posición cerca de la entrada
+                MAP_BIBLIOTECA -> Pair(17, 5)  // Posición cerca de la entrada
 
                 else -> Pair(MAP_WIDTH / 2, MAP_HEIGHT / 2)
             }
