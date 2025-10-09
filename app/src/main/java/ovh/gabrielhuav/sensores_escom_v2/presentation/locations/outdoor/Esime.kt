@@ -2,6 +2,7 @@ package ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor
 
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.Rect
 import android.os.Bundle
 import android.util.Log
 import android.view.MotionEvent
@@ -40,14 +41,17 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
     private var canEnterBuilding = false
     private var currentBuilding: Int? = null
 
-    // 🔴 CORREGIDO: Cada edificio en posición ÚNICA (sin duplicados)
+    // 🔴 POSICIONES FIJAS de los edificios
     private val buildingLocations = mapOf(
-        1 to Pair(8, 30),   // Edificio 1 - MÁS ARRIBA
+        1 to Pair(8, 30),   // Edificio 1
         2 to Pair(8, 24),   // Edificio 2
-        3 to Pair(8, 17),   // Edificio 3 - INTERACTIVO (posición única)
+        3 to Pair(8, 17),   // Edificio 3 - INTERACTIVO
         4 to Pair(8, 11),   // Edificio 4
-        5 to Pair(8, 5)    // Edificio 5 - MÁS ABAJO
+        5 to Pair(8, 5)     // Edificio 5
     )
+
+    // 🔴 ÁREAS DE COLISIÓN - Rectángulos grandes bloqueados
+    private val collisionAreas = mutableListOf<Rect>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -82,7 +86,10 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
                     updateLocalPlayerPosition(playerPosition)
                 }
 
-                // 🔴🔴🔴 CONFIGURAR MARCADORES DE EDIFICIOS FIJOS 🔴🔴🔴
+                // 🔴 CONFIGURAR COLISIONES PRIMERO
+                setupCollisionAreas()
+
+                // 🔴 CONFIGURAR MARCADORES DE EDIFICIOS FIJOS
                 setupBuildingMarkers()
 
                 // 🔴 INICIAR ACTUALIZACIONES CONSTANTES PARA POSICIONES FIJAS
@@ -91,13 +98,14 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
                 // Configurar colores de jugadores
                 configureRedPlayers()
 
-                // Inicializar managers
+                // Inicializar managers (CON COLISIONES)
                 initializeManagers()
 
                 // Configurar listeners de botones
                 setupButtonListeners()
 
                 Log.d("Esime", "Mapa ESIME inicializado: $normalizedMap")
+                Log.d("Esime", "Áreas de colisión: ${collisionAreas.size}")
             }
         } catch (e: Exception) {
             Log.e("Esime", "Error en onCreate: ${e.message}")
@@ -106,7 +114,63 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
         }
     }
 
-    // 🔴🔴🔴 NUEVO: CONFIGURAR MARCADORES VISUALES DE EDIFICIOS FIJOS 🔴🔴🔴
+    // 🔴 CONFIGURAR ÁREAS DE COLISIÓN PARA BLOQUEAR EDIFICIOS
+    private fun setupCollisionAreas() {
+        try {
+            collisionAreas.clear()
+
+            // 🔴 DEFINIR RECTÁNGULOS GRANDES PARA BLOQUEAR ACCESO A EDIFICIOS
+            // Cada edificio tiene un área rectangular grande bloqueada alrededor de su entrada
+
+            // Edificio 1 - Área grande bloqueada
+            collisionAreas.add(Rect(5, 28, 11, 32))   // Rectángulo alrededor del edificio 1
+
+            // Edificio 2 - Área grande bloqueada
+            collisionAreas.add(Rect(5, 22, 11, 26))   // Rectángulo alrededor del edificio 2
+
+            // Edificio 3 - Solo bloquear los lados, dejar entrada libre
+            collisionAreas.add(Rect(5, 15, 7, 19))    // Lado izquierdo del edificio 3
+            collisionAreas.add(Rect(9, 15, 11, 19))   // Lado derecho del edificio 3
+            collisionAreas.add(Rect(7, 13, 9, 15))    // Parte superior del edificio 3
+
+            // Edificio 4 - Área grande bloqueada
+            collisionAreas.add(Rect(5, 9, 11, 13))    // Rectángulo alrededor del edificio 4
+
+            // Edificio 5 - Área grande bloqueada
+            collisionAreas.add(Rect(5, 3, 11, 7))     // Rectángulo alrededor del edificio 5
+
+            // 🔴 BORDES DEL MAPA - Para evitar que el jugador se salga
+            collisionAreas.add(Rect(0, 0, 1, 40))     // Borde izquierdo
+            collisionAreas.add(Rect(14, 0, 15, 40))   // Borde derecho
+            collisionAreas.add(Rect(0, 0, 15, 1))     // Borde superior
+            collisionAreas.add(Rect(0, 39, 15, 40))   // Borde inferior
+
+            Log.d("ESIME_COLLISIONS", "✅ ${collisionAreas.size} áreas de colisión configuradas")
+
+            // Mostrar información de debug
+            showCollisionAreasDebug()
+
+        } catch (e: Exception) {
+            Log.e("ESIME_COLLISIONS", "Error configurando colisiones: ${e.message}")
+        }
+    }
+
+    // 🔴 MOSTRAR INFORMACIÓN DE DEBUG SOBRE COLISIONES
+    private fun showCollisionAreasDebug() {
+        val debugMessage = StringBuilder("🚫 ÁREAS DE COLISIÓN:\n")
+        collisionAreas.forEachIndexed { index, rect ->
+            debugMessage.append("Area $index: [${rect.left},${rect.top}]->[${rect.right},${rect.bottom}]\n")
+        }
+        Log.d("ESIME_COLLISIONS", debugMessage.toString())
+
+        Toast.makeText(this,
+            "🚫 Áreas bloqueadas configuradas\n" +
+                    "Solo Edificio 3 es accesible",
+            Toast.LENGTH_LONG
+        ).show()
+    }
+
+    // 🔴🔴🔴 CONFIGURAR MARCADORES VISUALES DE EDIFICIOS FIJOS 🔴🔴🔴
     private fun setupBuildingMarkers() {
         try {
             // Usar reflexión para agregar marcadores FIJOS
@@ -220,8 +284,8 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
         // Mostrar organización en Toast
         Toast.makeText(this,
             "🏢 Edificios en columna X=8\n" +
-                    "⬆️ Y=35 (Edif 1)\n" +
-                    "⬇️ Y=15 (Edif 5)\n" +
+                    "⬆️ Y=30 (Edif 1) - BLOQUEADO\n" +
+                    "⬇️ Y=5 (Edif 5) - BLOQUEADO\n" +
                     "Solo Edificio 3 es interactivo",
             Toast.LENGTH_LONG
         ).show()
@@ -329,20 +393,75 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
             onlineServerManager = onlineServerManager
         )
 
+        // 🔴 INICIALIZAR MOVEMENT MANAGER CON COLISIONES
         movementManager = MovementManager(
             mapView = mapView
         ) { position -> updatePlayerPosition(position) }
+
+        // 🔴 CONFIGURAR ÁREAS DE COLISIÓN EN EL MOVEMENT MANAGER
+        setupMovementManagerWithCollisions()
 
         mapView.setMapTransitionListener(this)
         mapView.playerManager.localPlayerId = playerName
         updatePlayerPosition(playerPosition)
     }
 
+    // 🔴 CONFIGURAR MOVEMENT MANAGER CON SISTEMA DE COLISIONES
+    private fun setupMovementManagerWithCollisions() {
+        try {
+            // Usar reflexión para configurar colisiones en MovementManager
+            val movementManagerClass = movementManager.javaClass
+
+            // Intentar encontrar el método setCollisionAreas
+            try {
+                val setCollisionMethod = movementManagerClass.getDeclaredMethod("setCollisionAreas", List::class.java)
+                setCollisionMethod.isAccessible = true
+                setCollisionMethod.invoke(movementManager, collisionAreas)
+                Log.d("ESIME_COLLISIONS", "✅ Colisiones configuradas en MovementManager")
+            } catch (e: NoSuchMethodException) {
+                // Si no existe el método, usar enfoque alternativo
+                setupCollisionsAlternative()
+            }
+
+        } catch (e: Exception) {
+            Log.e("ESIME_COLLISIONS", "Error configurando colisiones en MovementManager: ${e.message}")
+            setupCollisionsAlternative()
+        }
+    }
+
+    // 🔴 ENFOQUE ALTERNATIVO PARA COLISIONES
+    private fun setupCollisionsAlternative() {
+        try {
+            // Agregar campo de colisiones al MovementManager via reflexión
+            val collisionField = movementManager.javaClass.getDeclaredField("collisionAreas")
+            collisionField.isAccessible = true
+            val existingCollisions = collisionField.get(movementManager) as? MutableList<Rect> ?: mutableListOf()
+            existingCollisions.clear()
+            existingCollisions.addAll(collisionAreas)
+            collisionField.set(movementManager, existingCollisions)
+
+            Log.d("ESIME_COLLISIONS", "✅ Colisiones configuradas (enfoque alternativo)")
+        } catch (e: Exception) {
+            Log.e("ESIME_COLLISIONS", "❌ No se pudo configurar sistema de colisiones")
+            // Fallback: mostrar mensaje de áreas bloqueadas
+            Toast.makeText(this, "Áreas alrededor de edificios están bloqueadas", Toast.LENGTH_LONG).show()
+        }
+    }
+
     private fun setupButtonListeners() {
-        btnNorth.setOnTouchListener { _, event -> handleMovement(event, 0, -1); true }
-        btnSouth.setOnTouchListener { _, event -> handleMovement(event, 0, 1); true }
-        btnEast.setOnTouchListener { _, event -> handleMovement(event, 1, 0); true }
-        btnWest.setOnTouchListener { _, event -> handleMovement(event, -1, 0); true }
+        // 🔴 MODIFICAR LOS LISTENERS PARA VERIFICAR COLISIONES
+        btnNorth.setOnTouchListener { _, event ->
+            handleMovementWithCollisions(event, 0, -1); true
+        }
+        btnSouth.setOnTouchListener { _, event ->
+            handleMovementWithCollisions(event, 0, 1); true
+        }
+        btnEast.setOnTouchListener { _, event ->
+            handleMovementWithCollisions(event, 1, 0); true
+        }
+        btnWest.setOnTouchListener { _, event ->
+            handleMovementWithCollisions(event, -1, 0); true
+        }
 
         buttonA.setOnClickListener {
             when {
@@ -358,15 +477,52 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
         }
     }
 
-    private fun handleMovement(event: MotionEvent, deltaX: Int, deltaY: Int) {
+    // 🔴 NUEVO MÉTODO PARA MANEJAR MOVIMIENTO CON VERIFICACIÓN DE COLISIONES
+    private fun handleMovementWithCollisions(event: MotionEvent, deltaX: Int, deltaY: Int) {
         if (::movementManager.isInitialized) {
-            movementManager.handleMovement(event, deltaX, deltaY)
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    // Verificar si el movimiento futuro causaría colisión
+                    val newX = playerPosition.first + deltaX
+                    val newY = playerPosition.second + deltaY
+                    val newPosition = Pair(newX, newY)
+
+                    if (isPositionBlocked(newPosition)) {
+                        // 🔴 POSICIÓN BLOQUEADA - Mostrar mensaje y no mover
+                        Toast.makeText(this, "🚫 Área bloqueada", Toast.LENGTH_SHORT).show()
+                        return
+                    }
+
+                    // 🔴 MOVIMIENTO PERMITIDO - Proceder normalmente
+                    movementManager.handleMovement(event, deltaX, deltaY)
+                }
+                else -> {
+                    movementManager.handleMovement(event, deltaX, deltaY)
+                }
+            }
+        }
+    }
+
+    // 🔴 VERIFICAR SI UNA POSICIÓN ESTÁ BLOQUEADA
+    private fun isPositionBlocked(position: Pair<Int, Int>): Boolean {
+        val (x, y) = position
+
+        // Verificar todas las áreas de colisión
+        return collisionAreas.any { rect ->
+            x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom
         }
     }
 
     private fun updatePlayerPosition(position: Pair<Int, Int>) {
         runOnUiThread {
             try {
+                // 🔴 VERIFICAR COLISIÓN ANTES DE ACTUALIZAR
+                if (isPositionBlocked(position)) {
+                    Log.d("ESIME_COLLISIONS", "🚫 Colisión detectada en: $position")
+                    Toast.makeText(this, "Movimiento bloqueado", Toast.LENGTH_SHORT).show()
+                    return@runOnUiThread
+                }
+
                 playerPosition = position
                 mapView.updateLocalPlayerPosition(position, forceCenter = true)
                 mapView.invalidate()
@@ -390,6 +546,11 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
     // 🔴 NUEVO: Mostrar posición actual y edificios cercanos
     private fun showCurrentPositionDebug(position: Pair<Int, Int>) {
         val (x, y) = position
+
+        // Verificar si está en área bloqueada
+        if (isPositionBlocked(position)) {
+            Log.d("ESIME_POSITION", "🚫 POSICIÓN BLOQUEADA: ($x, $y)")
+        }
 
         // Encontrar edificio más cercano
         val closestBuilding = buildingLocations.minByOrNull { (_, buildingPos) ->
