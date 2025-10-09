@@ -122,24 +122,23 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
             // 🔴 DEFINIR RECTÁNGULOS GRANDES PARA BLOQUEAR ACCESO A EDIFICIOS
             // Cada edificio tiene un área rectangular grande bloqueada alrededor de su entrada
 
-            // Edificio 1 - Área grande bloqueada
-            collisionAreas.add(Rect(5, 28, 11, 32))   // Rectángulo alrededor del edificio 1
+            // Edificio 1 - Rectángulo grande bloqueado (desde X=8 hacia la derecha)
+            collisionAreas.add(Rect(8, 25, 15, 35))   // Rectángulo grande desde entrada del Edificio 1
 
-            // Edificio 2 - Área grande bloqueada
-            collisionAreas.add(Rect(5, 22, 11, 26))   // Rectángulo alrededor del edificio 2
+// Edificio 2 - Rectángulo grande bloqueado (desde X=8 hacia la derecha)
+            collisionAreas.add(Rect(8, 19, 15, 29))   // Rectángulo grande desde entrada del Edificio 2
 
-            // Edificio 3 - Solo bloquear los lados, dejar entrada libre
-            collisionAreas.add(Rect(5, 15, 7, 19))    // Lado izquierdo del edificio 3
-            collisionAreas.add(Rect(9, 15, 11, 19))   // Lado derecho del edificio 3
-            collisionAreas.add(Rect(7, 13, 9, 15))    // Parte superior del edificio 3
+// Edificio 3 - Solo bloquear área derecha, dejar entrada libre frontal
+            collisionAreas.add(Rect(8, 12, 15, 22))   // Área derecha bloqueada del Edificio 3
+// NOTA: La entrada frontal (X=8, Y=17) permanece accesible
 
-            // Edificio 4 - Área grande bloqueada
-            collisionAreas.add(Rect(5, 9, 11, 13))    // Rectángulo alrededor del edificio 4
+// Edificio 4 - Rectángulo grande bloqueado (desde X=8 hacia la derecha)
+            collisionAreas.add(Rect(8, 6, 15, 16))    // Rectángulo grande desde entrada del Edificio 4
 
-            // Edificio 5 - Área grande bloqueada
-            collisionAreas.add(Rect(5, 3, 11, 7))     // Rectángulo alrededor del edificio 5
+// Edificio 5 - Rectángulo grande bloqueado (desde X=8 hacia la derecha)
+            collisionAreas.add(Rect(8, 0, 15, 10))    // Rectángulo grande desde entrada del Edificio 5
 
-            // 🔴 BORDES DEL MAPA - Para evitar que el jugador se salga
+// 🔴 BORDES DEL MAPA - Para evitar que el jugador se salga
             collisionAreas.add(Rect(0, 0, 1, 40))     // Borde izquierdo
             collisionAreas.add(Rect(14, 0, 15, 40))   // Borde derecho
             collisionAreas.add(Rect(0, 0, 15, 1))     // Borde superior
