@@ -31,6 +31,7 @@ import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.buildi
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.buildingIA.PalapasIA
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.gobierno.EdificioGobierno
 import kotlin.collections.iterator
 
 class GameplayActivity : AppCompatActivity(),
@@ -271,6 +272,8 @@ class GameplayActivity : AppCompatActivity(),
                         "zacatenco" -> startZacatencoActivity()
                         "Edificioiabajo" -> startEdificioIABajoActivity()
                         "palapas_ia" -> startPalapasIAActivity()
+                        "edificio_gobierno" -> startEdificioGobiernoActivity()
+
 
                         else -> showToast("No hay interacción disponible en esta posición")
                     }
@@ -279,6 +282,19 @@ class GameplayActivity : AppCompatActivity(),
                 }
             }
         }
+    }
+
+    //  NUEVA FUNCIÓN PARA INICIAR EL EDIFICIO DE GOBIERNO
+    private fun startEdificioGobiernoActivity() {
+        val intent = Intent(this, EdificioGobierno::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(5, 20)) // Posición inicial dentro del edificio
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
     }
 
     private fun startPalapasIAActivity() {
@@ -368,6 +384,7 @@ class GameplayActivity : AppCompatActivity(),
     private var targetDestination: String? = null  // Variable para almacenar el destino
 
     private fun checkPositionForMapChange(position: Pair<Int, Int>) {
+        Log.d(TAG, "Checking position for map change: $position")
         // Comprobar múltiples ubicaciones de transición
         when {
             position.first == 15 && position.second == 10 -> {
@@ -418,17 +435,7 @@ class GameplayActivity : AppCompatActivity(),
                     Toast.makeText(this, "Presiona A para entrar al salón 1212", Toast.LENGTH_SHORT).show()
                 }
             }
-            position.first == 25 && position.second == 5 -> {
-                canChangeMap = true
-                targetDestination = "Estacionamiento"
-                runOnUiThread {
-                    Toast.makeText(
-                        this,
-                        "Presiona A para entrar al estacionamiento",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
+
             position.first == 31 && position.second == 21 -> {
                 canChangeMap = true
                 targetDestination = "Edificioiabajo"
@@ -452,6 +459,19 @@ class GameplayActivity : AppCompatActivity(),
                     ).show()
                 }
             }
+
+            position.first == 10 && position.second == 18 -> {
+                canChangeMap = true
+                targetDestination = "edificio_gobierno"
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        "Presiona A para entrar al edificio de gobierno",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
             else -> {
                 canChangeMap = false
                 targetDestination = null
