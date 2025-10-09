@@ -37,6 +37,8 @@ class MapMatrixProvider {
         const val MAP_CABLEBUS = "cablebus"
         const val MAP_SALIDAMETRO = "escom_salidametro"
         const val MAP_PALAPAS_IA = "escom_palapas_ia"
+        const val MAP_EDIFICIO_GOBIERNO = "escom_edificio_gobierno"
+        const val MAP_BIBLIOTECA = "escom_biblioteca"
 
         fun normalizeMapName(mapName: String?): String {
             if (mapName.isNullOrBlank()) return MAP_MAIN
@@ -75,6 +77,9 @@ class MapMatrixProvider {
                 lowerMap.contains("cable") || lowerMap.contains("cablebus") -> MAP_CABLEBUS
                 lowerMap.contains("palapas_ia") -> MAP_PALAPAS_IA
 
+                lowerMap.contains("gobierno") || lowerMap.contains("edificio_gobierno") -> MAP_EDIFICIO_GOBIERNO
+                lowerMap.contains("biblioteca") -> MAP_BIBLIOTECA
+
                 // Si no coincide con ninguno de los anteriores, devolver el original
                 else -> mapName
             }
@@ -109,6 +114,12 @@ class MapMatrixProvider {
         val EDIFICIO_IA_BAJO_TO_MEDIO = Pair(5, 20)
         val MAIN_TO_PALAPAS_IA = Pair(1, 1)
 
+        // Nuevos puntos de transición para Edificio Gobierno y Biblioteca
+        val MAIN_TO_EDIFICIO_GOBIERNO = Pair(8, 35)
+        val EDIFICIO_GOBIERNO_TO_MAIN = Pair(20, 2)
+        val MAIN_TO_BIBLIOTECA = Pair(35, 15)
+        val BIBLIOTECA_TO_MAIN = Pair(2, 20)
+
         /**
          * Obtiene la matriz para el mapa especificado
          */
@@ -132,6 +143,8 @@ class MapMatrixProvider {
                 MAP_EDIFICIO_IA_MEDIO-> createEdificioIAMedioMatrix()
                 MAP_EDIFICIO_IA_ALTO -> createEdificioIAAltoMatrix()
                 MAP_PALAPAS_IA -> createPalapasIAMapMatrix()
+                MAP_EDIFICIO_GOBIERNO -> createEdificioGobiernoMatrix()
+                MAP_BIBLIOTECA -> createBibliotecaMatrix()
                 else -> createDefaultMatrix() // Por defecto, un mapa básico
             }
         }
@@ -1001,7 +1014,104 @@ class MapMatrixProvider {
             return matrix
         }
 
+        /**
+         * NUEVO MAPA: Edificio Gobierno
+         */
+        private fun createEdificioGobiernoMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
 
+            // Área principal del edificio (caminable)
+            for (i in 5 until MAP_HEIGHT - 5) {
+                for (j in 5 until MAP_WIDTH - 5) {
+                    matrix[i][j] = PATH
+                }
+            }
+
+            // Oficinas (obstáculos)
+            for (i in 8..12) {
+                for (j in 8..15) {
+                    matrix[i][j] = INACCESSIBLE // Oficina 1
+                }
+            }
+
+            for (i in 8..12) {
+                for (j in 20..27) {
+                    matrix[i][j] = INACCESSIBLE // Oficina 2
+                }
+            }
+
+            // Recepción central
+            for (i in 15..18) {
+                for (j in 15..20) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            // Salón de juntas
+            for (i in 22..28) {
+                for (j in 10..25) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            // Punto interactivo para salir al mapa principal
+            matrix[2][20] = INTERACTIVE
+
+            return matrix
+        }
+
+        /**
+         * NUEVO MAPA: Biblioteca
+         */
+        private fun createBibliotecaMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
+
+            // Área principal de la biblioteca (caminable)
+            for (i in 5 until MAP_HEIGHT - 5) {
+                for (j in 5 until MAP_WIDTH - 5) {
+                    matrix[i][j] = PATH
+                }
+            }
+
+            // Estanterías de libros (obstáculos en forma de filas)
+            for (row in 0..3) {
+                val shelfY = 8 + (row * 8)
+
+                // Crear filas de estanterías
+                for (j in 8 until MAP_WIDTH - 8) {
+                    if (j % 6 < 4) { // Espaciado entre estanterías
+                        matrix[shelfY][j] = INACCESSIBLE
+                        matrix[shelfY + 1][j] = INACCESSIBLE
+                    }
+                }
+            }
+
+            // Área de estudio
+            for (i in 25..30) {
+                for (j in 10..30) {
+                    if ((i - 25) % 3 == 0 || (j - 10) % 5 == 0) {
+                        matrix[i][j] = INACCESSIBLE // Mesas de estudio
+                    }
+                }
+            }
+
+            // Recepción
+            for (i in 5..8) {
+                for (j in 15..20) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            // Punto interactivo para salir al mapa principal
+            matrix[20][2] = INTERACTIVE
+
+            // Puntos interactivos para libros especiales
+            matrix[12][12] = INTERACTIVE
+            matrix[12][25] = INTERACTIVE
+            matrix[20][18] = INTERACTIVE
+
+            return matrix
+        }
         /**
          * Comprueba si la coordenada especificada es un punto de transición entre mapas
          */
@@ -1103,6 +1213,22 @@ class MapMatrixProvider {
                 return MAP_PALAPAS_IA
             }
 
+            // Nuevas transiciones para Edificio Gobierno y Biblioteca
+            if (mapId == MAP_MAIN && x == 8 && y == 35) {
+                return MAP_EDIFICIO_GOBIERNO
+            }
+
+            if (mapId == MAP_EDIFICIO_GOBIERNO && x == 20 && y == 2) {
+                return MAP_MAIN
+            }
+
+            if (mapId == MAP_MAIN && x == 15 && y == 35) {
+                return MAP_BIBLIOTECA
+            }
+
+            if (mapId == MAP_BIBLIOTECA && x == 2 && y == 20) {
+                return MAP_MAIN
+            }
             // Resto de transiciones...
 
             return null
@@ -1126,6 +1252,8 @@ class MapMatrixProvider {
                 MAP_EDIFICIO_IA_MEDIO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
                 MAP_EDIFICIO_IA_ALTO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
                 MAP_PALAPAS_IA -> Pair(2, 2)
+                MAP_EDIFICIO_GOBIERNO -> Pair(20, 5)  // Posición cerca de la entrada
+                MAP_BIBLIOTECA -> Pair(20, 5)  // Posición cerca de la entrada
 
                 else -> Pair(MAP_WIDTH / 2, MAP_HEIGHT / 2)
             }
