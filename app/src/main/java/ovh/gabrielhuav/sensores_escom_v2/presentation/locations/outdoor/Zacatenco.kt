@@ -27,6 +27,7 @@ import ovh.gabrielhuav.sensores_escom_v2.presentation.common.components.UIManage
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.MovementManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.ServerConnectionManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.Lindavista
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.encb.ENCB
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
 import kotlin.collections.iterator
@@ -332,6 +333,15 @@ class Zacatenco : AppCompatActivity(),
                         .show()
                 }
             }
+            //posicion de encb agregada
+            position.first == 12 && position.second == 24 -> {
+                canChangeMap = true
+                targetDestination = "encb"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para ver la ENCB", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
 
             else -> {
                 canChangeMap = false
@@ -368,6 +378,7 @@ class Zacatenco : AppCompatActivity(),
                         "cidetec" -> viewCIDETEC()
                         "cic" -> viewCIC()
                         "ford" -> startFordActivity()
+                        "encb" -> startENCBActivity()
 
                         else -> showToast("No hay interacción disponible en esta posición")
                     }
@@ -396,6 +407,19 @@ class Zacatenco : AppCompatActivity(),
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.cic.ipn.mx/"))
         startActivity(intent)
 
+    }
+    //funcion para visitar encb
+    private fun startENCBActivity() {
+        val intent = Intent(this, ENCB::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("IS_CONNECTED", gameState.isConnected) // Importante: mantener estado de conexión
+            putExtra("INITIAL_POSITION", Pair(20, 20)) // Posición inicial en ENCB (ajusta según tu mapa)
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual para volver
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
     }
     private fun returnToMainActivity() {
         // Obtener la posición previa del intent

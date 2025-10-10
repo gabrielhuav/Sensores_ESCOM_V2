@@ -40,6 +40,7 @@ class MapMatrixProvider {
         const val MAP_PALAPAS_ISC = "escom_palapas_isc"
         const val MAP_EDIFICIO_GOBIERNO = "escom_edificio_gobierno"
         const val MAP_BIBLIOTECA = "escom_biblioteca"
+        const val MAP_ENCB = "encb"
 
         fun normalizeMapName(mapName: String?): String {
             if (mapName.isNullOrBlank()) return MAP_MAIN
@@ -79,6 +80,7 @@ class MapMatrixProvider {
                 lowerMap.contains("palapas_ia") -> MAP_PALAPAS_IA
                 lowerMap.contains("gobierno") || lowerMap.contains("edificio_gobierno") -> MAP_EDIFICIO_GOBIERNO
                 lowerMap.contains("biblioteca") -> MAP_BIBLIOTECA
+                lowerMap.contains("encb") -> MAP_ENCB
                 // Si no coincide con ninguno de los anteriores, devolver el original
                 else -> mapName
             }
@@ -146,6 +148,7 @@ class MapMatrixProvider {
                 MAP_PALAPAS_ISC -> createPalapasISCMatrix()
                 MAP_EDIFICIO_GOBIERNO -> createEdificioGobiernoMatrix()
                 MAP_BIBLIOTECA -> createBibliotecaMatrix()// Matriz para palapas de ISC
+                MAP_ENCB -> createEncbMatrix()
                 else -> createDefaultMatrix() // Por defecto, un mapa básico
             }
         }
@@ -276,6 +279,9 @@ class MapMatrixProvider {
                     else if (i == 19 && j == 4) {
                         matrix[i][j] = INTERACTIVE // Entrada a ESCOM
                     }
+                    else if(i == 24 && j == 12){
+                        matrix[i][j] = INTERACTIVE // Entrada a ENCB
+                    }
                     // Obstáculos (árboles, bancas, etc)
                     /**else if (i % 7 == 0 && j % 8 == 0) {
                     matrix[i][j] = INACCESSIBLE
@@ -297,7 +303,18 @@ class MapMatrixProvider {
 
             return matrix
         }
-
+        //Mapa de la ENCB
+        private fun createEncbMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = WALL
+                    }
+                }
+            }
+            return matrix
+        }
         private fun createLindavistaMatrix(): Array<Array<Int>> {
             val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
 

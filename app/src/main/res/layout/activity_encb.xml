@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".presentation.locations.buildings.encb.ENCB">
+
+    <!-- Contenedor del mapa -->
+    <FrameLayout
+        android:id="@+id/map_container"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@+id/controls_container"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Contenedor de controles -->
+    <LinearLayout
+        android:id="@+id/controls_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:background="@android:color/black"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <!-- Estado del juego -->
+        <TextView
+            android:id="@+id/tvBluetoothStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="ENCB - Conectando..."
+            android:textAlignment="center"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:paddingBottom="8dp" />
+
+        <!-- Botones de control -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <!-- Botón B2 (BCK) -->
+            <Button
+                android:id="@+id/button_small_2"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:text="B2"
+                android:textSize="12sp"
+                android:layout_marginEnd="8dp" />
+
+            <!-- Botón B1 (START/STOP) -->
+            <Button
+                android:id="@+id/button_small_1"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:text="B1"
+                android:textSize="12sp"
+                android:layout_marginEnd="16dp" />
+
+            <!-- Botón A (Atrapar) -->
+            <Button
+                android:id="@+id/button_a"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:text="A"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginEnd="16dp" />
+
+            <!-- Botón Volver -->
+            <Button
+                android:id="@+id/button_back_to_home"
+                android:layout_width="wrap_content"
+                android:layout_height="60dp"
+                android:text="VOLVER"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <!-- D-Pad de movimiento -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_marginTop="8dp">
+
+            <!-- Botón Norte -->
+            <Button
+                android:id="@+id/button_north"
+                android:layout_width="80dp"
+                android:layout_height="60dp"
+                android:layout_centerHorizontal="true"
+                android:text="▲"
+                android:textSize="24sp" />
+
+            <!-- Botón Oeste -->
+            <Button
+                android:id="@+id/button_west"
+                android:layout_width="80dp"
+                android:layout_height="60dp"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:text="◄"
+                android:textSize="24sp" />
+
+            <!-- Botón Este -->
+            <Button
+                android:id="@+id/button_east"
+                android:layout_width="80dp"
+                android:layout_height="60dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:text="►"
+                android:textSize="24sp" />
+
+            <!-- Botón Sur -->
+            <Button
+                android:id="@+id/button_south"
+                android:layout_width="80dp"
+                android:layout_height="60dp"
+                android:layout_alignParentBottom="true"
+                android:layout_centerHorizontal="true"
+                android:text="▼"
+                android:textSize="24sp" />
+
+        </RelativeLayout>
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
