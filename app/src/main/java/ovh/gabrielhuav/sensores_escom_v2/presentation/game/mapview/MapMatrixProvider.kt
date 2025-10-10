@@ -41,6 +41,9 @@ class MapMatrixProvider {
         const val MAP_EDIFICIO_GOBIERNO = "escom_edificio_gobierno"
         const val MAP_BIBLIOTECA = "escom_biblioteca"
 
+        const val MAP_ESIA = "esia"
+
+
         fun normalizeMapName(mapName: String?): String {
             if (mapName.isNullOrBlank()) return MAP_MAIN
 
@@ -79,6 +82,8 @@ class MapMatrixProvider {
                 lowerMap.contains("palapas_ia") -> MAP_PALAPAS_IA
                 lowerMap.contains("gobierno") || lowerMap.contains("edificio_gobierno") -> MAP_EDIFICIO_GOBIERNO
                 lowerMap.contains("biblioteca") -> MAP_BIBLIOTECA
+                // ESIA
+                lowerMap.contains("esia") -> MAP_ESIA
                 // Si no coincide con ninguno de los anteriores, devolver el original
                 else -> mapName
             }
@@ -119,6 +124,10 @@ class MapMatrixProvider {
         val MAIN_TO_BIBLIOTECA = Pair(35, 15)
         val BIBLIOTECA_TO_MAIN = Pair(2, 20)
 
+        // NUEVOS PUNTOS DE TRANSICIÓN PARA ESIA
+        val ZACATENCO_TO_ESIA_POSITION = Pair(25, 12)
+        val ESIA_TO_ZACATENCO_POSITION = Pair(25, 35)
+
 
         /**
          * Obtiene la matriz para el mapa especificado
@@ -146,6 +155,7 @@ class MapMatrixProvider {
                 MAP_PALAPAS_ISC -> createPalapasISCMatrix()
                 MAP_EDIFICIO_GOBIERNO -> createEdificioGobiernoMatrix()
                 MAP_BIBLIOTECA -> createBibliotecaMatrix()// Matriz para palapas de ISC
+                MAP_ESIA -> createESIAMatrix()
                 else -> createDefaultMatrix() // Por defecto, un mapa básico
             }
         }
@@ -1449,6 +1459,170 @@ class MapMatrixProvider {
 
             return matrix
         }
+
+        private fun createESIAMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
+
+            // Crear un área rectangular simple y grande para toda la ESIA
+            for (i in 3 until 37) {
+                for (j in 3 until 37) {
+                    matrix[i][j] = PATH
+                }
+            }
+
+            // Bloquear la zona superior derecha (figura roja grande)
+            for (i in 3 until 12) {
+                for (j in 20 until 37) {
+                    val diagonal = (i - 3) + (j - 20)
+                    if (diagonal > 6) {
+                        matrix[i][j] = WALL
+                    }
+                }
+            }
+
+            // Bloquear más zona superior derecha (extensión de la figura roja)
+            for (i in 3 until 8) {
+                for (j in 15 until 37) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // Bloquear la zona media derecha (figura verde compleja)
+            for (i in 15 until 25) {
+                for (j in 28 until 37) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // Extensión adicional de la zona verde (parte más irregular)
+            for (i in 18 until 22) {
+                for (j in 25 until 28) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // Bloquear el área verde específica que encerraste (zona superior derecha)
+            for (i in 8 until 15) {
+                for (j in 25 until 37) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // Bloquear área adicional (20,12) a (24,12)
+            for (i in 12 until 13) {
+                for (j in 20 until 25) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // Bloquear área adicional (20,13) a (24,13)
+            for (i in 13 until 14) {
+                for (j in 20 until 25) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // Bloquear área adicional (20,14) a (24,14)
+            for (i in 14 until 15) {
+                for (j in 20 until 25) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // Bloquear área adicional (21,15) a (27,15)
+            for (i in 15 until 16) {
+                for (j in 21 until 28) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // Bloquear área adicional (22,16) a (27,16)
+            for (i in 16 until 17) {
+                for (j in 22 until 28) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // Bloquear área adicional (23,17) a (27,17)
+            for (i in 17 until 18) {
+                for (j in 23 until 28) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // NUEVO: Bloquear puntos específicos adicionales
+            // Punto (29, 25)
+            matrix[25][29] = WALL
+
+            // Punto (27, 22)
+            matrix[22][27] = WALL
+
+            // Punto (24, 18)
+            matrix[18][24] = WALL
+
+            // NUEVO: Bloquear área (16,8) a (21,8)
+            for (i in 8 until 9) {
+                for (j in 16 until 22) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // NUEVO: Bloquear área (17,9) a (20,9)
+            for (i in 9 until 10) {
+                for (j in 17 until 21) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // NUEVO: Bloquear área (18,10) a (19,10)
+            for (i in 10 until 11) {
+                for (j in 18 until 20) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // NUEVO: Bloquear punto (19,11)
+            matrix[11][19] = WALL
+
+            // Bloquear la zona inferior derecha (triángulo inferior)
+            for (i in 25 until 37) {
+                for (j in 30 until 37) {
+                    val diagonal = (37 - i) + (j - 30)
+                    if (diagonal > 8) {
+                        matrix[i][j] = WALL
+                    }
+                }
+            }
+
+            // Bloquear figura negra superior izquierda
+            for (i in 3 until 10) {
+                for (j in 3 until 12) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // Bloquear figura negra superior derecha (zona más específica)
+            for (i in 3 until 7) {
+                for (j in 12 until 20) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // Bloquear el rectángulo superior final
+            for (i in 3 until 8) {
+                for (j in 8 until 30) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // Punto de salida hacia Zacatenco (puerta principal en la parte inferior)
+            matrix[35][25] = INTERACTIVE
+
+            return matrix
+        }
+
+
+
         /**
          * Comprueba si la coordenada especificada es un punto de transición entre mapas
          */
@@ -1575,6 +1749,16 @@ class MapMatrixProvider {
             if (mapId == MAP_BIBLIOTECA && x == 2 && y == 20) {
                 return MAP_MAIN
             }
+
+            // TRANSICIONES PARA ESIA
+            if (mapId == MAP_ESIA && x == 25 && y == 35) {
+                return MAP_ZACATENCO
+            }
+
+            if (mapId == MAP_ZACATENCO && x == 25 && y == 12) {
+                return MAP_ESIA
+            }
+
             // Resto de transiciones...
 
             return null
@@ -1601,6 +1785,7 @@ class MapMatrixProvider {
                 MAP_PALAPAS_ISC -> Pair(38, 38) // Posición inicial dentro de palapas ISC
                 MAP_EDIFICIO_GOBIERNO -> Pair(17, 5)  // Posición cerca de la entrada
                 MAP_BIBLIOTECA -> Pair(17, 5)  // Posición cerca de la entrada
+                MAP_ESIA -> Pair(25, 35) // Posición inicial en ESIA (cerca de la entrada)
                 else -> Pair(MAP_WIDTH / 2, MAP_HEIGHT / 2)
             }
         }
