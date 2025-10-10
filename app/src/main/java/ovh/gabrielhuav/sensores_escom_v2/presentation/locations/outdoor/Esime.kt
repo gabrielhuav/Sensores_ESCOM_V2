@@ -125,20 +125,20 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
             // Edificio 1 - Rectángulo grande bloqueado (desde X=8 hacia la derecha)
             collisionAreas.add(Rect(8, 25, 15, 35))   // Rectángulo grande desde entrada del Edificio 1
 
-// Edificio 2 - Rectángulo grande bloqueado (desde X=8 hacia la derecha)
+            // Edificio 2 - Rectángulo grande bloqueado (desde X=8 hacia la derecha)
             collisionAreas.add(Rect(8, 19, 15, 29))   // Rectángulo grande desde entrada del Edificio 2
 
-// Edificio 3 - Solo bloquear área derecha, dejar entrada libre frontal
+            // Edificio 3 - Solo bloquear área derecha, dejar entrada libre frontal
             collisionAreas.add(Rect(8, 12, 15, 22))   // Área derecha bloqueada del Edificio 3
-// NOTA: La entrada frontal (X=8, Y=17) permanece accesible
+            // NOTA: La entrada frontal (X=8, Y=17) permanece accesible
 
-// Edificio 4 - Rectángulo grande bloqueado (desde X=8 hacia la derecha)
+            // Edificio 4 - Rectángulo grande bloqueado (desde X=8 hacia la derecha)
             collisionAreas.add(Rect(8, 6, 15, 16))    // Rectángulo grande desde entrada del Edificio 4
 
-// Edificio 5 - Rectángulo grande bloqueado (desde X=8 hacia la derecha)
+            // Edificio 5 - Rectángulo grande bloqueado (desde X=8 hacia la derecha)
             collisionAreas.add(Rect(8, 0, 15, 10))    // Rectángulo grande desde entrada del Edificio 5
 
-// 🔴 BORDES DEL MAPA - Para evitar que el jugador se salga
+            // 🔴 BORDES DEL MAPA - Para evitar que el jugador se salga
             collisionAreas.add(Rect(0, 0, 1, 40))     // Borde izquierdo
             collisionAreas.add(Rect(14, 0, 15, 40))   // Borde derecho
             collisionAreas.add(Rect(0, 0, 15, 1))     // Borde superior
