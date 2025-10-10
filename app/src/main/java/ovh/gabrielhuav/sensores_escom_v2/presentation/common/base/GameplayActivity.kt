@@ -32,6 +32,7 @@ import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.buildi
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.buildingIA.PalapasIA
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.gobierno.EdificioGobierno
 import kotlin.collections.iterator
 
 class GameplayActivity : AppCompatActivity(),
@@ -273,6 +274,7 @@ class GameplayActivity : AppCompatActivity(),
                         "Edificioiabajo" -> startEdificioIABajoActivity()
                         "palapas_ia" -> startPalapasIAActivity()
                         "palapas_isc" -> startPalapasISCActivity()
+                        "edificio_gobierno" -> startEdificioGobiernoActivity()
 
                         else -> showToast("No hay interacción disponible en esta posición")
                     }
@@ -282,7 +284,18 @@ class GameplayActivity : AppCompatActivity(),
             }
         }
     }
-
+    //  NUEVA FUNCIÓN PARA INICIAR EL EDIFICIO DE GOBIERNO
+    private fun startEdificioGobiernoActivity() {
+        val intent = Intent(this, EdificioGobierno::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(5, 20)) // Posición inicial dentro del edificio
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
     private fun startPalapasIAActivity() {
         val intent = Intent(this, PalapasIA::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
@@ -294,7 +307,6 @@ class GameplayActivity : AppCompatActivity(),
         startActivity(intent)
         finish()
     }
-
     // Función para iniciar la Activity de las Palapas ISC
     private fun startPalapasISCActivity() {
         // Obtenemos la posición inicial correcta desde el proveedor
@@ -313,7 +325,6 @@ class GameplayActivity : AppCompatActivity(),
         startActivity(intent)
         finish()
     }
-
 
     private fun startZacatencoActivity() {
         val intent = Intent(this, Zacatenco::class.java).apply {
@@ -480,7 +491,17 @@ class GameplayActivity : AppCompatActivity(),
                     Toast.makeText(this, "Presiona A para entrar a Palapas ISC", Toast.LENGTH_SHORT).show()
                 }
             }
-
+            position.first == 10 && position.second == 18 -> {
+                canChangeMap = true
+                targetDestination = "edificio_gobierno"
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        "Presiona A para entrar al edificio de gobierno",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
             else -> {
                 canChangeMap = false
                 targetDestination = null
