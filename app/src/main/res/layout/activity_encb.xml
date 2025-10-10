@@ -39,94 +39,124 @@
             android:textSize="14sp"
             android:paddingBottom="8dp" />
 
-        <!-- Botones de control -->
-        <LinearLayout
+        <!-- Layout principal de controles (todo en uno) -->
+        <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center">
+            android:layout_height="180dp">
 
-            <!-- Botón B2 (BCK) -->
-            <Button
-                android:id="@+id/button_small_2"
-                android:layout_width="60dp"
-                android:layout_height="60dp"
-                android:text="B2"
-                android:textSize="12sp"
-                android:layout_marginEnd="8dp" />
+            <!-- D-Pad de movimiento (IZQUIERDA) -->
+            <RelativeLayout
+                android:id="@+id/dpad_container"
+                android:layout_width="200dp"
+                android:layout_height="match_parent"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true">
 
-            <!-- Botón B1 (START/STOP) -->
-            <Button
-                android:id="@+id/button_small_1"
-                android:layout_width="60dp"
-                android:layout_height="60dp"
-                android:text="B1"
-                android:textSize="12sp"
-                android:layout_marginEnd="16dp" />
+                <!-- Botón Norte -->
+                <Button
+                    android:id="@+id/button_north"
+                    android:layout_width="60dp"
+                    android:layout_height="50dp"
+                    android:layout_centerHorizontal="true"
+                    android:layout_marginTop="0dp"
+                    android:text="▲"
+                    android:textSize="20sp" />
 
-            <!-- Botón A (Atrapar) -->
-            <Button
-                android:id="@+id/button_a"
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                android:text="A"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:layout_marginEnd="16dp" />
+                <!-- Botón Oeste -->
+                <Button
+                    android:id="@+id/button_west"
+                    android:layout_width="60dp"
+                    android:layout_height="50dp"
+                    android:layout_centerVertical="true"
+                    android:layout_alignParentStart="true"
+                    android:layout_marginStart="10dp"
+                    android:text="◄"
+                    android:textSize="20sp" />
 
-            <!-- Botón Volver -->
+                <!-- Botón Este -->
+                <Button
+                    android:id="@+id/button_east"
+                    android:layout_width="60dp"
+                    android:layout_height="50dp"
+                    android:layout_centerVertical="true"
+                    android:layout_alignParentEnd="true"
+                    android:layout_marginEnd="10dp"
+                    android:text="►"
+                    android:textSize="20sp" />
+
+                <!-- Botón Sur -->
+                <Button
+                    android:id="@+id/button_south"
+                    android:layout_width="60dp"
+                    android:layout_height="50dp"
+                    android:layout_alignParentBottom="true"
+                    android:layout_centerHorizontal="true"
+                    android:layout_marginBottom="0dp"
+                    android:text="▼"
+                    android:textSize="20sp" />
+
+            </RelativeLayout>
+
+            <!-- Botones de acción (DERECHA) -->
+            <RelativeLayout
+                android:id="@+id/action_buttons_container"
+                android:layout_width="200dp"
+                android:layout_height="match_parent"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true">
+
+                <!-- Botón A (Atrapar) - GRANDE Y CENTRADO -->
+                <Button
+                    android:id="@+id/button_a"
+                    android:layout_width="90dp"
+                    android:layout_height="90dp"
+                    android:layout_centerInParent="true"
+                    android:text="A\nATRAPAR"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:backgroundTint="#FF6B6B" />
+
+                <!-- Botón B1 (START/STOP) - Arriba a la derecha -->
+                <Button
+                    android:id="@+id/button_small_1"
+                    android:layout_width="55dp"
+                    android:layout_height="55dp"
+                    android:layout_alignParentTop="true"
+                    android:layout_alignParentEnd="true"
+                    android:layout_marginTop="5dp"
+                    android:layout_marginEnd="10dp"
+                    android:text="B1\nSTART"
+                    android:textSize="10sp"
+                    android:backgroundTint="#4ECDC4" />
+
+                <!-- Botón B2 (VOLVER) - Abajo a la derecha -->
+                <Button
+                    android:id="@+id/button_small_2"
+                    android:layout_width="55dp"
+                    android:layout_height="55dp"
+                    android:layout_alignParentBottom="true"
+                    android:layout_alignParentEnd="true"
+                    android:layout_marginBottom="5dp"
+                    android:layout_marginEnd="10dp"
+                    android:text="B2\nVOLVER"
+                    android:textSize="10sp"
+                    android:backgroundTint="#95E1D3" />
+
+            </RelativeLayout>
+
+            <!-- Botón Back to Home (CENTRO ABAJO) -->
             <Button
                 android:id="@+id/button_back_to_home"
                 android:layout_width="wrap_content"
-                android:layout_height="60dp"
-                android:text="VOLVER"
-                android:textSize="12sp" />
-        </LinearLayout>
-
-        <!-- D-Pad de movimiento -->
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:layout_marginTop="8dp">
-
-            <!-- Botón Norte -->
-            <Button
-                android:id="@+id/button_north"
-                android:layout_width="80dp"
-                android:layout_height="60dp"
-                android:layout_centerHorizontal="true"
-                android:text="▲"
-                android:textSize="24sp" />
-
-            <!-- Botón Oeste -->
-            <Button
-                android:id="@+id/button_west"
-                android:layout_width="80dp"
-                android:layout_height="60dp"
-                android:layout_alignParentStart="true"
-                android:layout_centerVertical="true"
-                android:text="◄"
-                android:textSize="24sp" />
-
-            <!-- Botón Este -->
-            <Button
-                android:id="@+id/button_east"
-                android:layout_width="80dp"
-                android:layout_height="60dp"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:text="►"
-                android:textSize="24sp" />
-
-            <!-- Botón Sur -->
-            <Button
-                android:id="@+id/button_south"
-                android:layout_width="80dp"
-                android:layout_height="60dp"
+                android:layout_height="40dp"
                 android:layout_alignParentBottom="true"
                 android:layout_centerHorizontal="true"
-                android:text="▼"
-                android:textSize="24sp" />
+                android:layout_marginBottom="5dp"
+                android:text="🏠 SALIR"
+                android:textSize="12sp"
+                android:backgroundTint="#F38181"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp" />
 
         </RelativeLayout>
 

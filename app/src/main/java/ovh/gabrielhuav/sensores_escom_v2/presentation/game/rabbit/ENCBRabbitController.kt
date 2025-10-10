@@ -26,8 +26,8 @@ class ENCBRabbitController(
 
         // Número de conejos por dificultad
         private val RABBITS_COUNT = mapOf(
-            DIFFICULTY_EASY to 3,
-            DIFFICULTY_MEDIUM to 5,
+            DIFFICULTY_EASY to 7,
+            DIFFICULTY_MEDIUM to 7,
             DIFFICULTY_HARD to 7
         )
 
@@ -217,21 +217,42 @@ class ENCBRabbitController(
         }
 
         fun catchRabbit() {
-            isCaught = true
-            respawnTime = System.currentTimeMillis()
-            Log.d(TAG, "Conejo $id atrapado, respawneará en 2 segundos")
+            if (!isCaught) {  // IMPORTANTE: Solo ejecutar si NO estaba atrapado
+                isCaught = true
+                respawnTime = System.currentTimeMillis()
+
+                // Llamar al callback SOLO UNA VEZ
+                onRabbitCaught(id)
+
+                Log.d(TAG, "Conejo $id atrapado, respawneará en 2 segundos")
+            }
         }
 
         private fun respawn() {
-            // Encontrar una nueva posición de spawn válida
+            // IMPORTANTE: Zonas seguras para respawn (igual que en createRabbits)
+            val safeZones = listOf(
+                Pair(12..18, 5..10),
+                Pair(12..18, 16..23),
+                Pair(12..18, 28..35),
+                Pair(13..26, 5..35),
+                Pair(20..27, 5..10),
+                Pair(20..27, 16..23),
+                Pair(20..27, 28..35)
+            )
+
             var xPos: Int
             var yPos: Int
             var attempts = 0
+
             do {
-                xPos = Random.nextInt(5, 35)
-                yPos = Random.nextInt(5, 35)
+                // Elegir una zona segura aleatoria
+                val zone = safeZones.random()
+                xPos = zone.first.random()
+                yPos = zone.second.random()
                 attempts++
+
                 if (attempts > 100) {
+                    // Fallback al centro si no encontramos posición
                     xPos = 20
                     yPos = 20
                     break
@@ -245,8 +266,11 @@ class ENCBRabbitController(
             // CRÍTICO: Notificar nueva posición después de respawn
             onRabbitPositionChanged(id, position)
 
-            Log.d(TAG, "Conejo $id respawneado en $position")
+            Log.d(TAG, "🐰 Conejo $id respawneado en $position")
         }
+
+
+
     }
 
     /**
@@ -303,6 +327,10 @@ class ENCBRabbitController(
      * Intenta atrapar un conejo cerca de la posición del jugador
      * Retorna el ID del conejo atrapado o null si no hay ninguno cerca
      */
+    /**
+     * Intenta atrapar un conejo cerca de la posición del jugador
+     * Retorna el ID del conejo atrapado o null si no hay ninguno cerca
+     */
     fun tryToCatchRabbit(playerPosition: Pair<Int, Int>): String? {
         for (rabbit in rabbits) {
             if (!rabbit.isCaught) {
@@ -311,7 +339,10 @@ class ENCBRabbitController(
                 if (distance <= catchDistance) {
                     // ¡Conejo atrapado!
                     rabbit.catchRabbit()
-                    onRabbitCaught(rabbit.id)
+
+                    // IMPORTANTE: Solo llamar al callback UNA VEZ
+                    // No llamar aquí, ya se llama en catchRabbit()
+
                     Log.d(TAG, "¡Conejo ${rabbit.id} atrapado por jugador!")
                     return rabbit.id
                 }
@@ -330,36 +361,87 @@ class ENCBRabbitController(
 
         Log.d(TAG, "🐰 Creando $count conejos con dificultad $currentDifficulty")
 
+        // IMPORTANTE: Zonas seguras donde los conejos pueden spawnearse
+        // Evitamos los bordes y las esquinas
+        val safeZones = listOf(
+            // Área superior (entre salas superiores)
+            Pair(12..18, 5..10),   // Izquierda superior
+            Pair(12..18, 16..23),  // Centro superior
+            Pair(12..18, 28..35),  // Derecha superior
+
+            // Área central GRANDE (la más segura)
+            Pair(13..26, 5..35),   // Todo el centro
+
+            // Área inferior (entre salas inferiores)
+            Pair(20..27, 5..10),   // Izquierda inferior
+            Pair(20..27, 16..23),  // Centro inferior
+            Pair(20..27, 28..35)   // Derecha inferior
+        )
+
         for (i in 0 until count) {
             var xPos: Int
             var yPos: Int
             var attempts = 0
-            do {
-                xPos = Random.nextInt(10, 30)
-                yPos = Random.nextInt(10, 30)
-                attempts++
-                if (attempts > 100) {
-                    Log.w(TAG, "Usando posición fija para conejo $i")
-                    xPos = 20 + i // Distribuir si hay múltiples conejos
-                    yPos = 20
-                    break
+            var positioned = false
+
+            // Intentar hasta 200 veces encontrar una posición válida
+            while (attempts < 200 && !positioned) {
+                // Elegir una zona segura aleatoria
+                val zone = safeZones.random()
+                xPos = zone.first.random()
+                yPos = zone.second.random()
+
+                // Verificar que la posición es válida
+                if (isValidPosition(xPos, yPos)) {
+                    // Verificar que no hay otro conejo muy cerca (mínimo 3 casillas de distancia)
+                    var tooClose = false
+                    for (existingRabbit in rabbits) {
+                        val distance = calculateDistance(Pair(xPos, yPos), existingRabbit.position)
+                        if (distance < 3.0) {
+                            tooClose = true
+                            break
+                        }
+                    }
+
+                    if (!tooClose) {
+                        // ¡Posición válida encontrada!
+                        val rabbit = Rabbit(
+                            id = "rabbit_$i",
+                            position = Pair(xPos, yPos),
+                            speed = speed,
+                            detectionRange = range
+                        )
+
+                        rabbits.add(rabbit)
+
+                        Log.d(TAG, "🐰 Conejo ${rabbit.id} creado en posición ${rabbit.position}")
+
+                        // CRÍTICO: Notificar posición inicial INMEDIATAMENTE
+                        onRabbitPositionChanged(rabbit.id, rabbit.position)
+
+                        positioned = true
+                    }
                 }
-            } while (!isValidPosition(xPos, yPos))
 
-            val rabbit = Rabbit(
-                id = "rabbit_$i",
-                position = Pair(xPos, yPos),
-                speed = speed,
-                detectionRange = range
-            )
+                attempts++
+            }
 
-            rabbits.add(rabbit)
+            // Si después de 200 intentos no encontramos posición, usar una posición por defecto en el centro
+            if (!positioned) {
+                val fallbackX = 20
+                val fallbackY = 20 + (i * 2) // Separar los conejos
 
-            Log.d(TAG, "🐰 Conejo ${rabbit.id} creado en posición ${rabbit.position}")
+                val rabbit = Rabbit(
+                    id = "rabbit_$i",
+                    position = Pair(fallbackX, fallbackY),
+                    speed = speed,
+                    detectionRange = range
+                )
 
-            // CRÍTICO: Notificar posición inicial INMEDIATAMENTE
-            // Este es el callback que hace que se visualice el conejo
-            onRabbitPositionChanged(rabbit.id, rabbit.position)
+                rabbits.add(rabbit)
+                Log.w(TAG, "⚠️ Conejo ${rabbit.id} usando posición de respaldo: ${rabbit.position}")
+                onRabbitPositionChanged(rabbit.id, rabbit.position)
+            }
         }
 
         Log.d(TAG, "✅ Total de conejos creados: ${rabbits.size}")

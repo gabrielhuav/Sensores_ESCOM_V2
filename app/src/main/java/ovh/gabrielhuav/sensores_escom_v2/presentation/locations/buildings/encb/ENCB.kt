@@ -248,7 +248,10 @@ class ENCB : AppCompatActivity(),
                 Toast.makeText(this, "¡Conejo atrapado! 🐰 Total: $rabbitsCollected", Toast.LENGTH_SHORT).show()
             }
 
+            // Enviar actualización solo UNA vez
             sendRabbitGameUpdate("rabbit_caught", rabbitsCaught = rabbitsCollected)
+
+            Log.d(TAG, "✅ Conejo $rabbitId capturado. Total: $rabbitsCollected")
         }
     }
 
@@ -326,7 +329,9 @@ class ENCB : AppCompatActivity(),
         val caughtRabbit = encbRabbitController.tryToCatchRabbit(playerPos)
 
         if (caughtRabbit != null) {
-            onPlayerCaughtRabbit(caughtRabbit)
+            // NO llamar aquí a onPlayerCaughtRabbit
+            // Ya se llamó a través del callback onRabbitCaught
+            // onPlayerCaughtRabbit(caughtRabbit)  // ❌ ELIMINAR ESTA LÍNEA SI EXISTE
         } else {
             Toast.makeText(this, "¡No hay conejos cerca!", Toast.LENGTH_SHORT).show()
         }
