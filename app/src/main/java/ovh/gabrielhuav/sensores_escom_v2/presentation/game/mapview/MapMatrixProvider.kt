@@ -37,6 +37,7 @@ class MapMatrixProvider {
         const val MAP_CABLEBUS = "cablebus"
         const val MAP_SALIDAMETRO = "escom_salidametro"
         const val MAP_PALAPAS_IA = "escom_palapas_ia"
+        const val MAP_PALAPAS_ISC = "escom_palapas_isc"
         const val MAP_EDIFICIO_GOBIERNO = "escom_edificio_gobierno"
         const val MAP_BIBLIOTECA = "escom_biblioteca"
 
@@ -76,10 +77,8 @@ class MapMatrixProvider {
                 lowerMap.contains("ia_alto") || lowerMap.contains("edificio_ia_alto") -> MAP_EDIFICIO_IA_ALTO
                 lowerMap.contains("cable") || lowerMap.contains("cablebus") -> MAP_CABLEBUS
                 lowerMap.contains("palapas_ia") -> MAP_PALAPAS_IA
-
                 lowerMap.contains("gobierno") || lowerMap.contains("edificio_gobierno") -> MAP_EDIFICIO_GOBIERNO
                 lowerMap.contains("biblioteca") -> MAP_BIBLIOTECA
-
                 // Si no coincide con ninguno de los anteriores, devolver el original
                 else -> mapName
             }
@@ -113,12 +112,13 @@ class MapMatrixProvider {
 
         val EDIFICIO_IA_BAJO_TO_MEDIO = Pair(5, 20)
         val MAIN_TO_PALAPAS_IA = Pair(1, 1)
-
-        // Nuevos puntos de transición para Edificio Gobierno y Biblioteca
+        val MAIN_TO_PALAPAS_ISC_POSITION = Pair(8, 29)
+        val PALAPAS_ISC_TO_MAIN_POSITION = Pair(38, 38)
         val MAIN_TO_EDIFICIO_GOBIERNO = Pair(8, 35)
         val EDIFICIO_GOBIERNO_TO_MAIN = Pair(20, 2)
         val MAIN_TO_BIBLIOTECA = Pair(35, 15)
         val BIBLIOTECA_TO_MAIN = Pair(2, 20)
+
 
         /**
          * Obtiene la matriz para el mapa especificado
@@ -143,8 +143,9 @@ class MapMatrixProvider {
                 MAP_EDIFICIO_IA_MEDIO-> createEdificioIAMedioMatrix()
                 MAP_EDIFICIO_IA_ALTO -> createEdificioIAAltoMatrix()
                 MAP_PALAPAS_IA -> createPalapasIAMapMatrix()
+                MAP_PALAPAS_ISC -> createPalapasISCMatrix()
                 MAP_EDIFICIO_GOBIERNO -> createEdificioGobiernoMatrix()
-                MAP_BIBLIOTECA -> createBibliotecaMatrix()
+                MAP_BIBLIOTECA -> createBibliotecaMatrix()// Matriz para palapas de ISC
                 else -> createDefaultMatrix() // Por defecto, un mapa básico
             }
         }
@@ -194,6 +195,7 @@ class MapMatrixProvider {
             matrix[5][25] = INTERACTIVE // Entrada al Estacionamiento de ESCOM
 
             matrix[21][31] = INTERACTIVE // entrar edificio ia
+            matrix[29][8] = INTERACTIVE // Entrar a las palapas de ISC
             // Áreas de juego específicas
             // Zona central despejada
             for (i in 15..25) {
@@ -1017,6 +1019,81 @@ class MapMatrixProvider {
             return matrix
         }
 
+        // Función para crear la matriz de palapas ISC
+        private fun createPalapasISCMatrix(): Array<Array<Int>> {
+            // Empezamos con una matriz donde todo es un camino (PATH) por defecto
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Dibuja los muros exteriores
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = WALL
+                    }
+                }
+            }
+            // Mesa
+            for (i in 8..11) {
+                for (j in 4..7) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            // Mesa
+            for (i in 8..11) {
+                for (j in 14..17) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            // Mesa
+            for (i in 8..11) {
+                for (j in 24..27) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            // Mesa
+            for (i in 21..24) {
+                for (j in 9..11) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            // Mesa
+            for (i in 21..24) {
+                for (j in 18..21) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            // Mesa
+            for (i in 21..24) {
+                for (j in 28..31) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            // jardinera
+            for (i in 31..32) {
+                for (j in 2..15) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            // jardinera
+            for (i in 31..32) {
+                for (j in 20..33) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            // jardinera
+            for (i in 6..25) {
+                for (j in 35..36) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            // Define el punto de salida (INTERACTIVE) para volver al mapa principal
+            // Usamos las coordenadas que definimos antes
+            val exitX = PALAPAS_ISC_TO_MAIN_POSITION.first
+            val exitY = PALAPAS_ISC_TO_MAIN_POSITION.second
+            matrix[exitY][exitX] = INTERACTIVE
+
+            return matrix
+        }
         /**
          * NUEVO MAPA: Edificio Gobierno
          */
@@ -1472,6 +1549,15 @@ class MapMatrixProvider {
             if (mapId == MAP_MAIN && x == 31 && y == 10) {
                 return MAP_PALAPAS_IA
             }
+            // Transición DESDE el mapa principal HACIA las palapas ISC
+            if (mapId == MAP_MAIN && x == MAIN_TO_PALAPAS_ISC_POSITION.first && y == MAIN_TO_PALAPAS_ISC_POSITION.second) {
+                return MAP_PALAPAS_ISC
+            }
+
+            // Transición DESDE las palapas ISC de vuelta HACIA el mapa principal
+            if (mapId == MAP_PALAPAS_ISC && x == PALAPAS_ISC_TO_MAIN_POSITION.first && y == PALAPAS_ISC_TO_MAIN_POSITION.second) {
+                return MAP_MAIN
+            }
 
             // Nuevas transiciones para Edificio Gobierno y Biblioteca
             if (mapId == MAP_MAIN && x == 8 && y == 35) {
@@ -1512,9 +1598,9 @@ class MapMatrixProvider {
                 MAP_EDIFICIO_IA_MEDIO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
                 MAP_EDIFICIO_IA_ALTO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
                 MAP_PALAPAS_IA -> Pair(2, 2)
+                MAP_PALAPAS_ISC -> Pair(38, 38) // Posición inicial dentro de palapas ISC
                 MAP_EDIFICIO_GOBIERNO -> Pair(17, 5)  // Posición cerca de la entrada
                 MAP_BIBLIOTECA -> Pair(17, 5)  // Posición cerca de la entrada
-
                 else -> Pair(MAP_WIDTH / 2, MAP_HEIGHT / 2)
             }
         }

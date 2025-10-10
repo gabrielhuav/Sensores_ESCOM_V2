@@ -338,8 +338,48 @@ pasillosPrincipales.forEach(pasillo => {
     }
 });
 
+// =================================================================
+// Matriz de colisión para Palapas ISC (40x40)
+// =================================================================
+const palapasISCCollisionMatrix = Array(40).fill().map(() => Array(40).fill(0));
+
+// 1. Bordes exteriores (Muro = 1)
+for (let i = 0; i < 40; i++) {
+    palapasISCCollisionMatrix[0][i] = 1;      // Pared superior
+    palapasISCCollisionMatrix[39][i] = 1;     // Pared inferior
+    palapasISCCollisionMatrix[i][0] = 1;      // Pared izquierda
+    palapasISCCollisionMatrix[i][39] = 1;     // Pared derecha
+}
+
+// 2. Obstáculos internos (Inaccesible = 1)
+// Mesas (6 en total)
+for (let i = 8; i <= 11; i++) {
+    for (let j = 4; j <= 7; j++) { palapasISCCollisionMatrix[i][j] = 1; }
+    for (let j = 14; j <= 17; j++) { palapasISCCollisionMatrix[i][j] = 1; }
+    for (let j = 24; j <= 27; j++) { palapasISCCollisionMatrix[i][j] = 1; }
+}
+for (let i = 21; i <= 24; i++) {
+    for (let j = 9; j <= 11; j++) { palapasISCCollisionMatrix[i][j] = 1; }
+    for (let j = 18; j <= 21; j++) { palapasISCCollisionMatrix[i][j] = 1; }
+    for (let j = 28; j <= 31; j++) { palapasISCCollisionMatrix[i][j] = 1; }
+}
+
+// Jardineras (3 en total)
+for (let i = 31; i <= 32; i++) {
+    for (let j = 2; j <= 15; j++) { palapasISCCollisionMatrix[i][j] = 1; }
+    for (let j = 20; j <= 33; j++) { palapasISCCollisionMatrix[i][j] = 1; }
+}
+for (let i = 6; i <= 25; i++) {
+    for (let j = 35; j <= 36; j++) { palapasISCCollisionMatrix[i][j] = 1; }
+}
+
+// 3. Punto de salida (Interactivo = 2)
+// Coordenadas: (x: 38, y: 38)
+palapasISCCollisionMatrix[38][38] = 2;
+
 // Exportar las matrices
 module.exports = {
     cafeteriaCollisionMatrix,
-    edificioGobiernoCollisionMatrix
+    edificioGobiernoCollisionMatrix,
+    palapasISCCollisionMatrix
 };

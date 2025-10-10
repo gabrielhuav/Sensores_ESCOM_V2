@@ -23,6 +23,7 @@ import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.MovementMa
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.ServerConnectionManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.BuildingEdificioIA
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.BuildingNumber2
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.PalapasISC
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.building4.BuildingNumber4
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.cafeteria.Cafeteria
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.EstacionamientoEscom
@@ -272,8 +273,8 @@ class GameplayActivity : AppCompatActivity(),
                         "zacatenco" -> startZacatencoActivity()
                         "Edificioiabajo" -> startEdificioIABajoActivity()
                         "palapas_ia" -> startPalapasIAActivity()
+                        "palapas_isc" -> startPalapasISCActivity()
                         "edificio_gobierno" -> startEdificioGobiernoActivity()
-
 
                         else -> showToast("No hay interacción disponible en esta posición")
                     }
@@ -283,7 +284,6 @@ class GameplayActivity : AppCompatActivity(),
             }
         }
     }
-
     //  NUEVA FUNCIÓN PARA INICIAR EL EDIFICIO DE GOBIERNO
     private fun startEdificioGobiernoActivity() {
         val intent = Intent(this, EdificioGobierno::class.java).apply {
@@ -296,7 +296,6 @@ class GameplayActivity : AppCompatActivity(),
         startActivity(intent)
         finish()
     }
-
     private fun startPalapasIAActivity() {
         val intent = Intent(this, PalapasIA::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
@@ -308,7 +307,24 @@ class GameplayActivity : AppCompatActivity(),
         startActivity(intent)
         finish()
     }
+    // Función para iniciar la Activity de las Palapas ISC
+    private fun startPalapasISCActivity() {
+        // Obtenemos la posición inicial correcta desde el proveedor
+        val initialPos = MapMatrixProvider.getInitialPositionForMap(MapMatrixProvider.MAP_PALAPAS_ISC)
 
+        val intent = Intent(this, PalapasISC::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+
+            // La pasamos en el Intent con la clave "INITIAL_POSITION"
+            putExtra("INITIAL_POSITION", initialPos)
+
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
 
     private fun startZacatencoActivity() {
         val intent = Intent(this, Zacatenco::class.java).apply {
@@ -384,7 +400,6 @@ class GameplayActivity : AppCompatActivity(),
     private var targetDestination: String? = null  // Variable para almacenar el destino
 
     private fun checkPositionForMapChange(position: Pair<Int, Int>) {
-        Log.d(TAG, "Checking position for map change: $position")
         // Comprobar múltiples ubicaciones de transición
         when {
             position.first == 15 && position.second == 10 -> {
@@ -435,7 +450,17 @@ class GameplayActivity : AppCompatActivity(),
                     Toast.makeText(this, "Presiona A para entrar al salón 1212", Toast.LENGTH_SHORT).show()
                 }
             }
-
+            position.first == 25 && position.second == 5 -> {
+                canChangeMap = true
+                targetDestination = "Estacionamiento"
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        "Presiona A para entrar al estacionamiento",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
             position.first == 31 && position.second == 21 -> {
                 canChangeMap = true
                 targetDestination = "Edificioiabajo"
@@ -459,7 +484,13 @@ class GameplayActivity : AppCompatActivity(),
                     ).show()
                 }
             }
-
+            position.first == 8 && position.second == 29 -> {
+                canChangeMap = true
+                targetDestination = "palapas_isc" // Un identificador único
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para entrar a Palapas ISC", Toast.LENGTH_SHORT).show()
+                }
+            }
             position.first == 10 && position.second == 18 -> {
                 canChangeMap = true
                 targetDestination = "edificio_gobierno"
@@ -471,7 +502,6 @@ class GameplayActivity : AppCompatActivity(),
                     ).show()
                 }
             }
-
             else -> {
                 canChangeMap = false
                 targetDestination = null
