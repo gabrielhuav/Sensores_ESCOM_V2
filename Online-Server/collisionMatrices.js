@@ -309,6 +309,115 @@ for (let i = 11; i <= 11; i++) {
 // Punto interactivo para salir al mapa principal
 edificioGobiernoCollisionMatrix[2][20] = 0;
 
+// Matriz de colisión para ESIME (40x40)
+const esimeCollisionMatrix = Array(40).fill().map(() => Array(40).fill(2)); // Todo PATH por defecto
+
+// ========== BORDES DEL MAPA ==========
+for (let i = 0; i < 40; i++) {
+    esimeCollisionMatrix[0][i] = 1; // Pared superior
+    esimeCollisionMatrix[39][i] = 1; // Pared inferior
+    esimeCollisionMatrix[i][0] = 1; // Pared izquierda
+    esimeCollisionMatrix[i][39] = 1; // Pared derecha
+}
+
+// ========== EDIFICIOS BLOQUEADOS (RECTÁNGULOS GRANDES) ==========
+
+// Edificio 1 - Rectángulo grande bloqueado (desde X=8 hacia la derecha)
+for (let i = 8; i <= 15; i++) {
+    for (let j = 25; j <= 35; j++) {
+        esimeCollisionMatrix[j][i] = 3; // INACCESSIBLE
+    }
+}
+
+// Edificio 2 - Rectángulo grande bloqueado (desde X=8 hacia la derecha)
+for (let i = 8; i <= 15; i++) {
+    for (let j = 19; j <= 29; j++) {
+        esimeCollisionMatrix[j][i] = 3; // INACCESSIBLE
+    }
+}
+
+// Edificio 3 - Solo bloquear área derecha, dejar entrada libre frontal
+for (let i = 8; i <= 15; i++) {
+    for (let j = 12; j <= 22; j++) {
+        esimeCollisionMatrix[j][i] = 3; // INACCESSIBLE
+    }
+}
+
+// Edificio 4 - Rectángulo grande bloqueado (desde X=8 hacia la derecha)
+for (let i = 8; i <= 15; i++) {
+    for (let j = 6; j <= 16; j++) {
+        esimeCollisionMatrix[j][i] = 3; // INACCESSIBLE
+    }
+}
+
+// Edificio 5 - Rectángulo grande bloqueado (desde X=8 hacia la derecha)
+for (let i = 8; i <= 15; i++) {
+    for (let j = 0; j <= 10; j++) {
+        esimeCollisionMatrix[j][i] = 3; // INACCESSIBLE
+    }
+}
+
+// ========== PUNTOS INTERACTIVOS ==========
+
+// Entrada al Edificio 3 (accesible)
+esimeCollisionMatrix[17][8] = 0; // INTERACTIVE - Entrada Edificio 3
+
+// Punto de salida/entrada a Zacatenco
+esimeCollisionMatrix[35][5] = 0; // INTERACTIVE - Salida a Zacatenco
+
+// ========== ZONAS CAMINABLES GARANTIZADAS ==========
+
+// Asegurar que el área izquierda de los edificios sea caminable
+for (let i = 1; i <= 7; i++) {
+    for (let j = 1; j <= 38; j++) {
+        if (esimeCollisionMatrix[j][i] !== 0) { // No sobreescribir puntos interactivos
+            esimeCollisionMatrix[j][i] = 2; // PATH
+        }
+    }
+}
+
+// Asegurar pasillo entre edificios
+for (let i = 1; i <= 7; i++) {
+    // Pasillo entre Edificio 1 y 2
+    esimeCollisionMatrix[30][i] = 2;
+    // Pasillo entre Edificio 2 y 3
+    esimeCollisionMatrix[24][i] = 2;
+    // Pasillo entre Edificio 3 y 4
+    esimeCollisionMatrix[17][i] = 2;
+    // Pasillo entre Edificio 4 y 5
+    esimeCollisionMatrix[11][i] = 2;
+}
+
+// ========== VERIFICACIÓN DE CONECTIVIDAD ==========
+
+// Garantizar que el jugador pueda llegar a todos los puntos importantes
+const puntosImportantes = [
+    {x: 5, y: 35}, // Salida a Zacatenco
+    {x: 8, y: 17}, // Entrada Edificio 3
+    {x: 2, y: 2}   // Posición inicial
+];
+
+// Asegurar caminos entre puntos importantes
+function asegurarCamino(startX, startY, endX, endY) {
+    // Camino horizontal
+    for (let x = Math.min(startX, endX); x <= Math.max(startX, endX); x++) {
+        if (esimeCollisionMatrix[startY][x] !== 0) {
+            esimeCollisionMatrix[startY][x] = 2;
+        }
+    }
+    // Camino vertical
+    for (let y = Math.min(startY, endY); y <= Math.max(startY, endY); y++) {
+        if (esimeCollisionMatrix[y][endX] !== 0) {
+            esimeCollisionMatrix[y][endX] = 2;
+        }
+    }
+}
+
+// Conectar puntos importantes
+asegurarCamino(2, 2, 5, 35); // Inicio -> Salida Zacatenco
+asegurarCamino(2, 2, 8, 17); // Inicio -> Entrada Edificio 3
+asegurarCamino(5, 35, 8, 17); // Salida -> Entrada Edificio 3
+
 // ========== VERIFICACIÓN FINAL ==========
 
 // Asegurar que los pasillos principales se mantengan como PATH
@@ -341,5 +450,6 @@ pasillosPrincipales.forEach(pasillo => {
 // Exportar las matrices
 module.exports = {
     cafeteriaCollisionMatrix,
-    edificioGobiernoCollisionMatrix
+    edificioGobiernoCollisionMatrix,
+     esimeCollisionMatrix
 };
