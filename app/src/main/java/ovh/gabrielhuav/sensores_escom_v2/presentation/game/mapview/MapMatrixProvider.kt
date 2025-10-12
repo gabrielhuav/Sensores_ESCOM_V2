@@ -41,6 +41,7 @@ class MapMatrixProvider {
         const val MAP_EDIFICIO_GOBIERNO = "escom_edificio_gobierno"
         const val MAP_BIBLIOTECA = "escom_biblioteca"
         const val MAP_ENCB = "encb"
+        const val MAP_LAB_POSGRADO = "escom_lab_posgrado"
 
         fun normalizeMapName(mapName: String?): String {
             if (mapName.isNullOrBlank()) return MAP_MAIN
@@ -149,6 +150,7 @@ class MapMatrixProvider {
                 MAP_EDIFICIO_GOBIERNO -> createEdificioGobiernoMatrix()
                 MAP_BIBLIOTECA -> createBibliotecaMatrix()// Matriz para palapas de ISC
                 MAP_ENCB -> createEncbMatrix()
+                MAP_LAB_POSGRADO -> createLabPosgradoMatrix()
                 else -> createDefaultMatrix() // Por defecto, un mapa básico
             }
         }
@@ -194,6 +196,7 @@ class MapMatrixProvider {
             }
             // Explicitly set coordinates 29,22 and 29,23 as blue interactive points
             matrix[28][27] = INTERACTIVE
+            matrix[12][24] = INTERACTIVE
 
             matrix[5][25] = INTERACTIVE // Entrada al Estacionamiento de ESCOM
 
@@ -1706,6 +1709,84 @@ class MapMatrixProvider {
 
             return matrix
         }
+
+        /**
+         * Matriz para el Laboratorio de Posgrado.
+         * Mapa ASCII Art:
+         * +-------------------------------------------------------------------------+
+         * |                          Laboratorio de Posgrado                          |
+         * |                                                                         |
+         * |   +----+  +----+  +----+  +----+  +----+                                |
+         * |   | 💻 |  | 💻 |  | 💻 |  | 💻 |  | 💻 |                                |
+         * |   +----+  +----+  +----+  +----+  +----+        +----------------+      |
+         * |                                                 |   Profesor's   |      |
+         * |   +----+  +----+  +----+  +----+  +----+        |      Desk      |      |
+         * |   | 💻 |  | 💻 |  | 💻 |  | 💻 |  | 💻 |        +----------------+      |
+         * |   +----+  +----+  +----+  +----+  +----+                                |
+         * |                                                   +----------------+    |
+         * |   +----+  +----+  +----+  +----+  +----+          |                |    |
+         * |   | 💻 |  | 💻 |  | 💻 |  | 💻 |  | 💻 |          |   Proyector    |    |
+         * |   +----+  +----+  +----+  +----+  +----+          |                |    |
+         * |                                                   +----------------+    |
+         * |   +----+  +----+  +----+  +----+  +----+                                |
+         * |   | 💻 |  | 💻 |  | 💻 |  | 💻 |  | 💻 |                                |
+         * |   +----+  +----+  +----+  +----+  +----+                                |
+         * |                                                                         |
+         * |   🚪 Salida                                                              |
+         * +-------------------------------------------------------------------------+
+         * Representa un laboratorio de cómputo con un proyector a la derecha.
+         */
+        private fun createLabPosgradoMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Bordes exteriores del laboratorio
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = WALL
+                    }
+                }
+            }
+
+            // Pantalla del proyector en la pared derecha (inaccesible)
+            val projectorScreenStart = MAP_HEIGHT / 2 - 5
+            val projectorScreenEnd = MAP_HEIGHT / 2 + 5
+            for (i in projectorScreenStart..projectorScreenEnd) {
+                matrix[i][MAP_WIDTH - 2] = INACCESSIBLE
+            }
+
+            // Mesa del profesor en la parte frontal (derecha, cerca del proyector)
+            for (i in projectorScreenStart - 4 until projectorScreenStart) {
+                for (j in MAP_WIDTH - 15 until MAP_WIDTH - 8) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            // Filas de computadoras en una cuadrícula
+            // 4 filas de computadoras
+            for (row in 0..3) {
+                val rowY = 8 + (row * 7) // Separación vertical entre filas
+
+                // 5 estaciones de cómputo por fila
+                for (station in 0..4) {
+                    val stationX = 3 + (station * 4) // Separación horizontal
+
+                    // Cada estación es un bloque de 2x2
+                    for (i in rowY..rowY + 1) {
+                        for (j in stationX..stationX + 1) {
+                            if (i < MAP_HEIGHT && j < MAP_WIDTH) {
+                                matrix[i][j] = INACCESSIBLE
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Puerta de entrada/salida en la parte inferior izquierda
+            matrix[MAP_HEIGHT - 4][4] = INTERACTIVE
+
+            return matrix
+        }
         /**
          * Comprueba si la coordenada especificada es un punto de transición entre mapas
          */
@@ -1832,6 +1913,9 @@ class MapMatrixProvider {
             if (mapId == MAP_BIBLIOTECA && x == 2 && y == 20) {
                 return MAP_MAIN
             }
+            //MAP_HEIGHT - 5, 5
+            if (mapId == MAP_LAB_POSGRADO && x == 4 && y == MAP_HEIGHT - 4)
+                return MAP_MAIN
             // Resto de transiciones...
 
             return null

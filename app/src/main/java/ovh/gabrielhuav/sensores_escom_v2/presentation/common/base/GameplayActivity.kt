@@ -33,6 +33,7 @@ import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProv
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.buildingIA.PalapasIA
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.gobierno.EdificioGobierno
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.lab.LaboratorioPosgradoActivity
 import kotlin.collections.iterator
 
 class GameplayActivity : AppCompatActivity(),
@@ -275,6 +276,7 @@ class GameplayActivity : AppCompatActivity(),
                         "palapas_ia" -> startPalapasIAActivity()
                         "palapas_isc" -> startPalapasISCActivity()
                         "edificio_gobierno" -> startEdificioGobiernoActivity()
+                        "laboratorio_posgrado" -> startLaboratorioPosgradoActivity()
 
                         else -> showToast("No hay interacción disponible en esta posición")
                     }
@@ -296,6 +298,7 @@ class GameplayActivity : AppCompatActivity(),
         startActivity(intent)
         finish()
     }
+
     private fun startPalapasIAActivity() {
         val intent = Intent(this, PalapasIA::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
@@ -307,10 +310,12 @@ class GameplayActivity : AppCompatActivity(),
         startActivity(intent)
         finish()
     }
+
     // Función para iniciar la Activity de las Palapas ISC
     private fun startPalapasISCActivity() {
         // Obtenemos la posición inicial correcta desde el proveedor
-        val initialPos = MapMatrixProvider.getInitialPositionForMap(MapMatrixProvider.MAP_PALAPAS_ISC)
+        val initialPos =
+            MapMatrixProvider.getInitialPositionForMap(MapMatrixProvider.MAP_PALAPAS_ISC)
 
         val intent = Intent(this, PalapasISC::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
@@ -337,6 +342,7 @@ class GameplayActivity : AppCompatActivity(),
         startActivity(intent)
         finish()
     }
+
     private fun startEdificioIABajoActivity() {
         val intent = Intent(this, BuildingEdificioIA::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
@@ -348,6 +354,7 @@ class GameplayActivity : AppCompatActivity(),
         startActivity(intent)
         finish()
     }
+
     private fun startCafeteriaActivity() {
         val intent = Intent(this, Cafeteria::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
@@ -390,6 +397,22 @@ class GameplayActivity : AppCompatActivity(),
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_POSITION", Pair(4, 25))  // Posición dentro del estacionamiento
             putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda posición actual para regreso
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
+
+    // NUEVA FUNCIÓN PARA INICIAR EL LABORATORIO DE POSGRADO
+    private fun startLaboratorioPosgradoActivity() {
+        val intent = Intent(this, LaboratorioPosgradoActivity::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra(
+                "INITIAL_POSITION",
+                Pair(5, MapMatrixProvider.MAP_HEIGHT - 5)
+            ) // Posición inicial dentro del laboratorio
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         startActivity(intent)
@@ -498,6 +521,18 @@ class GameplayActivity : AppCompatActivity(),
                     Toast.makeText(
                         this,
                         "Presiona A para entrar al edificio de gobierno",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
+            position.first == 24 && position.second == 12 -> {
+                canChangeMap = true
+                targetDestination = "laboratorio_posgrado"
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        "Presiona A para entrar al Laboratorio de Posgrado",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
