@@ -171,7 +171,7 @@ class BuildingNumber2Piso1 : AppCompatActivity(),
         updatePlayerPosition(gameState.playerPosition)
     }
 
-    // Actualiza el método onMapTransitionRequested para manejar la transición al salón 2009
+    // Actualiza el metodo onMapTransitionRequested para manejar la transición al salón 2009
     override fun onMapTransitionRequested(targetMap: String, initialPosition: Pair<Int, Int>) {
         when (targetMap) {
             MapMatrixProvider.MAP_MAIN -> {

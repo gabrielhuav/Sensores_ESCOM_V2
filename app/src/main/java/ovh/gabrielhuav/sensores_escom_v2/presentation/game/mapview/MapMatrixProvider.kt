@@ -29,12 +29,12 @@ class MapMatrixProvider {
         const val MAP_SALON2004 = "escom_salon2004"
         const val MAP_SALON2005 = "escom_salon2005"
         const val MAP_SALON2006 = "escom_salon2006"
-        const val MAP_SALON2101 = "escom_salon2001"
-        const val MAP_SALON2102 = "escom_salon2002"
-        const val MAP_SALON2103 = "escom_salon2003"
-        const val MAP_SALON2104 = "escom_salon2004"
-        const val MAP_SALON2105 = "escom_salon2005"
-        const val MAP_SALON2106 = "escom_salon2006"
+        const val MAP_SALON2101 = "escom_salon2101"
+        const val MAP_SALON2102 = "escom_salon2102"
+        const val MAP_SALON2103 = "escom_salon2103"
+        const val MAP_SALON2104 = "escom_salon2104"
+        const val MAP_SALON2105 = "escom_salon2105"
+        const val MAP_SALON2106 = "escom_salon2106"
         const val MAP_SALON2009 = "escom_salon2009"
         const val MAP_SALON2010 = "escom_salon2010"
         const val MAP_CAFETERIA = "escom_cafeteria"
@@ -120,6 +120,13 @@ class MapMatrixProvider {
         val BUILDING2_TO_SALON2004_POSITION = Pair(21, 22)
         val BUILDING2_TO_SALON2005_POSITION = Pair(26, 22)
         val BUILDING2_TO_SALON2006_POSITION = Pair(31, 22)
+
+        val BUILDING2_TO_SALON2101_POSITION = Pair(2, 25)
+        val BUILDING2_TO_SALON2102_POSITION = Pair(7, 25)
+        val BUILDING2_TO_SALON2103_POSITION = Pair(12, 25)
+        val BUILDING2_TO_SALON2104_POSITION = Pair(20, 25)
+        val BUILDING2_TO_SALON2105_POSITION = Pair(25, 25)
+        val BUILDING2_TO_SALON2106_POSITION = Pair(30, 25)
 
         val SALON2009_TO_BUILDING2_POSITION = Pair(1, 20)
         val BUILDING2_TO_SALON2010_POSITION = Pair(20, 20)
@@ -2318,12 +2325,12 @@ class MapMatrixProvider {
                 // Compara la posición actual del jugador (x, y) con las coordenadas interactivas.
                 when (Pair(x, y)) {
                     // --- Transiciones a Salones ---
-                    Pair(4, 22) -> return MAP_SALON2001
-                    Pair(9, 22) -> return MAP_SALON2002
-                    Pair(13, 22) -> return MAP_SALON2003
-                    Pair(21, 22) -> return MAP_SALON2004
-                    Pair(26, 22) -> return MAP_SALON2005
-                    Pair(31, 22) -> return MAP_SALON2006
+                    Pair(2, 22) -> return MAP_SALON2001
+                    Pair(7, 22) -> return MAP_SALON2002
+                    Pair(12, 22) -> return MAP_SALON2003
+                    Pair(16, 22) -> return MAP_SALON2004
+                    Pair(20, 22) -> return MAP_SALON2005
+                    Pair(25, 22) -> return MAP_SALON2006
                     // Pair(35, 22) -> return MAP_WC // Puedes activar esta línea si los baños son un mapa separado
 
                     // --- Transición a otros pisos (Escaleras) ---
@@ -2349,8 +2356,8 @@ class MapMatrixProvider {
                     // --- Transiciones a Salones del Primer Piso ---
                     // Nota: Deberás crear constantes para estos mapas (ej. MAP_SALON2101) si aún no existen.
                     Pair(2, corridorWallY) -> return MAP_SALON2101 // Asumiendo el nombre del mapa
-                    Pair(7, corridorWallY) -> return "escom_salon2102"
-                    Pair(12, corridorWallY) -> return "escom_salon2103"
+                    Pair(7, corridorWallY) -> return MAP_SALON2102
+                    Pair(12, corridorWallY) -> return MAP_SALON2103
                     Pair(16, corridorWallY) -> return "escom_salon2104"
                     Pair(20, corridorWallY) -> return "escom_salon2105"
                     Pair(25, corridorWallY) -> return "escom_salon2106"
