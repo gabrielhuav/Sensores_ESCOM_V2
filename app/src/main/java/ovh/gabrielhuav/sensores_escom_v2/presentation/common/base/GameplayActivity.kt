@@ -292,6 +292,11 @@ class GameplayActivity : AppCompatActivity(),
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_LAT", 19.504633)  // ESCOM coordinates
             putExtra("INITIAL_LON", -99.146744)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
     //  NUEVA FUNCIÓN PARA INICIAR EL EDIFICIO DE GOBIERNO
     private fun startEdificioGobiernoActivity() {
         val intent = Intent(this, EdificioGobierno::class.java).apply {
@@ -497,7 +502,10 @@ class GameplayActivity : AppCompatActivity(),
                 canChangeMap = true
                 targetDestination = "osm_view"
                 runOnUiThread {
-                    Toast.makeText(this, "Presiona A para vista de mapa real", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Presiona A para vista de mapa real", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
             position.first == 8 && position.second == 29 -> {
                 canChangeMap = true
                 targetDestination = "palapas_isc" // Un identificador único

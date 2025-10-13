@@ -379,6 +379,9 @@ class Zacatenco : AppCompatActivity(),
                 targetDestination = "osm_map"
                 runOnUiThread {
                     Toast.makeText(this, "Presiona A para ver mapa real", Toast.LENGTH_SHORT).show()
+
+                }
+            }
             //posicion de encb agregada
             position.first == 12 && position.second == 24 -> {
                 canChangeMap = true
@@ -419,8 +422,6 @@ class Zacatenco : AppCompatActivity(),
                     when (targetDestination) {
                         "main" -> returnToMainActivity()
                         "lindavista" -> startLindavistaActivity()
-                        "esia" -> viewESIA()
-                        "esia" -> startESIAActivity()
                         "esfm" -> viewESFM()
                         "cidetec" -> viewCIDETEC()
                         "cic" -> viewCIC()
@@ -436,10 +437,10 @@ class Zacatenco : AppCompatActivity(),
             }
         }
     }
-    private fun viewESIA(){
+    private fun viewESIA() {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.esiaz.ipn.mx/"))
-        startActivity(intent)
-
+        startActivity(intent)   f
+    }
     private fun startESIAActivity() {
         // ✅ GUARDAR LA POSICIÓN ACTUAL ANTES DE IR A ESIA
         saveCurrentPosition()
