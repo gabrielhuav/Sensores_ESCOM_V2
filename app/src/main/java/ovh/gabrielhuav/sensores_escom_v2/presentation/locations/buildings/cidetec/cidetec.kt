@@ -1,4 +1,6 @@
-package ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor
+package ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.cidetec
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.Zacatenco
+
 
 import android.Manifest
 import android.bluetooth.BluetoothDevice
@@ -22,19 +24,15 @@ import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
 import ovh.gabrielhuav.sensores_escom_v2.domain.bluetooth.BluetoothManager
-import ovh.gabrielhuav.sensores_escom_v2.presentation.common.base.GameplayActivity
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.components.UIManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.MovementManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.ServerConnectionManager
-import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.Lindavista
-import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.encb.ENCB
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
-import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.cidetec.Cidetec
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.transportation.Cablebus
 import kotlin.collections.iterator
-import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.Esime
 
-class Zacatenco : AppCompatActivity(),
+class Cidetec : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,
     BluetoothGameManager.ConnectionListener,
     OnlineServerManager.WebSocketListener,
@@ -76,13 +74,13 @@ class Zacatenco : AppCompatActivity(),
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_zacatenco)
+        setContentView(R.layout.activity_lindavista)
 
         try {
             // Primero inicializamos el mapView
             mapView = MapView(
                 context = this,
-                mapResourceId = R.drawable.zacatenco
+                mapResourceId = R.drawable.cidetec
             )
             findViewById<FrameLayout>(R.id.map_container).addView(mapView)
 
@@ -92,8 +90,8 @@ class Zacatenco : AppCompatActivity(),
             // Esperar a que el mapView esté listo
             mapView.post {
                 // Configurar el mapa
-                val normalizedMap = MapMatrixProvider.Companion.normalizeMapName(MapMatrixProvider.Companion.MAP_ZACATENCO)
-                mapView.setCurrentMap(normalizedMap, R.drawable.zacatenco)
+                val normalizedMap = MapMatrixProvider.Companion.normalizeMapName(MapMatrixProvider.Companion.MAP_CIDETEC)
+                mapView.setCurrentMap(normalizedMap, R.drawable.cidetec)
 
                 // Después configurar el playerManager
                 mapView.playerManager.apply {
@@ -102,7 +100,7 @@ class Zacatenco : AppCompatActivity(),
                     updateLocalPlayerPosition(gameState.playerPosition)
                 }
 
-                Log.d("Zacatenco", "Set map to: $normalizedMap")
+                Log.d("Cidetec", "Set map to: $normalizedMap")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error en onCreate: ${e.message}")
@@ -122,23 +120,7 @@ class Zacatenco : AppCompatActivity(),
         if (savedInstanceState == null) {
             // Inicializar el estado del juego desde el Intent
             gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
-            gameState.playerPosition =
-                (intent.getParcelableExtra("INITIAL_POSITION")  ?: Pair(10, 12)) as Pair<Int, Int>
-            // ✅ SISTEMA DE POSICIÓN GUARDADA - CORREGIDO
-            gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
-
-            // Primero intentar usar la posición del Intent - MÉTODO CORREGIDO
-            var initialPosition = intent.getSerializableExtra("INITIAL_POSITION") as? Pair<Int, Int>
-
-            // Si no hay posición en el Intent, usar la posición guardada
-            if (initialPosition == null) {
-                initialPosition = getSavedPosition() ?: Pair(10, 12)
-                Log.d(TAG, "Zacatenco: Usando posición guardada: $initialPosition")
-            } else {
-                Log.d(TAG, "Zacatenco: Usando posición del Intent: $initialPosition")
-            }
-
-            gameState.playerPosition = initialPosition
+            gameState.playerPosition = (intent.getParcelableExtra("INITIAL_POSITION") ?: Pair(11, 22)) as Pair<Int, Int>
         } else {
             restoreState(savedInstanceState)
         }
@@ -157,32 +139,6 @@ class Zacatenco : AppCompatActivity(),
         serverConnectionManager.onlineServerManager.setListener(this)
     }
 
-    // ✅ MÉTODO PARA GUARDAR LA POSICIÓN ACTUAL
-    private fun saveCurrentPosition() {
-        val sharedPrefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-        with(sharedPrefs.edit()) {
-            putInt(LAST_POSITION_X, gameState.playerPosition.first)
-            putInt(LAST_POSITION_Y, gameState.playerPosition.second)
-            apply()
-        }
-        Log.d(TAG, "Zacatenco: Posición guardada: ${gameState.playerPosition}")
-    }
-
-    // ✅ MÉTODO PARA CARGAR LA ÚLTIMA POSICIÓN GUARDADA
-    private fun getSavedPosition(): Pair<Int, Int>? {
-        val sharedPrefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-        val x = sharedPrefs.getInt(LAST_POSITION_X, -1)
-        val y = sharedPrefs.getInt(LAST_POSITION_Y, -1)
-
-        return if (x != -1 && y != -1) {
-            Log.d(TAG, "Zacatenco: Posición cargada: ($x, $y)")
-            Pair(x, y)
-        } else {
-            Log.d(TAG, "Zacatenco: No hay posición guardada")
-            null
-        }
-    }
-
     private fun initializeViews() {
 
         uiManager = UIManager(findViewById(R.id.main_layout), mapView).apply {
@@ -192,14 +148,14 @@ class Zacatenco : AppCompatActivity(),
 
     private fun initializeManagers() {
         bluetoothManager = BluetoothManager.Companion.getInstance(this, uiManager.tvBluetoothStatus).apply {
-            setCallback(this@Zacatenco)
+            setCallback(this@Cidetec)
         }
 
         bluetoothBridge = BluetoothWebSocketBridge.Companion.getInstance()
 
         // Configurar OnlineServerManager con el listener
         val onlineServerManager = OnlineServerManager.Companion.getInstance(this).apply {
-            setListener(this@Zacatenco)
+            setListener(this@Cidetec)
         }
 
         serverConnectionManager = ServerConnectionManager(
@@ -224,9 +180,9 @@ class Zacatenco : AppCompatActivity(),
     // Actualiza el método onMapTransitionRequested para manejar la transición al salón 2009
     override fun onMapTransitionRequested(targetMap: String, initialPosition: Pair<Int, Int>) {
         when (targetMap) {
-            MapMatrixProvider.Companion.MAP_MAIN -> {
+            MapMatrixProvider.Companion.MAP_ZACATENCO -> {
                 // Transición al mapa principal
-                returnToMainActivity()
+                returnToZacatencoActivity()
             }
             // Añadir más casos según sea necesario para otros mapas
             else -> {
@@ -320,83 +276,11 @@ class Zacatenco : AppCompatActivity(),
     private fun checkPositionForMapChange(position: Pair<Int, Int>) {
 
         when {
-            position.first == 10 && position.second == 12 -> {
+            position.first == 11 && position.second == 22 -> {
                 canChangeMap = true
-                targetDestination = "main"
+                targetDestination = "zacatenco"
                 runOnUiThread {
-                    Toast.makeText(this, "Presiona A para entrar a ESCOM", Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-            position.first == 34 && position.second == 17 -> {
-                canChangeMap = true
-                targetDestination = "lindavista"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para salir a Lindavista", Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-            position.first == 25 && position.second == 12 -> {
-                canChangeMap = true
-                targetDestination = "esia"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para ver la ESIA", Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-            position.first == 31 && position.second == 17 -> {
-                canChangeMap = true
-                targetDestination = "esfm"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para ver la ESFM", Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-            position.first == 28 && position.second == 24 -> { // Cambiado a (28, 24)
-                canChangeMap = true
-                targetDestination = "esime"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para entrar a ESIME", Toast.LENGTH_SHORT).show()
-                }
-            }
-            position.first == 8 && position.second == 18 -> {
-                canChangeMap = true
-                targetDestination = "cidetec"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para entrar a CIDETEC", Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-            position.first == 5 && position.second == 16 -> {
-                canChangeMap = true
-                targetDestination = "cic"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para ver el CIC", Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-            position.first == 4 && position.second == 19 -> {
-                canChangeMap = true
-                targetDestination = "ford"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para ver la ford", Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-            position.first == 10 && position.second == 1 -> {
-                canChangeMap = true
-                targetDestination = "osm_map"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para ver mapa real", Toast.LENGTH_SHORT).show()
-
-                }
-            }
-            //posicion de encb agregada
-            position.first == 12 && position.second == 24 -> {
-                canChangeMap = true
-                targetDestination = "encb"
-                runOnUiThread {
-                    Toast.makeText(this, "Presiona A para ver la ENCB", Toast.LENGTH_SHORT)
+                    Toast.makeText(this, "Presiona A para regresar a Zacatenco", Toast.LENGTH_SHORT)
                         .show()
                 }
             }
@@ -417,7 +301,7 @@ class Zacatenco : AppCompatActivity(),
 
             // Añadir el listener para el botón de regreso
             btnConnectDevice.setOnClickListener {
-                returnToMainActivity()
+                returnToZacatencoActivity()
             }
 
             btnNorth.setOnTouchListener { _, event -> handleMovement(event, 0, -1); true }
@@ -429,17 +313,8 @@ class Zacatenco : AppCompatActivity(),
             buttonA.setOnClickListener {
                 if (canChangeMap) {
                     when (targetDestination) {
-                        "main" -> returnToMainActivity()
-                        "lindavista" -> startLindavistaActivity()
-                        "esfm" -> viewESFM()
-                        "cidetec" -> startCidetecActivity()
-                        "cic" -> viewCIC()
-                        "ford" -> startFordActivity()
-                        "esime" -> startEsimeActivity()
-                        "osm_map" -> startOSMMapActivity()
-                        "encb" -> startENCBActivity()
-
-                        else -> showToast("No hay interacción disponible en esta posición")
+                        "zacatenco" -> returnToZacatencoActivity()
+                    else -> showToast("No hay interacción disponible en esta posición")
                     }
                 } else {
                     showToast("No hay interacción disponible en esta posición")
@@ -447,71 +322,12 @@ class Zacatenco : AppCompatActivity(),
             }
         }
     }
-    private fun viewESIA() {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.esiaz.ipn.mx/"))
-        startActivity(intent)   f
-    }
-    private fun startESIAActivity() {
-        // ✅ GUARDAR LA POSICIÓN ACTUAL ANTES DE IR A ESIA
-        saveCurrentPosition()
-
-        val intent = Intent(this, ESIA::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(25, 35)) // Posición inicial en ESIA
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        startActivity(intent)
-        finish()
-    }
-    private fun viewESFM(){
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.esfm.ipn.mx/"))
-        startActivity(intent)
-
-    }
-    private fun startEsimeActivity() {
-        val intent = Intent(this, Esime::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(2, 2)) // Posición inicial dentro de ESIME
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        startActivity(intent)
-        finish()
-    }
-    private fun viewCIDETEC(){
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.cidetec.ipn.mx/"))
-        startActivity(intent)
-
-    }
-    private fun viewCIC(){
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.cic.ipn.mx/"))
-        startActivity(intent)
-
-    }
-    //funcion para visitar encb
-    private fun startENCBActivity() {
-        val intent = Intent(this, ENCB::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("IS_CONNECTED", gameState.isConnected) // Importante: mantener estado de conexión
-            putExtra("INITIAL_POSITION", Pair(20, 20)) // Posición inicial en ENCB (ajusta según tu mapa)
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual para volver
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        startActivity(intent)
-        finish()
-    }
-    private fun returnToMainActivity() {
-        saveCurrentPosition()
-
+    private fun returnToZacatencoActivity() {
         // Obtener la posición previa del intent
         val previousPosition = intent.getSerializableExtra("PREVIOUS_POSITION") as? Pair<Int, Int>
-            ?: Pair(11, 4) // Posición por defecto si no hay previa
+            ?: Pair(34, 17) // Posición por defecto si no hay previa
 
-        val intent = Intent(this, GameplayActivity::class.java).apply {
+        val intent = Intent(this, Zacatenco::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_POSITION", previousPosition) // Usar la posición previa
@@ -520,54 +336,6 @@ class Zacatenco : AppCompatActivity(),
 
         // Limpiar datos antes de cambiar de activity
         mapView.playerManager.cleanup()
-        startActivity(intent)
-        finish()
-    }
-
-    private fun startLindavistaActivity() {
-        val intent = Intent(this, Lindavista::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(1, 6))
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        startActivity(intent)
-        finish()
-    }
-
-    private fun startCidetecActivity() {
-        val intent = Intent(this, Cidetec::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(11, 22))
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        startActivity(intent)
-        finish()
-    }
-
-    private fun startFordActivity() {
-        val intent = Intent(this, SalidaMetro::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(1, 6))
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        startActivity(intent)
-        finish()
-    }
-    private fun startOSMMapActivity() {
-        val intent = Intent(this, OSMMapActivity::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_LAT", 19.5055)  // Zacatenco coordinates
-            putExtra("INITIAL_LON", -99.1350)
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
         startActivity(intent)
         finish()
     }
@@ -581,7 +349,7 @@ class Zacatenco : AppCompatActivity(),
                 mapView.updateLocalPlayerPosition(position, forceCenter = true)
 
                 if (gameState.isConnected) {
-                    serverConnectionManager.sendUpdateMessage(playerName, position, "escom_zacatenco")
+                    serverConnectionManager.sendUpdateMessage(playerName, position, "escom_cidetec")
                 }
 
                 checkPositionForMapChange(position)
@@ -840,9 +608,5 @@ class Zacatenco : AppCompatActivity(),
 
     companion object {
         private const val TAG = "GameplayActivity"
-
-        private const val PREFS_NAME = "ZacatencoPosition"
-        private const val LAST_POSITION_X = "last_position_x"
-        private const val LAST_POSITION_Y = "last_position_y"
     }
 }

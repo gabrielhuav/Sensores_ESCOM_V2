@@ -13,16 +13,16 @@ class MapMatrix(private val mapId: String) {
 
     private val paints = mapOf(
         MapMatrixProvider.INTERACTIVE to Paint().apply {
-            color = Color.argb(100, 0, 255, 255)  // Cian semi-transparente para puntos interactivos
+            color = Color.argb(180, 0, 255, 255)  // Cian más visible para puntos interactivos
         },
         MapMatrixProvider.WALL to Paint().apply {
-            color = Color.argb(150, 139, 69, 19)  // Marrón semi-transparente para paredes
+            color = Color.argb(200, 139, 69, 19)  // Marrón más visible para paredes
         },
         MapMatrixProvider.PATH to Paint().apply {
-            color = Color.argb(30, 220, 220, 255)  // Gris azulado muy transparente para caminos
+            color = Color.argb(50, 200, 200, 255)  // Gris azulado suave para caminos
         },
         MapMatrixProvider.INACCESSIBLE to Paint().apply {
-            color = Color.argb(120, 178, 34, 34)  // Rojo ladrillo semi-transparente para objetos
+            color = Color.argb(160, 255, 69, 0)  // Naranja rojizo más visible para edificios bloqueados
         }
     )
 
