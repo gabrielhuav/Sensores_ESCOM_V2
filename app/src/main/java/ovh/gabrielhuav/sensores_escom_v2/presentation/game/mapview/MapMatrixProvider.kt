@@ -23,6 +23,18 @@ class MapMatrixProvider {
         const val MAP_BUILDING2 = "escom_building2"
         const val MAP_BUILDING2_PISO1 = "escom_building2_piso1"
         const val MAP_BUILDING4_F2 = "escom_building4_floor_2"
+        const val MAP_SALON2001 = "escom_salon2001"
+        const val MAP_SALON2002 = "escom_salon2002"
+        const val MAP_SALON2003 = "escom_salon2003"
+        const val MAP_SALON2004 = "escom_salon2004"
+        const val MAP_SALON2005 = "escom_salon2005"
+        const val MAP_SALON2006 = "escom_salon2006"
+        const val MAP_SALON2101 = "escom_salon2001"
+        const val MAP_SALON2102 = "escom_salon2002"
+        const val MAP_SALON2103 = "escom_salon2003"
+        const val MAP_SALON2104 = "escom_salon2004"
+        const val MAP_SALON2105 = "escom_salon2005"
+        const val MAP_SALON2106 = "escom_salon2006"
         const val MAP_SALON2009 = "escom_salon2009"
         const val MAP_SALON2010 = "escom_salon2010"
         const val MAP_CAFETERIA = "escom_cafeteria"
@@ -61,6 +73,18 @@ class MapMatrixProvider {
                 lowerMap.contains("building2") || lowerMap.contains("edificio2") -> MAP_BUILDING2
 
                 // Salones
+                lowerMap.contains("2001") || lowerMap.contains("salon2001") -> MAP_SALON2001
+                lowerMap.contains("2002") || lowerMap.contains("salon2002") -> MAP_SALON2002
+                lowerMap.contains("2003") || lowerMap.contains("salon2003") -> MAP_SALON2003
+                lowerMap.contains("2004") || lowerMap.contains("salon2004") -> MAP_SALON2004
+                lowerMap.contains("2005") || lowerMap.contains("salon2005") -> MAP_SALON2005
+                lowerMap.contains("2006") || lowerMap.contains("salon2006") -> MAP_SALON2006
+                lowerMap.contains("2101") || lowerMap.contains("salon2101") -> MAP_SALON2101
+                lowerMap.contains("2102") || lowerMap.contains("salon2102") -> MAP_SALON2102
+                lowerMap.contains("2103") || lowerMap.contains("salon2103") -> MAP_SALON2103
+                lowerMap.contains("2104") || lowerMap.contains("salon2104") -> MAP_SALON2104
+                lowerMap.contains("2105") || lowerMap.contains("salon2105") -> MAP_SALON2105
+                lowerMap.contains("2106") || lowerMap.contains("salon2106") -> MAP_SALON2106
                 lowerMap.contains("2009") || lowerMap.contains("salon2009") -> MAP_SALON2009
                 lowerMap.contains("2010") || lowerMap.contains("salon2010") -> MAP_SALON2010
                 lowerMap.contains("1212") || lowerMap.contains("salon1212") -> MAP_SALON1212
@@ -94,6 +118,14 @@ class MapMatrixProvider {
         val MAIN_TO_BUILDING2_POSITION = Pair(15, 10)
         val BUILDING2_TO_MAIN_POSITION = Pair(5, 5)
         val BUILDING2_TO_SALON2009_POSITION = Pair(15, 16)
+
+        val BUILDING2_TO_SALON2001_POSITION = Pair(4, 22)
+        val BUILDING2_TO_SALON2002_POSITION = Pair(9, 22)
+        val BUILDING2_TO_SALON2003_POSITION = Pair(13, 22)
+        val BUILDING2_TO_SALON2004_POSITION = Pair(21, 22)
+        val BUILDING2_TO_SALON2005_POSITION = Pair(26, 22)
+        val BUILDING2_TO_SALON2006_POSITION = Pair(31, 22)
+
         val SALON2009_TO_BUILDING2_POSITION = Pair(1, 20)
         val BUILDING2_TO_SALON2010_POSITION = Pair(20, 20)
         val MAIN_TO_SALON2010_POSITION = Pair(25, 25)
@@ -139,6 +171,19 @@ class MapMatrixProvider {
                 MAP_MAIN -> createMainMapMatrix()
                 MAP_BUILDING2 -> createBuilding2Matrix()
                 MAP_BUILDING4_F2 -> createBuilding2Matrix()
+                MAP_SALON2001 -> createSalon2001Matrix()
+                MAP_SALON2002 -> createSalon2002Matrix()
+                MAP_SALON2003 -> createSalon2003Matrix()
+                MAP_SALON2004 -> createSalon2004Matrix()
+                MAP_SALON2005 -> createSalon2005Matrix()
+                MAP_SALON2006 -> createSalon2006Matrix()
+                MAP_SALON2101 -> createSalon2101Matrix()
+                MAP_SALON2102 -> createSalon2102Matrix()
+                MAP_SALON2103 -> createSalon2103Matrix()
+                MAP_SALON2104 -> createSalon2104Matrix()
+                MAP_SALON2105 -> createSalon2105Matrix()
+                MAP_SALON2106 -> createSalon2106Matrix()
+
                 MAP_SALON2009 -> createSalon2009Matrix()  // Nueva matriz para el salón 2009
                 MAP_SALON2010 -> createSalon2010Matrix()  // Nueva matriz para el salón 2010
                 MAP_SALON1212 -> createSalon1212Matrix()
@@ -757,205 +802,758 @@ class MapMatrixProvider {
          * +-------------------------------------------------------------------------+
          */
         private fun createBuilding2Matrix(): Array<Array<Int>> {
-            // Start with everything as PATH (2) to make most areas walkable
+            // Empezar con una matriz donde todo es un camino (PATH)
             val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
 
-            // Add outer walls
-            for (i in 0 until MAP_HEIGHT) {
-                matrix[i][0] = WALL
-                matrix[i][MAP_WIDTH - 1] = WALL
+            // --- Coordenadas Clave ---
+            // Estas son las coordenadas de las paredes que me pediste no mover.
+            val topWallY = 14            // Posición Y del muro superior de los salones
+            val classroomDepth = 8       // Profundidad de los salones
+            val corridorWallY = topWallY + classroomDepth // Muro del pasillo (calculado automáticamente)
+            val corridorHeight = 9       // Altura del pasillo
+            val bottomWallY = corridorWallY + corridorHeight // Muro inferior del edificio
+            val leftWallX = 1            // Borde izquierdo
+            val rightWallX = MAP_WIDTH - 4 // Borde derecho
+
+            // --- 1. MUROS EXTERIORES Y DEL PASILLO ---
+            // Dibuja los 4 muros principales que forman la caja del edificio y el pasillo.
+            for (j in leftWallX..rightWallX) {
+                matrix[topWallY][j] = WALL       // Muro superior
+                matrix[corridorWallY][j] = WALL  // Muro del pasillo (con las puertas)
+                matrix[bottomWallY][j] = WALL    // Muro inferior
             }
-            for (j in 0 until MAP_WIDTH) {
-                matrix[0][j] = WALL
-                matrix[MAP_HEIGHT - 1][j] = WALL
-            }
-
-            // Based on ASCII art:
-            // +-------------------------------------------------------------------------+
-            // |                               Edificio 2                                |
-            // |                              Planta Baja                                |
-            // |                                                                         |
-            // |  +--------+--------+--------+-----+--------+--------+--------+----+     |
-            // |  |  2001  |  2002  |  2003  | ⬆️  |  2004  |  2005  |  2006  | 🚾 |     |
-            // |  |🏫 Aula |🏫 Aula |🏫 Aula | 🪜  |🏫 Aula |🏫 Aula |🏫 Aula | WC |     |
-            // |  +🚪------+🚪------+🚪------+ ⬇️  +🚪------+🚪------+🚪------+🚪--+     |
-            // |                                                                         |
-            // |                      [    Pasillo Principal 🚶    ]                     |
-            // |                                                                         |
-            // +-------------------------------------------------------------------------+
-
-            // Define the classroom row
-            val roomTop = 10
-            val roomHeight = 10
-            val corridorY = roomTop + roomHeight
-            val roomWidth = 5
-
-            // Draw the top walls of classrooms
-            for (x in 5 until 40 - 5) {
-                matrix[roomTop][x] = WALL
+            for (i in topWallY..bottomWallY) {
+                matrix[i][leftWallX] = WALL      // Muro izquierdo
+                matrix[i][rightWallX] = WALL     // Muro derecho
             }
 
-            // Draw the dividing walls between classrooms
-            // We'll have 7 classrooms total
-            for (roomNum in 0..7) {
-                val wallX = 5 + (roomNum * roomWidth)
-                if (wallX < MAP_WIDTH - 5) {
-                    for (y in roomTop until roomTop + roomHeight) {
-                        matrix[y][wallX] = WALL
-                    }
+            // --- 2. PAREDES VERTICALES ENTRE SALONES ---
+            // Dibuja las divisiones de cada salón.
+            val verticalWallPositions = listOf(6, 11, 15, 19, 23, 28, 33) // Coordenadas X de cada pared
+            for (wallX in verticalWallPositions) {
+                for (i in topWallY..corridorWallY) {
+                    matrix[i][wallX] = WALL
                 }
             }
 
-            // Bottom wall of classrooms (top of corridor)
-            for (x in 5 until 40 - 5) {
-                matrix[corridorY][x] = WALL
-            }
+            // --- 3. PUERTAS Y PUNTOS INTERACTIVOS (CORREGIDO) ---
+            // Abrimos huecos en la pared del pasillo y los marcamos como interactivos.
+            matrix[corridorWallY][2] = INTERACTIVE     // Puerta Salón 2001
+            matrix[corridorWallY][7] = INTERACTIVE     // Puerta Salón 2002
+            matrix[corridorWallY][12] = INTERACTIVE     // Puerta Salón 2002
+            matrix[corridorWallY][16] = INTERACTIVE    // Puerta Salón 2003
 
-            // Add doors to classrooms
-            for (roomNum in 0..6) {
-                // Skip room 3 which is stairs
-                if (roomNum != 3) {
-                    val doorX = 5 + (roomNum * roomWidth) + 2
-                    matrix[corridorY][doorX] = PATH
+            // Escaleras: Abrimos un hueco y ponemos un punto interactivo en el centro.
+            for(j in 16..18) { matrix[corridorWallY][j] = PATH }
+            matrix[corridorWallY - 1][17] = INTERACTIVE // Punto para subir/bajar
 
-                    // Make salon 2006 (room 6) door interactive
-                    if (roomNum == 5) {
-                        matrix[corridorY][doorX - 1] = INTERACTIVE
-                        matrix[corridorY][doorX] = INTERACTIVE
-                        matrix[corridorY][doorX + 1] = INTERACTIVE
-                    }
-                }
-            }
+            matrix[corridorWallY][20] = INTERACTIVE    // Puerta Salón 2004
+            matrix[corridorWallY][24] = INTERACTIVE    // Puerta Salón 2005
+            matrix[corridorWallY][29] = INTERACTIVE    // Puerta Salón 2006
+            matrix[corridorWallY][34] = INTERACTIVE    // Puerta Baños (WC)
 
-            // Make stairs area in room 3
-            val stairsX = 5 + (3 * roomWidth) + 2
-            for (y in roomTop + 2 until corridorY) {
-                matrix[y][stairsX] = INTERACTIVE
-            }
+            // --- 4. PUNTO DE SALIDA ---
+            // Punto para volver al mapa principal.
+            matrix[corridorWallY + 2][leftWallX] = INTERACTIVE
 
-            // Mark corridor area
-            // The corridor is below the classrooms
-            for (y in corridorY + 1 until corridorY + 4) {
-                for (x in 5 until 40 - 5) {
-                    matrix[y][x] = PATH
-                }
-            }
-
-            // Bottom wall of corridor
-            for (x in 5 until 40 - 5) {
-                matrix[corridorY + 4][x] = WALL
-            }
-
-            // Exit point from building
-            matrix[corridorY + 2][5] = INTERACTIVE
-
-            // Key interactive points (salon 2006 entrance)
-            // Explicitly set coordinates 29,22 and 29,23 as blue interactive points
-            matrix[22][29] = INTERACTIVE
-            matrix[23][29] = INTERACTIVE
-
-            matrix[22][24] = INTERACTIVE
-            matrix[23][24] = INTERACTIVE
-
-            matrix[15][17] = INTERACTIVE
-            matrix[15][18] = INTERACTIVE
-            matrix[15][16] = INTERACTIVE
-
-            matrix[1][1] = INTERACTIVE
-            // Add labels to help with debugging
-            Log.d("MapMatrix", "Interactive value = $INTERACTIVE")
-            Log.d("MapMatrix", "Wall value = $WALL")
-            Log.d("MapMatrix", "Path value = $PATH")
-            Log.d("MapMatrix", "Value at (29, 22): ${matrix[22][29]}")
-            Log.d("MapMatrix", "Value at (29, 23): ${matrix[23][29]}")
-
+            Log.d("MapMatrix", "Matriz del Edificio 2 (Final) creada y alineada.")
             return matrix
         }
 
         private fun createBuilding2Piso1Matrix(): Array<Array<Int>> {
-            // Start with everything as PATH (2) to make most areas walkable
+            // Empezar con una matriz donde todo es un camino (PATH)
             val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
 
-            // Add outer walls
-            for (i in 0 until MAP_HEIGHT) {
-                matrix[i][0] = WALL
-                matrix[i][MAP_WIDTH - 1] = WALL
+            // --- Coordenadas Clave ---
+            // Estas son las coordenadas de las paredes que me pediste no mover.
+            val topWallY = 15            // Posición Y del muro superior de los salones
+            val classroomDepth = 10       // Profundidad de los salones
+            val corridorWallY = topWallY + classroomDepth // Muro del pasillo (calculado automáticamente)
+            val corridorHeight = 9       // Altura del pasillo
+            val bottomWallY = corridorWallY + corridorHeight // Muro inferior del edificio
+            val leftWallX = 1            // Borde izquierdo
+            val rightWallX = MAP_WIDTH - 3 // Borde derecho
+
+            // --- 1. MUROS EXTERIORES Y DEL PASILLO ---
+            // Dibuja los 4 muros principales que forman la caja del edificio y el pasillo.
+            for (j in leftWallX..rightWallX) {
+                matrix[topWallY][j] = WALL       // Muro superior
+                matrix[corridorWallY][j] = WALL  // Muro del pasillo (con las puertas)
+                matrix[bottomWallY][j] = WALL    // Muro inferior
             }
-            for (j in 0 until MAP_WIDTH) {
-                matrix[0][j] = WALL
-                matrix[MAP_HEIGHT - 1][j] = WALL
+            for (i in topWallY..bottomWallY) {
+                matrix[i][leftWallX] = WALL      // Muro izquierdo
+                matrix[i][rightWallX] = WALL     // Muro derecho
             }
 
-
-            // Define the classroom row
-            val roomTop = 10
-            val roomHeight = 10
-            val corridorY = roomTop + roomHeight
-            val roomWidth = 5
-
-            // Draw the top walls of classrooms
-            for (x in 5 until 40 - 5) {
-                matrix[roomTop][x] = WALL
+            // --- 2. PAREDES VERTICALES ENTRE SALONES ---
+            // Dibuja las divisiones de cada salón.
+            val verticalWallPositions = listOf(6, 11, 16, 19, 24, 29, 34) // Coordenadas X de cada pared
+            for (wallX in verticalWallPositions) {
+                for (i in topWallY..corridorWallY) {
+                    matrix[i][wallX] = WALL
+                }
             }
 
-            // Draw the dividing walls between classrooms
-            // We'll have 7 classrooms total
-            for (roomNum in 0..7) {
-                val wallX = 5 + (roomNum * roomWidth)
-                if (wallX < MAP_WIDTH - 5) {
-                    for (y in roomTop until roomTop + roomHeight) {
-                        matrix[y][wallX] = WALL
+            // --- 3. PUERTAS Y PUNTOS INTERACTIVOS (CORREGIDO) ---
+            // Abrimos huecos en la pared del pasillo y los marcamos como interactivos.
+            matrix[corridorWallY][2] = INTERACTIVE     // Puerta Salón 2001
+            matrix[corridorWallY][7] = INTERACTIVE     // Puerta Salón 2002
+            matrix[corridorWallY][12] = INTERACTIVE     // Puerta Salón 2002
+            matrix[corridorWallY][16] = INTERACTIVE    // Puerta Salón 2003
+
+            // Escaleras: Abrimos un hueco y ponemos un punto interactivo en el centro.
+            for(j in 16..18) { matrix[corridorWallY][j] = PATH }
+            matrix[corridorWallY - 1][17] = INTERACTIVE // Punto para subir/bajar
+
+            matrix[corridorWallY][20] = INTERACTIVE    // Puerta Salón 2004
+            matrix[corridorWallY][25] = INTERACTIVE    // Puerta Salón 2005
+            matrix[corridorWallY][30] = INTERACTIVE    // Puerta Salón 2006
+            matrix[corridorWallY][35] = INTERACTIVE    // Puerta Baños (WC)
+
+            Log.d("MapMatrix", "Matriz del Edificio 2 (Final) creada y alineada.")
+            return matrix
+        }
+
+
+
+        private fun createSalon2009Matrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
+
+            // Dimensiones del aula
+            val roomWidth = 30
+            val roomHeight = 25
+            val startX = 5
+            val startY = 5
+
+            // Interior del salón (espacio abierto)
+            for (i in startY until startY + roomHeight) {
+                for (j in startX until startX + roomWidth) {
+                    matrix[i][j] = PATH
+                }
+            }
+
+            // Puerta de salida hacia el edificio 2 (lado izquierdo)
+            matrix[startY + roomHeight/2][1] = INTERACTIVE
+
+            // Pizarrón (pared frontal)
+            for (j in startX + 2 until startX + roomWidth - 2) {
+                matrix[startY + 1][j] = INACCESSIBLE
+            }
+            // Centro del pizarrón es interactivo
+            matrix[startY + 1][startX + roomWidth/2] = INTERACTIVE
+
+            // Escritorio del profesor
+            for (j in startX + 10 until startX + 20) {
+                for (i in startY + 3 until startY + 6) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            // Filas de pupitres para estudiantes
+            for (row in 0 until 4) {
+                val rowY = startY + 8 + (row * 4)
+
+                // 5 pupitres por fila
+                for (desk in 0 until 5) {
+                    val deskX = startX + 3 + (desk * 5)
+
+                    // Cada pupitre ocupa 3x2
+                    for (i in rowY until rowY + 2) {
+                        for (j in deskX until deskX + 3) {
+                            matrix[i][j] = INACCESSIBLE
+                        }
                     }
                 }
             }
 
-            // Bottom wall of classrooms (top of corridor)
-            for (x in 5 until 40 - 5) {
-                matrix[corridorY][x] = WALL
-            }
+            return matrix
+        }
 
-            // Add doors to classrooms
-            for (roomNum in 0..6) {
-                // Skip room 3 which is stairs
-                if (roomNum != 3) {
-                    val doorX = 5 + (roomNum * roomWidth) + 2
-                    matrix[corridorY][doorX] = PATH
+        private fun createSalon2001Matrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
 
+            // Dimensiones del aula
+            val roomWidth = 30
+            val roomHeight = 25
+            val startX = 5
+            val startY = 5
+
+            // Interior del salón (espacio abierto)
+            for (i in startY until startY + roomHeight) {
+                for (j in startX until startX + roomWidth) {
+                    matrix[i][j] = PATH
                 }
             }
 
-            // Make stairs area in room 3
+            // Puerta de salida hacia el edificio 2 (lado izquierdo)
+            matrix[startY + roomHeight/2][1] = INTERACTIVE
 
-            // Mark corridor area
-            // The corridor is below the classrooms
-            for (y in corridorY + 1 until corridorY + 4) {
-                for (x in 5 until 40 - 5) {
-                    matrix[y][x] = PATH
+            // Pizarrón (pared frontal)
+            for (j in startX + 2 until startX + roomWidth - 2) {
+                matrix[startY + 1][j] = INACCESSIBLE
+            }
+            // Centro del pizarrón es interactivo
+            matrix[startY + 1][startX + roomWidth/2] = INTERACTIVE
+
+            // Escritorio del profesor
+            for (j in startX + 10 until startX + 20) {
+                for (i in startY + 3 until startY + 6) {
+                    matrix[i][j] = INACCESSIBLE
                 }
             }
 
-            // Bottom wall of corridor
-            for (x in 5 until 40 - 5) {
-                matrix[corridorY + 4][x] = WALL
+            // Filas de pupitres para estudiantes
+            for (row in 0 until 4) {
+                val rowY = startY + 8 + (row * 4)
+
+                // 5 pupitres por fila
+                for (desk in 0 until 5) {
+                    val deskX = startX + 3 + (desk * 5)
+
+                    // Cada pupitre ocupa 3x2
+                    for (i in rowY until rowY + 2) {
+                        for (j in deskX until deskX + 3) {
+                            matrix[i][j] = INACCESSIBLE
+                        }
+                    }
+                }
             }
-
-            // Key interactive points (salon 2006 entrance)
-            // Explicitly set coordinates 29,22 and 29,23 as blue interactive points
-
-            matrix[23][17] = INTERACTIVE
-            // Add labels to help with debugging
-            Log.d("MapMatrix", "Interactive value = $INTERACTIVE")
-            Log.d("MapMatrix", "Wall value = $WALL")
-            Log.d("MapMatrix", "Path value = $PATH")
-            Log.d("MapMatrix", "Value at (29, 22): ${matrix[22][29]}")
-            Log.d("MapMatrix", "Value at (29, 23): ${matrix[23][29]}")
 
             return matrix
         }
-        /**
-         * Matriz para el salón 2009
-         */
-        private fun createSalon2009Matrix(): Array<Array<Int>> {
+
+        private fun createSalon2002Matrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
+
+            // Dimensiones del aula
+            val roomWidth = 30
+            val roomHeight = 25
+            val startX = 5
+            val startY = 5
+
+            // Interior del salón (espacio abierto)
+            for (i in startY until startY + roomHeight) {
+                for (j in startX until startX + roomWidth) {
+                    matrix[i][j] = PATH
+                }
+            }
+
+            // Puerta de salida hacia el edificio 2 (lado izquierdo)
+            matrix[startY + roomHeight/2][1] = INTERACTIVE
+
+            // Pizarrón (pared frontal)
+            for (j in startX + 2 until startX + roomWidth - 2) {
+                matrix[startY + 1][j] = INACCESSIBLE
+            }
+            // Centro del pizarrón es interactivo
+            matrix[startY + 1][startX + roomWidth/2] = INTERACTIVE
+
+            // Escritorio del profesor
+            for (j in startX + 10 until startX + 20) {
+                for (i in startY + 3 until startY + 6) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            // Filas de pupitres para estudiantes
+            for (row in 0 until 4) {
+                val rowY = startY + 8 + (row * 4)
+
+                // 5 pupitres por fila
+                for (desk in 0 until 5) {
+                    val deskX = startX + 3 + (desk * 5)
+
+                    // Cada pupitre ocupa 3x2
+                    for (i in rowY until rowY + 2) {
+                        for (j in deskX until deskX + 3) {
+                            matrix[i][j] = INACCESSIBLE
+                        }
+                    }
+                }
+            }
+
+            return matrix
+        }
+
+        private fun createSalon2003Matrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
+
+            // Dimensiones del aula
+            val roomWidth = 30
+            val roomHeight = 25
+            val startX = 5
+            val startY = 5
+
+            // Interior del salón (espacio abierto)
+            for (i in startY until startY + roomHeight) {
+                for (j in startX until startX + roomWidth) {
+                    matrix[i][j] = PATH
+                }
+            }
+
+            // Puerta de salida hacia el edificio 2 (lado izquierdo)
+            matrix[startY + roomHeight/2][1] = INTERACTIVE
+
+            // Pizarrón (pared frontal)
+            for (j in startX + 2 until startX + roomWidth - 2) {
+                matrix[startY + 1][j] = INACCESSIBLE
+            }
+            // Centro del pizarrón es interactivo
+            matrix[startY + 1][startX + roomWidth/2] = INTERACTIVE
+
+            // Escritorio del profesor
+            for (j in startX + 10 until startX + 20) {
+                for (i in startY + 3 until startY + 6) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            // Filas de pupitres para estudiantes
+            for (row in 0 until 4) {
+                val rowY = startY + 8 + (row * 4)
+
+                // 5 pupitres por fila
+                for (desk in 0 until 5) {
+                    val deskX = startX + 3 + (desk * 5)
+
+                    // Cada pupitre ocupa 3x2
+                    for (i in rowY until rowY + 2) {
+                        for (j in deskX until deskX + 3) {
+                            matrix[i][j] = INACCESSIBLE
+                        }
+                    }
+                }
+            }
+
+            return matrix
+        }
+
+        private fun createSalon2004Matrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
+
+            // Dimensiones del aula
+            val roomWidth = 30
+            val roomHeight = 25
+            val startX = 5
+            val startY = 5
+
+            // Interior del salón (espacio abierto)
+            for (i in startY until startY + roomHeight) {
+                for (j in startX until startX + roomWidth) {
+                    matrix[i][j] = PATH
+                }
+            }
+
+            // Puerta de salida hacia el edificio 2 (lado izquierdo)
+            matrix[startY + roomHeight/2][1] = INTERACTIVE
+
+            // Pizarrón (pared frontal)
+            for (j in startX + 2 until startX + roomWidth - 2) {
+                matrix[startY + 1][j] = INACCESSIBLE
+            }
+            // Centro del pizarrón es interactivo
+            matrix[startY + 1][startX + roomWidth/2] = INTERACTIVE
+
+            // Escritorio del profesor
+            for (j in startX + 10 until startX + 20) {
+                for (i in startY + 3 until startY + 6) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            // Filas de pupitres para estudiantes
+            for (row in 0 until 4) {
+                val rowY = startY + 8 + (row * 4)
+
+                // 5 pupitres por fila
+                for (desk in 0 until 5) {
+                    val deskX = startX + 3 + (desk * 5)
+
+                    // Cada pupitre ocupa 3x2
+                    for (i in rowY until rowY + 2) {
+                        for (j in deskX until deskX + 3) {
+                            matrix[i][j] = INACCESSIBLE
+                        }
+                    }
+                }
+            }
+
+            return matrix
+        }
+
+        private fun createSalon2005Matrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
+
+            // Dimensiones del aula
+            val roomWidth = 30
+            val roomHeight = 25
+            val startX = 5
+            val startY = 5
+
+            // Interior del salón (espacio abierto)
+            for (i in startY until startY + roomHeight) {
+                for (j in startX until startX + roomWidth) {
+                    matrix[i][j] = PATH
+                }
+            }
+
+            // Puerta de salida hacia el edificio 2 (lado izquierdo)
+            matrix[startY + roomHeight/2][1] = INTERACTIVE
+
+            // Pizarrón (pared frontal)
+            for (j in startX + 2 until startX + roomWidth - 2) {
+                matrix[startY + 1][j] = INACCESSIBLE
+            }
+            // Centro del pizarrón es interactivo
+            matrix[startY + 1][startX + roomWidth/2] = INTERACTIVE
+
+            // Escritorio del profesor
+            for (j in startX + 10 until startX + 20) {
+                for (i in startY + 3 until startY + 6) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            // Filas de pupitres para estudiantes
+            for (row in 0 until 4) {
+                val rowY = startY + 8 + (row * 4)
+
+                // 5 pupitres por fila
+                for (desk in 0 until 5) {
+                    val deskX = startX + 3 + (desk * 5)
+
+                    // Cada pupitre ocupa 3x2
+                    for (i in rowY until rowY + 2) {
+                        for (j in deskX until deskX + 3) {
+                            matrix[i][j] = INACCESSIBLE
+                        }
+                    }
+                }
+            }
+
+            return matrix
+        }
+
+        private fun createSalon2006Matrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
+
+            // Dimensiones del aula
+            val roomWidth = 30
+            val roomHeight = 25
+            val startX = 5
+            val startY = 5
+
+            // Interior del salón (espacio abierto)
+            for (i in startY until startY + roomHeight) {
+                for (j in startX until startX + roomWidth) {
+                    matrix[i][j] = PATH
+                }
+            }
+
+            // Puerta de salida hacia el edificio 2 (lado izquierdo)
+            matrix[startY + roomHeight/2][1] = INTERACTIVE
+
+            // Pizarrón (pared frontal)
+            for (j in startX + 2 until startX + roomWidth - 2) {
+                matrix[startY + 1][j] = INACCESSIBLE
+            }
+            // Centro del pizarrón es interactivo
+            matrix[startY + 1][startX + roomWidth/2] = INTERACTIVE
+
+            // Escritorio del profesor
+            for (j in startX + 10 until startX + 20) {
+                for (i in startY + 3 until startY + 6) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            // Filas de pupitres para estudiantes
+            for (row in 0 until 4) {
+                val rowY = startY + 8 + (row * 4)
+
+                // 5 pupitres por fila
+                for (desk in 0 until 5) {
+                    val deskX = startX + 3 + (desk * 5)
+
+                    // Cada pupitre ocupa 3x2
+                    for (i in rowY until rowY + 2) {
+                        for (j in deskX until deskX + 3) {
+                            matrix[i][j] = INACCESSIBLE
+                        }
+                    }
+                }
+            }
+
+            return matrix
+        }
+
+        private fun createSalon2101Matrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
+
+            // Dimensiones del aula
+            val roomWidth = 30
+            val roomHeight = 25
+            val startX = 5
+            val startY = 5
+
+            // Interior del salón (espacio abierto)
+            for (i in startY until startY + roomHeight) {
+                for (j in startX until startX + roomWidth) {
+                    matrix[i][j] = PATH
+                }
+            }
+
+            // Puerta de salida hacia el edificio 2 (lado izquierdo)
+            matrix[startY + roomHeight/2][1] = INTERACTIVE
+
+            // Pizarrón (pared frontal)
+            for (j in startX + 2 until startX + roomWidth - 2) {
+                matrix[startY + 1][j] = INACCESSIBLE
+            }
+            // Centro del pizarrón es interactivo
+            matrix[startY + 1][startX + roomWidth/2] = INTERACTIVE
+
+            // Escritorio del profesor
+            for (j in startX + 10 until startX + 20) {
+                for (i in startY + 3 until startY + 6) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            // Filas de pupitres para estudiantes
+            for (row in 0 until 4) {
+                val rowY = startY + 8 + (row * 4)
+
+                // 5 pupitres por fila
+                for (desk in 0 until 5) {
+                    val deskX = startX + 3 + (desk * 5)
+
+                    // Cada pupitre ocupa 3x2
+                    for (i in rowY until rowY + 2) {
+                        for (j in deskX until deskX + 3) {
+                            matrix[i][j] = INACCESSIBLE
+                        }
+                    }
+                }
+            }
+
+            return matrix
+        }
+
+        private fun createSalon2102Matrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
+
+            // Dimensiones del aula
+            val roomWidth = 30
+            val roomHeight = 25
+            val startX = 5
+            val startY = 5
+
+            // Interior del salón (espacio abierto)
+            for (i in startY until startY + roomHeight) {
+                for (j in startX until startX + roomWidth) {
+                    matrix[i][j] = PATH
+                }
+            }
+
+            // Puerta de salida hacia el edificio 2 (lado izquierdo)
+            matrix[startY + roomHeight/2][1] = INTERACTIVE
+
+            // Pizarrón (pared frontal)
+            for (j in startX + 2 until startX + roomWidth - 2) {
+                matrix[startY + 1][j] = INACCESSIBLE
+            }
+            // Centro del pizarrón es interactivo
+            matrix[startY + 1][startX + roomWidth/2] = INTERACTIVE
+
+            // Escritorio del profesor
+            for (j in startX + 10 until startX + 20) {
+                for (i in startY + 3 until startY + 6) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            // Filas de pupitres para estudiantes
+            for (row in 0 until 4) {
+                val rowY = startY + 8 + (row * 4)
+
+                // 5 pupitres por fila
+                for (desk in 0 until 5) {
+                    val deskX = startX + 3 + (desk * 5)
+
+                    // Cada pupitre ocupa 3x2
+                    for (i in rowY until rowY + 2) {
+                        for (j in deskX until deskX + 3) {
+                            matrix[i][j] = INACCESSIBLE
+                        }
+                    }
+                }
+            }
+
+            return matrix
+        }
+
+        private fun createSalon2103Matrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
+
+            // Dimensiones del aula
+            val roomWidth = 30
+            val roomHeight = 25
+            val startX = 5
+            val startY = 5
+
+            // Interior del salón (espacio abierto)
+            for (i in startY until startY + roomHeight) {
+                for (j in startX until startX + roomWidth) {
+                    matrix[i][j] = PATH
+                }
+            }
+
+            // Puerta de salida hacia el edificio 2 (lado izquierdo)
+            matrix[startY + roomHeight/2][1] = INTERACTIVE
+
+            // Pizarrón (pared frontal)
+            for (j in startX + 2 until startX + roomWidth - 2) {
+                matrix[startY + 1][j] = INACCESSIBLE
+            }
+            // Centro del pizarrón es interactivo
+            matrix[startY + 1][startX + roomWidth/2] = INTERACTIVE
+
+            // Escritorio del profesor
+            for (j in startX + 10 until startX + 20) {
+                for (i in startY + 3 until startY + 6) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            // Filas de pupitres para estudiantes
+            for (row in 0 until 4) {
+                val rowY = startY + 8 + (row * 4)
+
+                // 5 pupitres por fila
+                for (desk in 0 until 5) {
+                    val deskX = startX + 3 + (desk * 5)
+
+                    // Cada pupitre ocupa 3x2
+                    for (i in rowY until rowY + 2) {
+                        for (j in deskX until deskX + 3) {
+                            matrix[i][j] = INACCESSIBLE
+                        }
+                    }
+                }
+            }
+
+            return matrix
+        }
+
+        private fun createSalon2104Matrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
+
+            // Dimensiones del aula
+            val roomWidth = 30
+            val roomHeight = 25
+            val startX = 5
+            val startY = 5
+
+            // Interior del salón (espacio abierto)
+            for (i in startY until startY + roomHeight) {
+                for (j in startX until startX + roomWidth) {
+                    matrix[i][j] = PATH
+                }
+            }
+
+            // Puerta de salida hacia el edificio 2 (lado izquierdo)
+            matrix[startY + roomHeight/2][1] = INTERACTIVE
+
+            // Pizarrón (pared frontal)
+            for (j in startX + 2 until startX + roomWidth - 2) {
+                matrix[startY + 1][j] = INACCESSIBLE
+            }
+            // Centro del pizarrón es interactivo
+            matrix[startY + 1][startX + roomWidth/2] = INTERACTIVE
+
+            // Escritorio del profesor
+            for (j in startX + 10 until startX + 20) {
+                for (i in startY + 3 until startY + 6) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            // Filas de pupitres para estudiantes
+            for (row in 0 until 4) {
+                val rowY = startY + 8 + (row * 4)
+
+                // 5 pupitres por fila
+                for (desk in 0 until 5) {
+                    val deskX = startX + 3 + (desk * 5)
+
+                    // Cada pupitre ocupa 3x2
+                    for (i in rowY until rowY + 2) {
+                        for (j in deskX until deskX + 3) {
+                            matrix[i][j] = INACCESSIBLE
+                        }
+                    }
+                }
+            }
+
+            return matrix
+        }
+
+        private fun createSalon2105Matrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
+
+            // Dimensiones del aula
+            val roomWidth = 30
+            val roomHeight = 25
+            val startX = 5
+            val startY = 5
+
+            // Interior del salón (espacio abierto)
+            for (i in startY until startY + roomHeight) {
+                for (j in startX until startX + roomWidth) {
+                    matrix[i][j] = PATH
+                }
+            }
+
+            // Puerta de salida hacia el edificio 2 (lado izquierdo)
+            matrix[startY + roomHeight/2][1] = INTERACTIVE
+
+            // Pizarrón (pared frontal)
+            for (j in startX + 2 until startX + roomWidth - 2) {
+                matrix[startY + 1][j] = INACCESSIBLE
+            }
+            // Centro del pizarrón es interactivo
+            matrix[startY + 1][startX + roomWidth/2] = INTERACTIVE
+
+            // Escritorio del profesor
+            for (j in startX + 10 until startX + 20) {
+                for (i in startY + 3 until startY + 6) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            // Filas de pupitres para estudiantes
+            for (row in 0 until 4) {
+                val rowY = startY + 8 + (row * 4)
+
+                // 5 pupitres por fila
+                for (desk in 0 until 5) {
+                    val deskX = startX + 3 + (desk * 5)
+
+                    // Cada pupitre ocupa 3x2
+                    for (i in rowY until rowY + 2) {
+                        for (j in deskX until deskX + 3) {
+                            matrix[i][j] = INACCESSIBLE
+                        }
+                    }
+                }
+            }
+
+            return matrix
+        }
+
+        private fun createSalon2106Matrix(): Array<Array<Int>> {
             val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
 
             // Dimensiones del aula
@@ -1892,32 +2490,54 @@ class MapMatrixProvider {
             // Para el edificio 2, cualquier punto interactivo cerca del centro del pasillo
             // nos lleva al salón 2009
             if (mapId == MAP_BUILDING2) {
-                // Si estamos en o cerca de las coordenadas (15,16) o cualquiera de las alternativas
-                //val nearCenter = (x >= 14 && x <= 16 && y >= 15 && y <= 17)
-                val alternative1 = (x == 29 && y == 23)
-                val alternative2 = (x == 29 && y == 22)
+                // Usamos un when para que el código sea más limpio y fácil de leer.
+                // Compara la posición actual del jugador (x, y) con las coordenadas interactivas.
+                when (Pair(x, y)) {
+                    // --- Transiciones a Salones ---
+                    Pair(4, 22) -> return MAP_SALON2001
+                    Pair(9, 22) -> return MAP_SALON2002
+                    Pair(13, 22) -> return MAP_SALON2003
+                    Pair(21, 22) -> return MAP_SALON2004
+                    Pair(26, 22) -> return MAP_SALON2005
+                    Pair(31, 22) -> return MAP_SALON2006
+                    // Pair(35, 22) -> return MAP_WC // Puedes activar esta línea si los baños son un mapa separado
 
-                if (alternative1 || alternative2) {
-                    Log.d("MapTransition", "Transition to salon2009 triggered!")
-                    return MAP_SALON2009
-                }
+                    // --- Transición a otros pisos (Escaleras) ---
+                    Pair(17, 21) -> {
+                        Log.d("MapTransition", "Transition to Building 2, Floor 1 triggered!")
+                        return MAP_BUILDING2_PISO1
+                    }
 
-                if (x == 24 && y == 22 || x == 24 && y == 23 ) {
-                    return MAP_SALON2010
-                }
-
-                // Punto para regresar al mapa principal
-                if (x == 5 && y == 5) {
-                    return MAP_MAIN
-                }
-                if(x == 1 && y == 1){
-                    return MAP_MAIN
+                    // --- Transición para salir del edificio ---
+                    Pair(1, 24) -> {
+                        Log.d("MapTransition", "Transition to Main Map triggered!")
+                        return MAP_MAIN
+                    }
                 }
             }
 
-            if(mapId == MAP_BUILDING2_PISO1){
-                if(x == 17 && y == 23){
-                    return MAP_BUILDING2
+            if (mapId == MAP_BUILDING2_PISO1) {
+                // Calcula la coordenada Y del pasillo basado en las variables de la matriz.
+                val corridorWallY = 15 + 10 // topWallY + classroomDepth
+
+                // Compara la posición actual del jugador (x, y) con las coordenadas interactivas.
+                when (Pair(x, y)) {
+                    // --- Transiciones a Salones del Primer Piso ---
+                    // Nota: Deberás crear constantes para estos mapas (ej. MAP_SALON2101) si aún no existen.
+                    Pair(2, corridorWallY) -> return MAP_SALON2101 // Asumiendo el nombre del mapa
+                    Pair(7, corridorWallY) -> return "escom_salon2102"
+                    Pair(12, corridorWallY) -> return "escom_salon2103"
+                    Pair(16, corridorWallY) -> return "escom_salon2104"
+                    Pair(20, corridorWallY) -> return "escom_salon2105"
+                    Pair(25, corridorWallY) -> return "escom_salon2106"
+                    Pair(30, corridorWallY) -> return "escom_salon2107"
+                    Pair(35, corridorWallY) -> return "escom_wc_piso1" // Baños del piso 1
+
+                    // --- Transición para BAJAR a la Planta Baja (Escaleras) ---
+                    Pair(17, corridorWallY - 1) -> {
+                        Log.d("MapTransition", "Transition to Building 2, Ground Floor triggered!")
+                        return MAP_BUILDING2
+                    }
                 }
             }
 
@@ -1933,10 +2553,6 @@ class MapMatrixProvider {
                 if (x == 10 && y == 10) {
                     return MAP_MAIN
                 }
-            }
-
-            if(mapId == MAP_BUILDING2 && x == 17 && y == 15){
-                return MAP_BUILDING2_PISO1
             }
 
             if (mapId == MAP_MAIN && x == 33 && y == 34) {
@@ -2031,7 +2647,19 @@ class MapMatrixProvider {
             return when (mapId) {
                 MAP_MAIN -> Pair(15, 15)  // Posición central en el mapa principal
                 MAP_BUILDING4_F2 -> Pair(20, 16)  // Centro del pasillo principal del edificio 4
-                MAP_BUILDING2 -> Pair(20, 16)  // Centro del pasillo principal del edificio 2
+                MAP_BUILDING2 -> Pair(20, 16)
+                MAP_SALON2001 -> Pair(20, 20)
+                MAP_SALON2002 -> Pair(20, 20)
+                MAP_SALON2003 -> Pair(20, 20)
+                MAP_SALON2004 -> Pair(20, 20)
+                MAP_SALON2005 -> Pair(20, 20)
+                MAP_SALON2006 -> Pair(20, 20)// Centro del pasillo principal del edificio 2
+                MAP_SALON2101 -> Pair(20, 20)
+                MAP_SALON2102 -> Pair(20, 20)
+                MAP_SALON2103 -> Pair(20, 20)
+                MAP_SALON2104 -> Pair(20, 20)
+                MAP_SALON2105 -> Pair(20, 20)
+                MAP_SALON2106 -> Pair(20, 20)
                 MAP_SALON2009 -> Pair(20, 20)  // Posición central dentro del salón 2009
                 MAP_SALON2010 -> Pair(20, 20)  // Posición central dentro del salón 2010
                 MAP_CAFETERIA -> Pair(2, 2)  // Posición central dentro de la escomCAFE
