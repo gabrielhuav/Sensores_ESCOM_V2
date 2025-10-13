@@ -45,8 +45,10 @@
         <activity
             android:name=".presentation.common.base.GameplayActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
-
-
+        <!--ENCB Activity -->
+        <activity
+            android:name=".presentation.locations.buildings.encb.ENCB"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
         <!-- Building2 Activity -->
         <activity
             android:name=".presentation.components.BuildingNumber2"
@@ -120,10 +122,11 @@
             android:name=".presentation.locations.buildings.buildingIA.PalapasIA"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
+
+        <activity android:name=".presentation.components.PalapasISC" android:exported="false" />
         <activity
             android:name=".presentation.locations.buildings.gobierno.EdificioGobierno"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
-
         <!-- DeviceList Activity -->
         <activity
             android:name=".data.map.Bluetooth.DeviceListActivity"
