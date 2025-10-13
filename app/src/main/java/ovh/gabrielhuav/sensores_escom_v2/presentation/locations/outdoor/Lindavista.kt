@@ -175,7 +175,7 @@ class Lindavista : AppCompatActivity(),
         updatePlayerPosition(gameState.playerPosition)
     }
 
-    // Actualiza el método onMapTransitionRequested para manejar la transición al salón 2009
+    // Actualiza el método onMapTransitionRequested para manejar la transición al mapa anterior
     override fun onMapTransitionRequested(targetMap: String, initialPosition: Pair<Int, Int>) {
         when (targetMap) {
             MapMatrixProvider.Companion.MAP_ZACATENCO -> {

@@ -42,6 +42,7 @@ class MapMatrixProvider {
         const val MAP_BIBLIOTECA = "escom_biblioteca"
         const val MAP_ENCB = "encb"
         const val MAP_PLAZA_TORRES = "plaza_torres"
+        const val MAP_PLAZA_TORRES_N1 = "plaza_torres_n1"
 
         fun normalizeMapName(mapName: String?): String {
             if (mapName.isNullOrBlank()) return MAP_MAIN
@@ -83,6 +84,7 @@ class MapMatrixProvider {
                 lowerMap.contains("biblioteca") -> MAP_BIBLIOTECA
                 lowerMap.contains("encb") -> MAP_ENCB
                 lowerMap.contains("plaza_torres") -> MAP_PLAZA_TORRES
+                lowerMap.contains("plaza_torres_n1") -> MAP_PLAZA_TORRES_N1
                 // Si no coincide con ninguno de los anteriores, devolver el original
                 else -> mapName
             }
@@ -152,6 +154,7 @@ class MapMatrixProvider {
                 MAP_BIBLIOTECA -> createBibliotecaMatrix()// Matriz para palapas de ISC
                 MAP_ENCB -> createEncbMatrix()
                 MAP_PLAZA_TORRES -> createPlazaTorresMatrix()
+                MAP_PLAZA_TORRES_N1 -> createPlazaTorresN1Matrix()
                 else -> createDefaultMatrix() // Por defecto, un mapa básico
             }
         }
@@ -1745,6 +1748,31 @@ class MapMatrixProvider {
             matrix[18][15] = INACCESSIBLE
             matrix[18][30] = INACCESSIBLE
 
+            matrix[18][25] = INTERACTIVE // Punto para subir al nivel del Cinepolis
+
+            return matrix
+        }
+        /**
+         * NUEVO MAPA: Plaza Torres Nivel 1
+         */
+        private fun createPlazaTorresN1Matrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
+
+            // Área jugable (un rectángulo)
+            val startX = 10
+            val startY = 15
+            val roomWidth = 20
+            val roomHeight = 10
+
+            for (y in startY until startY + roomHeight) {
+                for (x in startX until startX + roomWidth) {
+                    matrix[y][x] = PATH
+                }
+            }
+
+            // Punto de salida para regresar a la planta baja
+            matrix[startY + roomHeight - 1][startX + roomWidth / 2] = INTERACTIVE // Salida
+
             return matrix
         }
 
@@ -1889,6 +1917,16 @@ class MapMatrixProvider {
                 {
                     return MAP_ZACATENCO
                 }
+
+                // Transición DESDE Plaza Torres HACIA el nivel 1
+                if (x == 25 && y == 18) {
+                    return MAP_PLAZA_TORRES_N1
+                }
+            }
+
+            // Transición DESDE el nivel 1 HACIA Plaza Torres
+            if (mapId == MAP_PLAZA_TORRES_N1 && x == 20 && y == 24) {
+                return MAP_PLAZA_TORRES
             }
 
             return null
@@ -1916,6 +1954,7 @@ class MapMatrixProvider {
                 MAP_EDIFICIO_GOBIERNO -> Pair(17, 5)  // Posición cerca de la entrada
                 MAP_BIBLIOTECA -> Pair(17, 5)  // Posición cerca de la entrada
                 MAP_PLAZA_TORRES -> Pair(18, 18) //Entrada ESCOM
+                MAP_PLAZA_TORRES_N1 -> Pair(20, 16) //Entrada cinepolis plaza torres
                 else -> Pair(MAP_WIDTH / 2, MAP_HEIGHT / 2)
             }
         }
