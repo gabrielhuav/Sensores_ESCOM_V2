@@ -124,6 +124,7 @@ class PlayerManager {
         // Dibujar texto "ITEM"
         canvas.drawText("ITEM", itemX, itemY - cellHeight * 0.5f, itemTextPaint)
     }
+
     /**
      * Dibuja un conejo en el mapa
      */

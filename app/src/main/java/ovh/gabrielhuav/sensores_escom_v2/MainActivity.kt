@@ -1,6 +1,7 @@
 package ovh.gabrielhuav.sensores_escom_v2
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -33,6 +34,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     // Modificamos el método onCreate
+    @SuppressLint("MissingPermission")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main_menu)

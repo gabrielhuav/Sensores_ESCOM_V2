@@ -27,6 +27,7 @@ import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.MovementMa
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.ServerConnectionManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.plaza.PlazaVistaNorte
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.transportation.Cablebus
 import kotlin.collections.iterator
 
@@ -292,7 +293,7 @@ class Lindavista : AppCompatActivity(),
             }
             position.first == 30 && position.second == 9 -> {
                 canChangeMap = true
-                targetDestination = "plaza"
+                targetDestination = "plazaVistaNorte"
                 runOnUiThread {
                     Toast.makeText(this, "Presiona A para ver Plaza Vista Norte", Toast.LENGTH_SHORT)
                         .show()
@@ -344,7 +345,7 @@ class Lindavista : AppCompatActivity(),
                     when (targetDestination) {
                         "zacatenco" -> returnToZacatencoActivity()
                         "indios" -> viewIndiosVerdes()
-                        "plaza" -> viewPlazaVistaNorte()
+                        "plazaVistaNorte" -> viewPlazaVistaNorte()
                         "talleres" -> viewTalleresTicoman()
                         "cablebus" -> enterCablebus()
                         else -> showToast("No hay interacción disponible en esta posición")
@@ -362,10 +363,21 @@ class Lindavista : AppCompatActivity(),
         startActivity(intent)
     }
     private fun viewPlazaVistaNorte() {
-        val intent =
-            Intent(Intent.ACTION_VIEW, Uri.parse("https://maps.app.goo.gl/yuDsYdMcNgQiLfJX9"))
+        //val intent =
+          //  Intent(Intent.ACTION_VIEW, Uri.parse("https://maps.app.goo.gl/yuDsYdMcNgQiLfJX9"))
+        //startActivity(intent)
+
+        val intent = Intent(this, PlazaVistaNorte::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(1, 6))
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
         startActivity(intent)
+        finish()
     }
+
     private fun viewTalleresTicoman() {
         val intent =
             Intent(Intent.ACTION_VIEW, Uri.parse("https://maps.app.goo.gl/g6mWn6vzEZJZsbeb7"))
