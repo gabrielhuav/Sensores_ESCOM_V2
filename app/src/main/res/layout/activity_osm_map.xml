@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F0F0F0"
+    tools:context=".presentation.locations.outdoor.OSMMapActivity">
+
+    <!-- Map Container -->
+    <FrameLayout
+        android:id="@+id/map_container"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- OSM MapView will be added programmatically here -->
+    </FrameLayout>
+
+    <!-- Top Status Bar Card -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/status_card"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp"
+        app:cardBackgroundColor="@android:color/white"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <TextView
+                android:id="@+id/tv_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Estado: Conectando..."
+                android:textSize="14sp"
+                android:textColor="#333333"/>
+
+            <TextView
+                android:id="@+id/tv_coordinates"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Lat: 0.000000, Lon: 0.000000"
+                android:textSize="12sp"
+                android:textColor="#666666"
+                android:layout_marginTop="4dp"/>
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Back Button -->
+    <Button
+        android:id="@+id/button_back"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:text="←"
+        android:textSize="24sp"
+        android:textColor="@android:color/white"
+        android:backgroundTint="#FF6B6B"
+        android:contentDescription="Back to previous screen"
+        app:layout_constraintTop_toBottomOf="@id/status_card"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_margin="16dp"/>
+
+    <!-- Map Control Buttons (Right Side) -->
+    <LinearLayout
+        android:id="@+id/map_controls"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_margin="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/status_card">
+
+        <Button
+            android:id="@+id/button_zoom_in"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:text="+"
+            android:textSize="20sp"
+            android:textColor="@android:color/white"
+            android:backgroundTint="#4CAF50"
+            android:contentDescription="Zoom In"/>
+
+        <Button
+            android:id="@+id/button_zoom_out"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:text="−"
+            android:textSize="20sp"
+            android:textColor="@android:color/white"
+            android:backgroundTint="#4CAF50"
+            android:contentDescription="Zoom Out"
+            android:layout_marginTop="4dp"/>
+
+        <Button
+            android:id="@+id/button_center"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:text="⌖"
+            android:textSize="20sp"
+            android:textColor="@android:color/white"
+            android:backgroundTint="#2196F3"
+            android:contentDescription="Center on Player"
+            android:layout_marginTop="4dp"/>
+
+    </LinearLayout>
+
+    <!-- Movement Controls Container -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/movement_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_margin="16dp">
+
+        <!-- Movement D-Pad Background -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="180dp"
+            android:layout_height="180dp"
+            app:cardCornerRadius="90dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="#20000000"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <!-- Movement Buttons Grid -->
+        <GridLayout
+            android:id="@+id/movement_buttons"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:rowCount="3"
+            android:columnCount="3"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_gravity="center">
+
+            <Space
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_row="0"
+                android:layout_column="0"/>
+
+            <Button
+                android:id="@+id/button_north"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:text="↑"
+                android:textSize="20sp"
+                android:textColor="@android:color/white"
+                android:backgroundTint="#3F51B5"
+                android:contentDescription="Move North"
+                android:layout_row="0"
+                android:layout_column="1"/>
+
+            <Space
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_row="0"
+                android:layout_column="2"/>
+
+            <Button
+                android:id="@+id/button_west"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:text="←"
+                android:textSize="20sp"
+                android:textColor="@android:color/white"
+                android:backgroundTint="#3F51B5"
+                android:contentDescription="Move West"
+                android:layout_row="1"
+                android:layout_column="0"/>
+
+            <View
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:background="@drawable/ic_circle_center"
+                android:layout_row="1"
+                android:layout_column="1"/>
+
+            <Button
+                android:id="@+id/button_east"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:text="→"
+                android:textSize="20sp"
+                android:textColor="@android:color/white"
+                android:backgroundTint="#3F51B5"
+                android:contentDescription="Move East"
+                android:layout_row="1"
+                android:layout_column="2"/>
+
+            <Space
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_row="2"
+                android:layout_column="0"/>
+
+            <Button
+                android:id="@+id/button_south"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:text="↓"
+                android:textSize="20sp"
+                android:textColor="@android:color/white"
+                android:backgroundTint="#3F51B5"
+                android:contentDescription="Move South"
+                android:layout_row="2"
+                android:layout_column="1"/>
+
+            <Space
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_row="2"
+                android:layout_column="2"/>
+        </GridLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- Action Button (Button A) -->
+    <Button
+        android:id="@+id/button_a"
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:text="A"
+        android:textSize="24sp"
+        android:textColor="@android:color/white"
+        android:backgroundTint="#FF5722"
+        android:contentDescription="Action Button"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_margin="24dp"/>
+
+    <!-- Mini Map Card (Optional) -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/mini_map_card"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_margin="16dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/button_a"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Mini map view can be added here -->
+
+    </androidx.cardview.widget.CardView>
+
+    <!-- Connection Status Indicators -->
+    <LinearLayout
+        android:id="@+id/connection_indicators"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_margin="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:id="@+id/indicator_bluetooth"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="BT"
+            android:textSize="12sp"
+            android:textColor="@android:color/white"
+            android:background="@drawable/indicator_background"
+            android:padding="4dp"
+            android:layout_marginEnd="8dp"/>
+
+        <TextView
+            android:id="@+id/indicator_server"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Server"
+            android:textSize="12sp"
+            android:textColor="@android:color/white"
+            android:background="@drawable/indicator_background"
+            android:padding="4dp"
+            android:layout_marginEnd="8dp"/>
+
+        <TextView
+            android:id="@+id/indicator_gps"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="GPS"
+            android:textSize="12sp"
+            android:textColor="@android:color/white"
+            android:background="@drawable/indicator_background"
+            android:padding="4dp"/>
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
