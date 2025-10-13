@@ -22,6 +22,7 @@ import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.ServerConn
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.building4.BuildingNumber4
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.Lindavista
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.Zacatenco
 
 class PlazaVistaNorte : AppCompatActivity(),
@@ -198,22 +199,22 @@ class PlazaVistaNorte : AppCompatActivity(),
 
         // Botón para volver al edificio 2
         btnBackToHome.setOnClickListener {
-            returnToZacatenco()
+            returnToLindavista()
         }
 
         // Configurar el botón BCK si existe
         findViewById<Button?>(R.id.button_small_2)?.setOnClickListener {
-            returnToZacatenco()
+            returnToLindavista()
         }
     }
 
-    private fun returnToZacatenco() {
+    private fun returnToLindavista() {
         // Obtener la posición previa
         val previousPosition = intent.getSerializableExtra("PREVIOUS_POSITION") as? Pair<Int, Int>
             ?: Pair(15, 16) // Por defecto, volver al pasillo principal
 
         // Crear intent para volver al Edificio 2
-        val intent = Intent(this, Zacatenco::class.java).apply {
+        val intent = Intent(this, Lindavista::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("IS_CONNECTED", gameState.isConnected) // Pasar el estado de conexión
@@ -268,8 +269,8 @@ class PlazaVistaNorte : AppCompatActivity(),
     // Implementación MapTransitionListener
     override fun onMapTransitionRequested(targetMap: String, initialPosition: Pair<Int, Int>) {
         when (targetMap) {
-            MapMatrixProvider.MAP_ZACATENCO -> {
-                returnToZacatenco()
+            MapMatrixProvider.MAP_LINDAVISTA -> {
+                returnToLindavista()
             }
             else -> {
                 Log.d(TAG, "Mapa destino no reconocido: $targetMap")
