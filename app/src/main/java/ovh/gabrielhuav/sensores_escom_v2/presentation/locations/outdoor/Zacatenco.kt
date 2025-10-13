@@ -343,6 +343,15 @@ class Zacatenco : AppCompatActivity(),
                 }
             }
 
+            position.first == 20 && position.second == 10 -> {
+                canChangeMap = true
+                targetDestination = "plaza_torres"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para ir a Plaza Torres", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+
             else -> {
                 canChangeMap = false
                 targetDestination = null
@@ -379,6 +388,7 @@ class Zacatenco : AppCompatActivity(),
                         "cic" -> viewCIC()
                         "ford" -> startFordActivity()
                         "encb" -> startENCBActivity()
+                        "plaza_torres" -> startPlazaTorresActivity()
 
                         else -> showToast("No hay interacción disponible en esta posición")
                     }
@@ -416,6 +426,19 @@ class Zacatenco : AppCompatActivity(),
             putExtra("IS_CONNECTED", gameState.isConnected) // Importante: mantener estado de conexión
             putExtra("INITIAL_POSITION", Pair(20, 20)) // Posición inicial en ENCB (ajusta según tu mapa)
             putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual para volver
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
+
+    private fun startPlazaTorresActivity() {
+        val intent = Intent(this, PlazaTorres::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("IS_CONNECTED", gameState.isConnected)
+            putExtra("INITIAL_POSITION", Pair(18, 18))
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         startActivity(intent)
