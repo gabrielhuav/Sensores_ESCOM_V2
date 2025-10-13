@@ -44,6 +44,7 @@ dependencies {
     implementation(libs.androidx.media3.common.ktx)
     implementation(libs.firebase.database.ktx)
     implementation(libs.okhttp)
+    implementation("org.osmdroid:osmdroid-android:6.1.18")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

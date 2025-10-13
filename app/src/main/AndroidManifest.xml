@@ -75,7 +75,7 @@
             android:configChanges="orientation|screenSize|keyboardHidden"/>
         <activity
             android:name=".presentation.components.BuildingEdificioIA"
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
+            android_configChanges="orientation|screenSize|keyboardHidden"/>
         <activity
             android:name=".presentation.components.BuildingEdificioIA_Medio"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
@@ -119,6 +119,9 @@
         <activity android:name=".presentation.components.PalapasISC" android:exported="false" />
         <activity
             android:name=".presentation.locations.buildings.gobierno.EdificioGobierno"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+        <activity
+            android:name=".presentation.locations.outdoor.GlobalMapActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
         <!-- DeviceList Activity -->
         <activity
