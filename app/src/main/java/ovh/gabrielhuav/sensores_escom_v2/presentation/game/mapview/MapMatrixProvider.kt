@@ -1102,9 +1102,9 @@ class MapMatrixProvider {
                 }
             }
 
-            // ENTRADA
-            for (i in 37..38) {
-                for (j in 15..25) {
+            // ENTRADA (franja justo sobre el texto "ENTRADA")
+            for (i in 29..30) {
+                for (j in 12..18) {
                     matrix[i][j] = INTERACTIVO
                 }
             }
@@ -1937,8 +1937,8 @@ class MapMatrixProvider {
                 return MAP_BUILDING2_PISO1
             }
 
-            if (mapId == MAP_MAIN && x == 33 && y == 34) {
-                return MAP_CAFETERIA
+            if (mapId == MAP_CAFETERIA && (y in 37..38) && (x in 18..22)) {
+                return MAP_MAIN
             }
 
             if (mapId == MAP_MAIN && x == 23 && y == 10) {
@@ -2032,7 +2032,7 @@ class MapMatrixProvider {
                 MAP_BUILDING2 -> Pair(20, 16)  // Centro del pasillo principal del edificio 2
                 MAP_SALON2009 -> Pair(20, 20)  // Posición central dentro del salón 2009
                 MAP_SALON2010 -> Pair(20, 20)  // Posición central dentro del salón 2010
-                MAP_CAFETERIA -> Pair(2, 2)  // Posición central dentro de la escomCAFE
+                MAP_CAFETERIA -> Pair(20, 36)  // Posición central dentro de la escomCAFE
                 MAP_BUILDING2_PISO1 -> Pair(20, 16)  // Posición central dentro del salón 2009
                 MAP_CABLEBUS -> Pair(2, 2) // Posicion central dentro del cablebus
                 MAP_EDIFICIO_IA_BAJO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
