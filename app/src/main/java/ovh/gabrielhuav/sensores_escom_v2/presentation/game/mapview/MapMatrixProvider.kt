@@ -81,6 +81,7 @@ class MapMatrixProvider {
                 lowerMap.contains("ia_alto") || lowerMap.contains("edificio_ia_alto") -> MAP_EDIFICIO_IA_ALTO
                 lowerMap.contains("cable") || lowerMap.contains("cablebus") -> MAP_CABLEBUS
                 lowerMap.contains("palapas_ia") -> MAP_PALAPAS_IA
+
                 lowerMap.contains("gobierno") || lowerMap.contains("edificio_gobierno") -> MAP_EDIFICIO_GOBIERNO
                 lowerMap.contains("biblioteca") -> MAP_BIBLIOTECA
                 // ESIA
@@ -290,6 +291,8 @@ class MapMatrixProvider {
                     }
                     else if (i == 19 && j == 4) {
                         matrix[i][j] = INTERACTIVE // Entrada a ESCOM
+                    }else if( i == 10 && j == 1){
+                        matrix[i][j] == INTERACTIVE
                     }
                     else if(i == 24 && j == 12){
                         matrix[i][j] = INTERACTIVE // Entrada a ENCB
@@ -2041,6 +2044,7 @@ class MapMatrixProvider {
                 MAP_EDIFICIO_IA_MEDIO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
                 MAP_EDIFICIO_IA_ALTO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
                 MAP_PALAPAS_IA -> Pair(2, 2)
+
                 MAP_PALAPAS_ISC -> Pair(38, 38) // Posición inicial dentro de palapas ISC
                 MAP_EDIFICIO_GOBIERNO -> Pair(17, 5)  // Posición cerca de la entrada
                 MAP_BIBLIOTECA -> Pair(17, 5)  // Posición cerca de la entrada

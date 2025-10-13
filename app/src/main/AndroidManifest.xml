@@ -118,6 +118,10 @@
             android:name=".presentation.locations.buildings.buildingIA.PalapasIA"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
+        <activity
+            android:name=".presentation.locations.buildings.buildingIA.PalapasIA"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+
 
         <activity android:name=".presentation.components.PalapasISC" android:exported="false" />
         <activity
@@ -136,6 +140,12 @@
             android:name=".data.map.Bluetooth.DeviceListActivity"
             android:exported="true"
             android:theme="@style/Theme.Sensores_ESCOM_V2" />
+
+        <activity
+            android:name=".presentation.locations.outdoor.OSMMapActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:screenOrientation="sensorLandscape"
+            android:exported="false" />
     </application>
 
 </manifest>
