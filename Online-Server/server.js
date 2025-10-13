@@ -17,7 +17,7 @@ const app = express();
 const PORT = 3000;
 
 const server = app.listen(PORT, () => {
-    console.log(`Server running on http://192.168.100.9:${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
 });
 
 const wss = new WebSocketServer({ server });
@@ -79,6 +79,23 @@ wss.on("connection", (ws) => {
     ws.on("message", (message) => {
         try {
             const data = JSON.parse(message);
+            
+            // Si el mensaje es una actualización para el mapa global, convierte las coordenadas.
+
+            if (data.type === 'update' && data.map === 'global') {
+                if (typeof data.x === 'number') data.x /= 1e6; // Divide la coordenada x
+                if (typeof data.y === 'number') data.y /= 1e6; // Divide la coordenada y
+        
+                // También aplica la lógica si vienen en formato local/remoto
+                if (data.local) {
+                    data.local.x /= 1e6;
+                    data.local.y /= 1e6;
+                }
+                if (data.remote) {
+                    data.remote.x /= 1e6;
+                    data.remote.y /= 1e6;
+                }
+            }
             console.log("Received data:", JSON.stringify(data, null, 2));
 
             const trimmedId = data.id?.trim();
