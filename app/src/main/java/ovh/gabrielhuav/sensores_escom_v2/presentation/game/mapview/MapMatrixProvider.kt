@@ -23,6 +23,8 @@ class MapMatrixProvider {
         const val MAP_BUILDING2 = "escom_building2"
         const val MAP_BUILDING2_PISO1 = "escom_building2_piso1"
         const val MAP_BUILDING4_F2 = "escom_building4_floor_2"
+        const val MAP_BUILDING4_F1 = "escom_building4_floor_1"
+        const val MAP_BUILDING4_F0 = "escom_building4_floor_0"
         const val MAP_SALON2009 = "escom_salon2009"
         const val MAP_SALON2010 = "escom_salon2010"
         const val MAP_CAFETERIA = "escom_cafeteria"
@@ -56,6 +58,10 @@ class MapMatrixProvider {
                 // Edificio 2
                 lowerMap.contains("escom_building2_piso1") -> MAP_BUILDING2_PISO1
                 lowerMap.contains("building2") || lowerMap.contains("edificio2") -> MAP_BUILDING2
+
+                //edificio 4
+                lowerMap.contains("escom_building4_planta_baja")->MAP_BUILDING4_F0
+                lowerMap.contains("escom_building4_piso_1")->MAP_BUILDING4_F1
 
                 // Salones
                 lowerMap.contains("2009") || lowerMap.contains("salon2009") -> MAP_SALON2009
@@ -130,6 +136,8 @@ class MapMatrixProvider {
                 MAP_MAIN -> createMainMapMatrix()
                 MAP_BUILDING2 -> createBuilding2Matrix()
                 MAP_BUILDING4_F2 -> createBuilding2Matrix()
+                MAP_BUILDING4_F1 -> createBuilding4Floor1Matrix()
+                MAP_BUILDING4_F0 -> createBuilding4Floor0Matrix()
                 MAP_SALON2009 -> createSalon2009Matrix()  // Nueva matriz para el salón 2009
                 MAP_SALON2010 -> createSalon2010Matrix()  // Nueva matriz para el salón 2010
                 MAP_SALON1212 -> createSalon1212Matrix()
@@ -940,7 +948,62 @@ class MapMatrixProvider {
 
             return matrix
         }
+
         /**
+         * Matriz para edificio 4. PLANTA BAJA
+         */
+
+        // === Edificio 4 – Planta Baja (F0) ===
+        private fun createBuilding4Floor0Matrix(): Array<Array<Int>> {
+            val m = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Bordes
+            for (i in 0 until MAP_HEIGHT) { m[i][0] = WALL; m[i][MAP_WIDTH-1] = WALL }
+            for (j in 0 until MAP_WIDTH)   { m[0][j] = WALL; m[MAP_HEIGHT-1][j] = WALL }
+
+            // Pasillo horizontal principal (ajusta luego si hace falta)
+            for (x in 5 until 35) m[20][x] = PATH
+
+            // Columna de escaleras alineada con F2 (x = 22)
+            for (y in 5 until 35) m[y][22] = PATH
+
+            // Unos muros interiores “dummy” (solo para no dejar vacío; los ajustamos después)
+            for (x in 6..34 step 6) for (y in 8..14) m[y][x] = WALL
+
+            // Interactivos de prueba:
+            m[18][22] = INTERACTIVE  // PB → F2 (escalera)
+            m[20][28] = INTERACTIVE  // puerta opcional
+
+            return m
+        }
+
+        //Creación matriz para piso 1 edificio 4
+        private fun createBuilding4Floor1Matrix(): Array<Array<Int>> {
+            val m = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Bordes
+            for (i in 0 until MAP_HEIGHT) { m[i][0] = WALL; m[i][MAP_WIDTH-1] = WALL }
+            for (j in 0 until MAP_WIDTH)   { m[0][j] = WALL; m[MAP_HEIGHT-1][j] = WALL }
+
+            // Pasillo horizontal principal (ajusta luego si hace falta)
+            for (x in 5 until 35) m[20][x] = PATH
+
+            // Columna de escaleras alineada con F2 (x = 22)
+            for (y in 5 until 35) m[y][22] = PATH
+
+            // Unos muros interiores “dummy” (solo para no dejar vacío; los ajustamos después)
+            for (x in 6..34 step 6) for (y in 8..14) m[y][x] = WALL
+
+            // Interactivos de prueba:
+            m[18][22] = INTERACTIVE  // PB → F2 (escalera)
+            m[20][28] = INTERACTIVE  // puerta opcional
+
+            return m
+        }
+
+        /**
+         *
+         *
          * Matriz para el salón 2009
          */
         private fun createSalon2009Matrix(): Array<Array<Int>> {
@@ -1712,6 +1775,32 @@ class MapMatrixProvider {
         fun isMapTransitionPoint(mapId: String, x: Int, y: Int): String? {
             // Imprimimos para depuración
             Log.d("MapTransition", "Checking transition at $mapId: ($x, $y)")
+// ---- Edificio 4 (Planta baja ↔ Piso 2 ↔ Piso 1) ----
+
+// F0 → F2 (usa columna de escaleras del F2, x = 22)
+            if (mapId == MAP_BUILDING4_F0) {
+                if (x == 22 && (y == 18 || y == 19)) return MAP_BUILDING4_F2
+            }
+
+// F2 → F0 (misma columna de escaleras)
+            if (mapId == MAP_BUILDING4_F2) {
+                if (x == 22 && y in 12..19) return MAP_BUILDING4_F0
+            }
+
+// F2 → F1 (mismo hotspot que usas en building2: 17,15)
+            if (mapId == MAP_BUILDING4_F2 && x == 17 && y == 15) {
+                return MAP_BUILDING4_F1
+            }
+
+// F1 → F2 (mismo hotspot que usas en building2_piso1: 17,23)
+            if (mapId == MAP_BUILDING4_F1 && x == 17 && y == 23) {
+                return MAP_BUILDING4_F2
+            }
+
+// (opcional) salida al mapa principal desde PB, si quieres:
+            if (mapId == MAP_BUILDING4_F0 && (x == 4 || x == 5) && y == 22) {
+                return MAP_MAIN
+            }
 
             // Para el edificio 2, cualquier punto interactivo cerca del centro del pasillo
             // nos lleva al salón 2009
