@@ -19,6 +19,8 @@ import ovh.gabrielhuav.sensores_escom_v2.domain.bluetooth.BluetoothManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.MovementManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.ServerConnectionManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.BuildingNumber2
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.BuildingNumber2Piso1
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.BuildingNumber2Piso2
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
 
@@ -114,6 +116,32 @@ class Salon2006 : AppCompatActivity(),
         connectToOnlineServer()
     }
 
+    private fun returnToPreviousMap() {
+        // Obtiene el mapa del que vinimos
+        val previousMap = intent.getStringExtra("PREVIOUS_MAP") ?: MapMatrixProvider.MAP_BUILDING2
+        val previousPosition = intent.getSerializableExtra("PREVIOUS_POSITION") as? Pair<Int, Int>
+            ?: Pair(20, 23) // Posición de respaldo
+
+        // Decide a qué Activity volver
+        val targetActivity = when (previousMap) {
+            MapMatrixProvider.MAP_BUILDING2_PISO1 -> BuildingNumber2Piso1::class.java
+            MapMatrixProvider.MAP_BUILDING2_PISO2 -> BuildingNumber2Piso2::class.java
+            else -> BuildingNumber2::class.java // Por defecto, Planta Baja
+        }
+
+        val intent = Intent(this, targetActivity).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("IS_CONNECTED", gameState.isConnected)
+            putExtra("INITIAL_POSITION", previousPosition)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+
+        mapView.playerManager.cleanup()
+        startActivity(intent)
+        finish()
+    }
+
     private fun connectToOnlineServer() {
         updateBluetoothStatus("Conectando al servidor online...")
         serverConnectionManager.connectToServer { success ->
@@ -173,7 +201,7 @@ class Salon2006 : AppCompatActivity(),
         btnSouth.setOnTouchListener { _, event -> handleMovement(event, 0, 1); true }
         btnEast.setOnTouchListener { _, event -> handleMovement(event, 1, 0); true }
         btnWest.setOnTouchListener { _, event -> handleMovement(event, -1, 0); true }
-        btnBackToHome.setOnClickListener { returnToBuilding2() }
+        btnBackToHome.setOnClickListener { returnToPreviousMap() }
     }
 
     private fun returnToBuilding2() {
