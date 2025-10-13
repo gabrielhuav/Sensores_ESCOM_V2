@@ -41,12 +41,8 @@ class MapMatrixProvider {
         const val MAP_EDIFICIO_GOBIERNO = "escom_edificio_gobierno"
         const val MAP_BIBLIOTECA = "escom_biblioteca"
         const val MAP_ENCB = "encb"
-
         const val MAP_ESIA = "escom_esia"
         const val MAP_CIDETEC = "escom_cidetec"
-
-        const val MAP_ESIA = "esia"
-
         const val MAP_PLAZA_VISTA_NORTE = "plazaVistaNorte"
 
         fun normalizeMapName(mapName: String?): String {
