@@ -23,6 +23,7 @@ import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.MovementMa
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.ServerConnectionManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.BuildingEdificioIA
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.BuildingNumber2
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.PalapasISC
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.building4.BuildingNumber4
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.cafeteria.Cafeteria
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.EstacionamientoEscom
@@ -32,6 +33,7 @@ import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProv
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.buildingIA.PalapasIA
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.OSMMapActivity
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.gobierno.EdificioGobierno
 import kotlin.collections.iterator
 
 class GameplayActivity : AppCompatActivity(),
@@ -273,6 +275,9 @@ class GameplayActivity : AppCompatActivity(),
                         "Edificioiabajo" -> startEdificioIABajoActivity()
                         "palapas_ia" -> startPalapasIAActivity()
                         "osm_view" -> startOSMActivity()
+                        "palapas_isc" -> startPalapasISCActivity()
+                        "edificio_gobierno" -> startEdificioGobiernoActivity()
+
                         else -> showToast("No hay interacción disponible en esta posición")
                     }
                 } else {
@@ -287,6 +292,13 @@ class GameplayActivity : AppCompatActivity(),
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_LAT", 19.504633)  // ESCOM coordinates
             putExtra("INITIAL_LON", -99.146744)
+    //  NUEVA FUNCIÓN PARA INICIAR EL EDIFICIO DE GOBIERNO
+    private fun startEdificioGobiernoActivity() {
+        val intent = Intent(this, EdificioGobierno::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(5, 20)) // Posición inicial dentro del edificio
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         startActivity(intent)
@@ -304,6 +316,24 @@ class GameplayActivity : AppCompatActivity(),
         finish()
     }
 
+    // Función para iniciar la Activity de las Palapas ISC
+    private fun startPalapasISCActivity() {
+        // Obtenemos la posición inicial correcta desde el proveedor
+        val initialPos = MapMatrixProvider.getInitialPositionForMap(MapMatrixProvider.MAP_PALAPAS_ISC)
+
+        val intent = Intent(this, PalapasISC::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+
+            // La pasamos en el Intent con la clave "INITIAL_POSITION"
+            putExtra("INITIAL_POSITION", initialPos)
+
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
 
     private fun startZacatencoActivity() {
         val intent = Intent(this, Zacatenco::class.java).apply {
@@ -468,6 +498,22 @@ class GameplayActivity : AppCompatActivity(),
                 targetDestination = "osm_view"
                 runOnUiThread {
                     Toast.makeText(this, "Presiona A para vista de mapa real", Toast.LENGTH_SHORT).show()
+            position.first == 8 && position.second == 29 -> {
+                canChangeMap = true
+                targetDestination = "palapas_isc" // Un identificador único
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para entrar a Palapas ISC", Toast.LENGTH_SHORT).show()
+                }
+            }
+            position.first == 10 && position.second == 18 -> {
+                canChangeMap = true
+                targetDestination = "edificio_gobierno"
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        "Presiona A para entrar al edificio de gobierno",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
             else -> {

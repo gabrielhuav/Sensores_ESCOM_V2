@@ -651,6 +651,10 @@ class MapView @JvmOverloads constructor(
             style = Paint.Style.FILL
         }
 
+        val rabbitPaint = Paint().apply {
+            color = Color.rgb(255, 182, 193) // rosa para los conejos
+            style = Paint.Style.FILL
+        }
         val itemPaint = Paint().apply {
             color = Color.rgb(255, 215, 0)  // Dorado para ítems
             style = Paint.Style.FILL
@@ -678,6 +682,11 @@ class MapView @JvmOverloads constructor(
                         // Dibujar un zombie (círculo verde más grande)
                         canvas.drawCircle(entityX, entityY, cellWidth * 0.4f, zombiePaint)
                         canvas.drawText("ZOMBIE", entityX, entityY - cellHeight * 0.7f, textPaint)
+                    }
+                    entityId == "rabbit" -> {
+                        //Dibujar un conejo (circulo rosa mas pequeño)
+                        canvas.drawCircle(entityX, entityY, cellWidth * 0.2f, rabbitPaint)
+                        canvas.drawText("conejo", entityX, entityY - cellHeight * 0.7f, textPaint)
                     }
                     entityId.startsWith("item_") -> {
                         // Dibujar un ítem (estrella dorada)
