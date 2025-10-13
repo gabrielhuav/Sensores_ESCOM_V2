@@ -85,6 +85,15 @@
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.components.BuildingEdificioIA_Alto"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+        <activity
+            android:name=".presentation.locations.outdoor.Esime"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+
+        <activity
+            android:name=".presentation.locations.outdoor.locations.esime.buildings.Edificio3Activity"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2009"
