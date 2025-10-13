@@ -28,8 +28,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Sensores_ESCOM_V2"
         android:usesCleartextTraffic="true">
+
         <activity
-            android:name=".presentation.locations.outdoor.PlazaTorresN1"
+            android:name=".presentation.locations.outdoor.PlazaTorresPb"
+            android:configChanges="orientation|screenSize|keyboardHidden"
             android:exported="false" />
         <!-- Actividad principal -->
         <activity
@@ -100,6 +102,7 @@
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.components.PalapasISC"
+            android:configChanges="orientation|screenSize|keyboardHidden"
             android:exported="false" />
         <activity
             android:name=".presentation.locations.buildings.gobierno.EdificioGobierno"
