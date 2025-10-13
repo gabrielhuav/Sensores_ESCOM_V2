@@ -33,6 +33,7 @@ import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProv
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.buildingIA.PalapasIA
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.cidetec.Cidetec
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.OSMMapActivity
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.gobierno.EdificioGobierno
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.GlobalMapActivity
 import kotlin.collections.iterator
@@ -275,6 +276,7 @@ class GameplayActivity : AppCompatActivity(),
                         "zacatenco" -> startZacatencoActivity()
                         "Edificioiabajo" -> startEdificioIABajoActivity()
                         "palapas_ia" -> startPalapasIAActivity()
+                        "osm_view" -> startOSMActivity()
                         "palapas_isc" -> startPalapasISCActivity()
                         "edificio_gobierno" -> startEdificioGobiernoActivity()
                         "cidetec" -> startCidetecActivity()
@@ -287,6 +289,17 @@ class GameplayActivity : AppCompatActivity(),
                 }
             }
         }
+    }
+    private fun startOSMActivity(){
+        val intent = Intent(this@GameplayActivity, OSMMapActivity::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_LAT", 19.504633)  // ESCOM coordinates
+            putExtra("INITIAL_LON", -99.146744)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
     }
     //  NUEVA FUNCIÓN PARA INICIAR EL EDIFICIO DE GOBIERNO
     private fun startEdificioGobiernoActivity() {
@@ -311,6 +324,7 @@ class GameplayActivity : AppCompatActivity(),
         startActivity(intent)
         finish()
     }
+
     // Función para iniciar la Activity de las Palapas ISC
     private fun startPalapasISCActivity() {
         // Obtenemos la posición inicial correcta desde el proveedor
@@ -516,6 +530,14 @@ class GameplayActivity : AppCompatActivity(),
                         "Presiona A para entrar a Palapas de IA ",
                         Toast.LENGTH_SHORT
                     ).show()
+                }
+            }
+            position.first == 11 && position.second == 1 -> {
+                canChangeMap = true
+                targetDestination = "osm_view"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para vista de mapa real", Toast.LENGTH_SHORT)
+                        .show()
                 }
             }
             position.first == 8 && position.second == 29 -> {

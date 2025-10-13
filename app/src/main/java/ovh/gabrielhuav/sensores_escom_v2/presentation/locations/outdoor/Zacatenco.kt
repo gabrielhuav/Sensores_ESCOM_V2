@@ -119,6 +119,10 @@ class Zacatenco : AppCompatActivity(),
         }
 
         if (savedInstanceState == null) {
+            // Inicializar el estado del juego desde el Intent
+            gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
+            gameState.playerPosition =
+                (intent.getParcelableExtra("INITIAL_POSITION")  ?: Pair(10, 12)) as Pair<Int, Int>
             // ✅ SISTEMA DE POSICIÓN GUARDADA - CORREGIDO
             gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
 
@@ -371,6 +375,14 @@ class Zacatenco : AppCompatActivity(),
                         .show()
                 }
             }
+            position.first == 10 && position.second == 1 -> {
+                canChangeMap = true
+                targetDestination = "osm_map"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para ver mapa real", Toast.LENGTH_SHORT).show()
+
+                }
+            }
             //posicion de encb agregada
             position.first == 12 && position.second == 24 -> {
                 canChangeMap = true
@@ -411,11 +423,11 @@ class Zacatenco : AppCompatActivity(),
                     when (targetDestination) {
                         "main" -> returnToMainActivity()
                         "lindavista" -> startLindavistaActivity()
-                        "esia" -> startESIAActivity()
                         "esfm" -> viewESFM()
                         "cidetec" -> startCidetecActivity()
                         "cic" -> viewCIC()
                         "ford" -> startFordActivity()
+                        "osm_map" -> startOSMMapActivity()
                         "encb" -> startENCBActivity()
 
                         else -> showToast("No hay interacción disponible en esta posición")
@@ -425,6 +437,10 @@ class Zacatenco : AppCompatActivity(),
                 }
             }
         }
+    }
+    private fun viewESIA() {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.esiaz.ipn.mx/"))
+        startActivity(intent)   f
     }
     private fun startESIAActivity() {
         // ✅ GUARDAR LA POSICIÓN ACTUAL ANTES DE IR A ESIA
@@ -518,6 +534,18 @@ class Zacatenco : AppCompatActivity(),
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_POSITION", Pair(1, 6))
             putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
+    private fun startOSMMapActivity() {
+        val intent = Intent(this, OSMMapActivity::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_LAT", 19.5055)  // Zacatenco coordinates
+            putExtra("INITIAL_LON", -99.1350)
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         startActivity(intent)
