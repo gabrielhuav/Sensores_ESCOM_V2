@@ -1,5 +1,6 @@
 package ovh.gabrielhuav.sensores_escom_v2.presentation.common.base
 
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
 import android.content.res.Configuration
@@ -558,6 +559,7 @@ class GameplayActivity : AppCompatActivity(),
     }
 
     // Bluetooth Callbacks
+    @SuppressLint("MissingPermission")
     override fun onBluetoothDeviceConnected(device: BluetoothDevice) {
         gameState.remotePlayerName = device.name
         uiManager.updateBluetoothStatus("Conectado a ${device.name}")
@@ -576,6 +578,7 @@ class GameplayActivity : AppCompatActivity(),
         onBluetoothConnectionFailed(message)
     }
 
+    @SuppressLint("MissingPermission")
     override fun onDeviceConnected(device: BluetoothDevice) {
         gameState.remotePlayerName = device.name
     }
@@ -717,6 +720,7 @@ class GameplayActivity : AppCompatActivity(),
         serverConnectionManager.onlineServerManager.requestPositionsUpdate()
     }
 
+    @SuppressLint("MissingPermission")
     override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
         runOnUiThread {
             val deviceName = device.name ?: "Unknown"

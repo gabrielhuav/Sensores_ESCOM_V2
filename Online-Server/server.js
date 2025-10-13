@@ -17,7 +17,7 @@ const app = express();
 const PORT = 3000;
 
 const server = app.listen(PORT, () => {
-    console.log(`Server running on http://192.168.100.9:${PORT}`);
+    console.log(`Server running on http://192.168.1.75:${PORT}`);
 });
 
 const wss = new WebSocketServer({ server });

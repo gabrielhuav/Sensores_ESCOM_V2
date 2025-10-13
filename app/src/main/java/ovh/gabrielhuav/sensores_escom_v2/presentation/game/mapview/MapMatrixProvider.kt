@@ -42,6 +42,8 @@ class MapMatrixProvider {
         const val MAP_BIBLIOTECA = "escom_biblioteca"
         const val MAP_ENCB = "encb"
 
+        const val MAP_PLAZA_VISTA_NORTE = "plazaVistaNorte"
+
         fun normalizeMapName(mapName: String?): String {
             if (mapName.isNullOrBlank()) return MAP_MAIN
 
@@ -72,6 +74,7 @@ class MapMatrixProvider {
                 lowerMap.contains("zaca") || lowerMap.contains("zacatenco") -> MAP_ZACATENCO
                 // Lindavista
                 lowerMap.contains("linda") || lowerMap.contains("lindavista") -> MAP_LINDAVISTA
+                lowerMap.contains("plazaVistaNorte") -> MAP_PLAZA_VISTA_NORTE
                 // edificio ia
                 lowerMap.contains("ia_baja") || lowerMap.contains("edificio_ia_bajo") -> MAP_EDIFICIO_IA_BAJO
                 lowerMap.contains("ia_medio") || lowerMap.contains("edificio_ia_medio") -> MAP_EDIFICIO_IA_MEDIO
