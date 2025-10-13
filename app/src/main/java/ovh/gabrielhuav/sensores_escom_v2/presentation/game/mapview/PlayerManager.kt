@@ -203,7 +203,14 @@ class PlayerManager {
     fun removeSpecialEntity(entityId: String) {
         specialEntities.remove(entityId)
     }
+    fun removeSpecialEntitiesByPrefix(prefix: String) {
+        val ids = specialEntities.keys.toList()
+        ids.filter { it.startsWith(prefix) }.forEach { specialEntities.remove(it) }
+    }
 
+    fun clearAllSpecialEntities() {
+        specialEntities.clear()
+    }
     fun drawPlayers(canvas: Canvas, mapState: MapState) {
         try {
             // Dimensiones reales del bitmap y células

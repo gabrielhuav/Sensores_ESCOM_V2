@@ -634,9 +634,16 @@ class MapView @JvmOverloads constructor(
     }
 
     fun removeSpecialEntity(entityId: String) {
-        specialEntities.remove(entityId)
+        playerManager.removeSpecialEntity(entityId)
+        invalidate()
+    }
+    fun removeSpecialEntitiesByPrefix(prefix: String) {
+        playerManager.removeSpecialEntitiesByPrefix(prefix)
     }
 
+    fun clearAllSpecialEntities() {
+        playerManager.clearAllSpecialEntities()
+    }
 
     /**
      * Método para dibujar entidades especiales
