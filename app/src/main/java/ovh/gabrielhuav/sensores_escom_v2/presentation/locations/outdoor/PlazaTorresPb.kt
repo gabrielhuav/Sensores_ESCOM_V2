@@ -44,6 +44,10 @@ class PlazaTorresPb : AppCompatActivity(),
 
     private var gameState = GameState()
 
+    // Variables para manejar la transición de mapas
+    private var canChangeMap = false
+    private var targetDestination: String? = null
+
     data class GameState(
         var isServer: Boolean = false,
         var isConnected: Boolean = false,
@@ -106,6 +110,7 @@ class PlazaTorresPb : AppCompatActivity(),
 
         if (savedInstanceState == null) {
             gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
+            // CAMBIO: Usar la posición inicial recibida del Intent
             gameState.playerPosition =
                 (intent.getSerializableExtra("INITIAL_POSITION") as? Pair<Int, Int>) ?: Pair(18, 18)
         } else {
@@ -134,18 +139,14 @@ class PlazaTorresPb : AppCompatActivity(),
         bluetoothManager = BluetoothManager.getInstance(this, uiManager.tvBluetoothStatus).apply {
             setCallback(this@PlazaTorresPb)
         }
-
         bluetoothBridge = BluetoothWebSocketBridge.getInstance()
-
         val onlineServerManager = OnlineServerManager.getInstance(this).apply {
             setListener(this@PlazaTorresPb)
         }
-
         serverConnectionManager = ServerConnectionManager(
             context = this,
             onlineServerManager = onlineServerManager
         )
-
         movementManager = MovementManager(
             mapView = mapView
         ) { position -> updatePlayerPosition(position) }
@@ -156,10 +157,9 @@ class PlazaTorresPb : AppCompatActivity(),
     }
 
     override fun onMapTransitionRequested(targetMap: String, initialPosition: Pair<Int, Int>) {
-        when (targetMap) {
-            MapMatrixProvider.MAP_ZACATENCO -> startZacatencoActivity(initialPosition)
-            else -> Log.d(TAG, "Mapa destino no reconocido: $targetMap")
-        }
+        // Esta función podría usarse para transiciones a OTROS mapas desde Plaza Torres.
+        // Por ahora, el regreso a Zacatenco se maneja directamente.
+        Log.d(TAG, "Transición solicitada a: $targetMap no implementada.")
     }
 
     private fun restoreState(savedInstanceState: Bundle) {
@@ -181,10 +181,8 @@ class PlazaTorresPb : AppCompatActivity(),
                 }
             }
         }
-
         val bluetoothState = savedInstanceState.getInt("BLUETOOTH_STATE")
         val connectedDevice = savedInstanceState.getParcelable<BluetoothDevice>("CONNECTED_DEVICE")
-
         if (bluetoothState == BluetoothManager.ConnectionState.CONNECTED.ordinal && connectedDevice != null) {
             bluetoothManager.connectToDevice(connectedDevice)
         }
@@ -232,23 +230,18 @@ class PlazaTorresPb : AppCompatActivity(),
         }
     }
 
-    private var canChangeMap = false
-    private var targetDestination: String? = null
-    private var targetPosition: Pair<Int, Int>? = null
-
+    // CAMBIO: Lógica para detectar el punto de salida
     private fun checkPositionForMapChange(position: Pair<Int, Int>) {
-        val target = MapMatrixProvider.isMapTransitionPoint(MapMatrixProvider.MAP_PLAZA_TORRES, position.first, position.second)
-        if (target != null) {
+        // Punto de entrada/salida: (18, 18)
+        if (position.first == 18 && position.second == 18) {
             canChangeMap = true
-            targetDestination = target
-            targetPosition = MapMatrixProvider.getInitialPositionForMap(target)
+            targetDestination = "zacatenco" // Identificador para el destino
             runOnUiThread {
                 Toast.makeText(this, "Presiona A para volver a Zacatenco", Toast.LENGTH_SHORT).show()
             }
         } else {
             canChangeMap = false
             targetDestination = null
-            targetPosition = null
         }
     }
 
@@ -258,18 +251,19 @@ class PlazaTorresPb : AppCompatActivity(),
                 if (gameState.isConnected) bluetoothManager.startServer()
                 else showToast("Debe conectarse al servidor online primero.")
             }
+            // CAMBIO: Botón secundario ahora también regresa
             btnConnectDevice.setOnClickListener {
-                val previousPosition = intent.getSerializableExtra("PREVIOUS_POSITION") as? Pair<Int, Int> ?: Pair(31, 17)
-                startZacatencoActivity(previousPosition)
+                returnToZacatencoActivity()
             }
             btnNorth.setOnTouchListener { _, event -> handleMovement(event, 0, -1); true }
             btnSouth.setOnTouchListener { _, event -> handleMovement(event, 0, 1); true }
             btnEast.setOnTouchListener { _, event -> handleMovement(event, 1, 0); true }
             btnWest.setOnTouchListener { _, event -> handleMovement(event, -1, 0); true }
 
+            // CAMBIO: Lógica del botón A para regresar a Zacatenco
             buttonA.setOnClickListener {
-                if (canChangeMap && targetDestination != null && targetPosition != null) {
-                    onMapTransitionRequested(targetDestination!!, targetPosition!!)
+                if (canChangeMap && targetDestination == "zacatenco") {
+                    returnToZacatencoActivity()
                 } else {
                     showToast("No hay interacción disponible en esta posición")
                 }
@@ -277,13 +271,17 @@ class PlazaTorresPb : AppCompatActivity(),
         }
     }
 
-    private fun startZacatencoActivity(initialPosition: Pair<Int, Int>) {
+    // CAMBIO: Función para regresar a Zacatenco
+    private fun returnToZacatencoActivity() {
+        // Recuperamos la posición que teníamos en Zacatenco para regresar al mismo lugar.
+        val previousPosition = intent.getSerializableExtra("PREVIOUS_POSITION") as? Pair<Int, Int>
+            ?: Pair(13, 11) // Posición de fallback por si algo falla
+
         val intent = Intent(this, Zacatenco::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("IS_CONNECTED", gameState.isConnected)
-            putExtra("INITIAL_POSITION", initialPosition)
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition)
+            putExtra("INITIAL_POSITION", previousPosition) // Volvemos a la posición anterior
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         startActivity(intent)
@@ -298,6 +296,7 @@ class PlazaTorresPb : AppCompatActivity(),
                 if (gameState.isConnected) {
                     serverConnectionManager.sendUpdateMessage(playerName, position, MapMatrixProvider.MAP_PLAZA_TORRES)
                 }
+                // CAMBIO: Llamamos a la función que revisa si estamos en un punto de salida
                 checkPositionForMapChange(position)
             } catch (e: Exception) {
                 Log.e(TAG, "Error en updatePlayerPosition: ${e.message}")
@@ -447,6 +446,6 @@ class PlazaTorresPb : AppCompatActivity(),
     }
 
     companion object {
-        private const val TAG = "GameplayActivity"
+        private const val TAG = "GameplayActivity" // TAG modificado para mejor depuración
     }
 }

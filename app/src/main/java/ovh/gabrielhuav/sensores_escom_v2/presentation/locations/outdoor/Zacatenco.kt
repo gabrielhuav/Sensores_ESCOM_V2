@@ -275,6 +275,7 @@ class Zacatenco : AppCompatActivity(),
     private var targetDestination: String? = null  // Variable para almacenar el destino
 
     private fun checkPositionForMapChange(position: Pair<Int, Int>) {
+        Log.d("ZacatencoDebug", "Revisando transiciones para: X=${position.first}, Y=${position.second}")
 
         when {
             position.first == 10 && position.second == 12 -> {
@@ -343,7 +344,7 @@ class Zacatenco : AppCompatActivity(),
                 }
             }
 
-            position.first == 20 && position.second == 10 -> {
+            position.first == 13 && position.second == 11 -> {
                 canChangeMap = true
                 targetDestination = "plaza_torres"
                 runOnUiThread {
@@ -378,6 +379,7 @@ class Zacatenco : AppCompatActivity(),
 
             // Modificar el botón A para manejar las transiciones de mapa
             buttonA.setOnClickListener {
+                Log.d("ZacatencoDebug", "Botón A presionado. Destino actual: $targetDestination")
                 if (canChangeMap) {
                     when (targetDestination) {
                         "main" -> returnToMainActivity()
@@ -436,8 +438,10 @@ class Zacatenco : AppCompatActivity(),
         val intent = Intent(this, PlazaTorresPb::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(20, 10))
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
+            // La posición inicial dentro de Plaza Torres
+            putExtra("INITIAL_POSITION", Pair(18, 18))
+            // Guardamos la posición actual para saber a dónde regresar
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         startActivity(intent)
@@ -486,6 +490,7 @@ class Zacatenco : AppCompatActivity(),
     }
 
     private fun updatePlayerPosition(position: Pair<Int, Int>) {
+        Log.d("ZacatencoDebug", "Nueva posición recibida: X=${position.first}, Y=${position.second}")
         runOnUiThread {
             try {
                 gameState.playerPosition = position
