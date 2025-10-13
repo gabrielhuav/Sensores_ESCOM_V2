@@ -18,11 +18,11 @@ import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManag
 import ovh.gabrielhuav.sensores_escom_v2.domain.bluetooth.BluetoothManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.MovementManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.ServerConnectionManager
-import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.building4.BuildingNumber4
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.BuildingNumber2
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
 
-class Salon2009 : AppCompatActivity(),
+class Salon2004 : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,
     BluetoothGameManager.ConnectionListener,
     OnlineServerManager.WebSocketListener,
@@ -44,18 +44,20 @@ class Salon2009 : AppCompatActivity(),
     private lateinit var playerName: String
     private lateinit var bluetoothBridge: BluetoothWebSocketBridge
 
-    // Reutilizamos la misma estructura de GameState que BuildingNumber2
-    private var gameState = BuildingNumber4.GameState()
+    // Reutilizamos la misma estructura de GameState
+    private var gameState = BuildingNumber2.GameState()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Asegúrate de tener un layout llamado 'activity_salon2004.xml'
         setContentView(R.layout.activity_salon2009)
 
         try {
             // Inicializar el mapView
             mapView = MapView(
                 context = this,
-                mapResourceId = R.drawable.escom_salon2009 // Usa la imagen del salón 2009
+                // Asegúrate de tener un drawable llamado 'escom_salon2004'
+                mapResourceId = R.drawable.escom_salon2009
             )
             findViewById<FrameLayout>(R.id.map_container).addView(mapView)
 
@@ -64,22 +66,20 @@ class Salon2009 : AppCompatActivity(),
 
             // Esperar a que el mapView esté listo
             mapView.post {
-                // Configurar el mapa para el salón 2009
-                val normalizedMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_SALON2009)
-                mapView.setCurrentMap(normalizedMap, R.drawable.escom_salon2009)
+                mapView.setCurrentMap(MapMatrixProvider.MAP_SALON2004, R.drawable.escom_salon2009)
 
                 // Configurar el playerManager
                 mapView.playerManager.apply {
-                    setCurrentMap(MapMatrixProvider.MAP_SALON2009)
+                    setCurrentMap(MapMatrixProvider.MAP_SALON2004)
                     localPlayerId = playerName
                     updateLocalPlayerPosition(gameState.playerPosition)
                 }
 
-                Log.d(TAG, "Set map to: " + MapMatrixProvider.MAP_SALON2009)
+                Log.d(TAG, "Set map to: " + MapMatrixProvider.MAP_SALON2004)
 
-                // Importante: Enviar un update inmediato para que otros jugadores sepan dónde estamos
+                // Enviar un update inmediato para que otros jugadores sepan dónde estamos
                 if (gameState.isConnected) {
-                    serverConnectionManager.sendUpdateMessage(playerName, gameState.playerPosition, MapMatrixProvider.MAP_SALON2009)
+                    serverConnectionManager.sendUpdateMessage(playerName, gameState.playerPosition, MapMatrixProvider.MAP_SALON2004)
                 }
             }
         } catch (e: Exception) {
@@ -88,9 +88,7 @@ class Salon2009 : AppCompatActivity(),
             finish()
         }
     }
-
     private fun initializeComponents(savedInstanceState: Bundle?) {
-        // Obtener datos desde Intent o restaurar el estado guardado
         playerName = intent.getStringExtra("PLAYER_NAME") ?: run {
             Toast.makeText(this, "Nombre de jugador no encontrado.", Toast.LENGTH_SHORT).show()
             finish()
@@ -98,52 +96,38 @@ class Salon2009 : AppCompatActivity(),
         }
 
         if (savedInstanceState == null) {
-            // Inicializar desde el Intent
             gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
-            gameState.isConnected = intent.getBooleanExtra("IS_CONNECTED", false) // Preservar estado de conexión
+            gameState.isConnected = intent.getBooleanExtra("IS_CONNECTED", false)
             gameState.playerPosition = intent.getSerializableExtra("INITIAL_POSITION") as? Pair<Int, Int>
                 ?: Pair(20, 20)
         } else {
             restoreState(savedInstanceState)
         }
 
-        // Inicializar vistas y gestores de lógica
         initializeViews()
         initializeManagers()
         setupButtonListeners()
 
-        // Inicializar el jugador
         mapView.playerManager.localPlayerId = playerName
         updatePlayerPosition(gameState.playerPosition)
 
-        // Asegurarnos de que nos reconectamos al servidor online
-        // Este es un paso importante para mantener la conexión
         connectToOnlineServer()
     }
 
     private fun connectToOnlineServer() {
-        // Mostrar estado de conexión
         updateBluetoothStatus("Conectando al servidor online...")
-
         serverConnectionManager.connectToServer { success ->
             runOnUiThread {
                 gameState.isConnected = success
-
                 if (success) {
-                    // Enviar mensaje de unión y posición actual
                     serverConnectionManager.onlineServerManager.sendJoinMessage(playerName)
-
-                    // Enviar inmediatamente la posición actual con el mapa correcto
                     serverConnectionManager.sendUpdateMessage(
                         playerName,
                         gameState.playerPosition,
-                        MapMatrixProvider.MAP_SALON2009
+                        MapMatrixProvider.MAP_SALON2004
                     )
-
-                    // Solicitar actualizaciones de posición
                     serverConnectionManager.onlineServerManager.requestPositionsUpdate()
-
-                    updateBluetoothStatus("Conectado al servidor online - Salón 2009")
+                    updateBluetoothStatus("Conectado al servidor online - Salón 2004")
                 } else {
                     updateBluetoothStatus("Error al conectar al servidor online")
                 }
@@ -152,27 +136,24 @@ class Salon2009 : AppCompatActivity(),
     }
 
     private fun initializeViews() {
-        // Obtener referencias a los botones de movimiento
         btnNorth = findViewById(R.id.button_north)
         btnSouth = findViewById(R.id.button_south)
         btnEast = findViewById(R.id.button_east)
         btnWest = findViewById(R.id.button_west)
         btnBackToHome = findViewById(R.id.button_back_to_home)
         tvBluetoothStatus = findViewById(R.id.tvBluetoothStatus)
-
-        // Cambiar el título para indicar dónde estamos
-        tvBluetoothStatus.text = "Salón 2009 - Conectando..."
+        tvBluetoothStatus.text = "Salón 2004 - Conectando..."
     }
 
     private fun initializeManagers() {
         bluetoothManager = BluetoothManager.getInstance(this, tvBluetoothStatus).apply {
-            setCallback(this@Salon2009)
+            setCallback(this@Salon2004)
         }
 
         bluetoothBridge = BluetoothWebSocketBridge.getInstance()
 
         val onlineServerManager = OnlineServerManager.getInstance(this).apply {
-            setListener(this@Salon2009)
+            setListener(this@Salon2004)
         }
 
         serverConnectionManager = ServerConnectionManager(
@@ -180,48 +161,33 @@ class Salon2009 : AppCompatActivity(),
             onlineServerManager = onlineServerManager
         )
 
-        // Configurar el MovementManager
         movementManager = MovementManager(
             mapView = mapView
         ) { position -> updatePlayerPosition(position) }
 
-        // Configurar listener de transición
         mapView.setMapTransitionListener(this)
     }
 
     private fun setupButtonListeners() {
-        // Configurar los botones de movimiento
         btnNorth.setOnTouchListener { _, event -> handleMovement(event, 0, -1); true }
         btnSouth.setOnTouchListener { _, event -> handleMovement(event, 0, 1); true }
         btnEast.setOnTouchListener { _, event -> handleMovement(event, 1, 0); true }
         btnWest.setOnTouchListener { _, event -> handleMovement(event, -1, 0); true }
-
-        // Botón para volver al edificio 2
-        btnBackToHome.setOnClickListener {
-            returnToBuilding2()
-        }
-
-        // Configurar el botón BCK si existe
-        findViewById<Button?>(R.id.button_small_2)?.setOnClickListener {
-            returnToBuilding2()
-        }
+        btnBackToHome.setOnClickListener { returnToBuilding2() }
     }
 
     private fun returnToBuilding2() {
-        // Obtener la posición previa
         val previousPosition = intent.getSerializableExtra("PREVIOUS_POSITION") as? Pair<Int, Int>
-            ?: Pair(15, 16) // Por defecto, volver al pasillo principal
+            ?: Pair(20, 23) // Volver al pasillo del Edificio 2
 
-        // Crear intent para volver al Edificio 2
-        val intent = Intent(this, BuildingNumber4::class.java).apply {
+        val intent = Intent(this, BuildingNumber2::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
-            putExtra("IS_CONNECTED", gameState.isConnected) // Pasar el estado de conexión
+            putExtra("IS_CONNECTED", gameState.isConnected)
             putExtra("INITIAL_POSITION", previousPosition)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
 
-        // Limpiar datos
         mapView.playerManager.cleanup()
         startActivity(intent)
         finish()
@@ -234,15 +200,10 @@ class Salon2009 : AppCompatActivity(),
     private fun updatePlayerPosition(position: Pair<Int, Int>) {
         runOnUiThread {
             gameState.playerPosition = position
+            mapView.updateLocalPlayerPosition(position, forceCenter = true)
 
-            // Actualizar posición del jugador y forzar centrado
-            mapView.updateLocalPlayerPosition(position)
-            mapView.forceRecenterOnPlayer() // Forzar explícitamente el centrado
-
-            // Enviar actualización a otros jugadores con el mapa específico
             if (gameState.isConnected) {
-                // Enviar la posición con el nombre del mapa correcto
-                serverConnectionManager.sendUpdateMessage(playerName, position, MapMatrixProvider.MAP_SALON2009)
+                serverConnectionManager.sendUpdateMessage(playerName, position, MapMatrixProvider.MAP_SALON2004)
             }
         }
     }
@@ -255,29 +216,23 @@ class Salon2009 : AppCompatActivity(),
                 ?: Pair(20, 20)
             @Suppress("UNCHECKED_CAST")
             remotePlayerPositions = (savedInstanceState.getSerializable("REMOTE_PLAYER_POSITIONS")
-                    as? HashMap<String, BuildingNumber4.GameState.PlayerInfo>)?.toMap() ?: emptyMap()
+                    as? HashMap<String, BuildingNumber2.GameState.PlayerInfo>)?.toMap() ?: emptyMap()
             remotePlayerName = savedInstanceState.getString("REMOTE_PLAYER_NAME")
         }
 
-        // Reconectar si es necesario
         if (gameState.isConnected) {
             connectToOnlineServer()
         }
     }
 
-    // Implementación MapTransitionListener
     override fun onMapTransitionRequested(targetMap: String, initialPosition: Pair<Int, Int>) {
-        when (targetMap) {
-            MapMatrixProvider.MAP_BUILDING2 -> {
-                returnToBuilding2()
-            }
-            else -> {
-                Log.d(TAG, "Mapa destino no reconocido: $targetMap")
-            }
+        if (targetMap == MapMatrixProvider.MAP_BUILDING2) {
+            returnToBuilding2()
+        } else {
+            Log.d(TAG, "Mapa destino no reconocido: $targetMap")
         }
     }
 
-    // Callbacks de Bluetooth
     override fun onBluetoothDeviceConnected(device: BluetoothDevice) {
         gameState.remotePlayerName = device.name
         updateBluetoothStatus("Conectado a ${device.name}")
@@ -303,78 +258,47 @@ class Salon2009 : AppCompatActivity(),
     override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
         runOnUiThread {
             val deviceName = device.name ?: "Unknown"
-            mapView.updateRemotePlayerPosition(deviceName, Pair(x, y), MapMatrixProvider.MAP_SALON2009)
+            mapView.updateRemotePlayerPosition(deviceName, Pair(x, y), MapMatrixProvider.MAP_SALON2004)
             mapView.invalidate()
         }
     }
 
-    // Implementación WebSocketListener
     override fun onMessageReceived(message: String) {
         runOnUiThread {
             try {
-                Log.d(TAG, "WebSocket message received: $message")
                 val jsonObject = JSONObject(message)
+                val currentMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_SALON2004)
 
                 when (jsonObject.getString("type")) {
-                    "positions" -> {
-                        val players = jsonObject.getJSONObject("players")
-                        players.keys().forEach { playerId ->
+                    "positions", "update" -> {
+                        val players = if (jsonObject.getString("type") == "positions") jsonObject.getJSONObject("players") else null
+                        val playerIds = players?.keys()?.asSequence()?.toList() ?: listOf(jsonObject.getString("id"))
+
+                        for (playerId in playerIds) {
                             if (playerId != playerName) {
-                                val playerData = players.getJSONObject(playerId.toString())
-                                val position = Pair(
-                                    playerData.getInt("x"),
-                                    playerData.getInt("y")
-                                )
-                                val map = playerData.getString("map")
+                                val playerData = players?.getJSONObject(playerId) ?: jsonObject
+                                val position = Pair(playerData.getInt("x"), playerData.getInt("y"))
+                                val mapStr = playerData.optString("map", playerData.optString("currentmap", "main"))
+                                val normalizedMap = MapMatrixProvider.normalizeMapName(mapStr)
 
-                                // Actualizar la posición del jugador en el mapa
-                                gameState.remotePlayerPositions = gameState.remotePlayerPositions +
-                                        (playerId to BuildingNumber4.GameState.PlayerInfo(
-                                            position,
-                                            map
-                                        ))
+                                gameState.remotePlayerPositions = gameState.remotePlayerPositions + (playerId to BuildingNumber2.GameState.PlayerInfo(position, normalizedMap))
 
-                                // Solo mostrar jugadores que estén en el mismo mapa
-                                if (map == MapMatrixProvider.MAP_SALON2009) {
-                                    mapView.updateRemotePlayerPosition(playerId, position, map)
-                                    Log.d(TAG, "Updated remote player $playerId position to $position in map $map")
+                                if (normalizedMap == currentMap) {
+                                    mapView.updateRemotePlayerPosition(playerId, position, normalizedMap)
                                 }
                             }
                         }
                     }
-                    "update" -> {
-                        val playerId = jsonObject.getString("id")
-                        if (playerId != playerName) {
-                            val position = Pair(
-                                jsonObject.getInt("x"),
-                                jsonObject.getInt("y")
-                            )
-                            val map = jsonObject.getString("map")
-
-                            // Actualizar el estado del jugador
-                            gameState.remotePlayerPositions = gameState.remotePlayerPositions +
-                                    (playerId to BuildingNumber4.GameState.PlayerInfo(
-                                        position,
-                                        map
-                                    ))
-
-                            // Solo mostrar jugadores que estén en el mismo mapa
-                            if (map == MapMatrixProvider.MAP_SALON2009) {
-                                mapView.updateRemotePlayerPosition(playerId, position, map)
-                                Log.d(TAG, "Updated remote player $playerId position to $position in map $map")
-                            }
-                        }
-                    }
                     "join" -> {
-                        // Un jugador se unió, solicitar actualización de posiciones
                         serverConnectionManager.onlineServerManager.requestPositionsUpdate()
-
-                        // Enviar nuestra posición actual para que el nuevo jugador nos vea
-                        serverConnectionManager.sendUpdateMessage(
-                            playerName,
-                            gameState.playerPosition,
-                            MapMatrixProvider.MAP_SALON2009
-                        )
+                        serverConnectionManager.sendUpdateMessage(playerName, gameState.playerPosition, currentMap)
+                    }
+                    "disconnect" -> {
+                        val disconnectedId = jsonObject.getString("id")
+                        if (disconnectedId != playerName) {
+                            gameState.remotePlayerPositions = gameState.remotePlayerPositions - disconnectedId
+                            mapView.removeRemotePlayer(disconnectedId)
+                        }
                     }
                 }
                 mapView.invalidate()
@@ -408,19 +332,8 @@ class Salon2009 : AppCompatActivity(),
     override fun onResume() {
         super.onResume()
         movementManager.setPosition(gameState.playerPosition)
-
-        // Simplemente intentar reconectar si estamos en estado conectado
         if (gameState.isConnected) {
             connectToOnlineServer()
-        }
-
-        // Reenviar nuestra posición para asegurar que todos nos vean
-        if (gameState.isConnected) {
-            serverConnectionManager.sendUpdateMessage(
-                playerName,
-                gameState.playerPosition,
-                MapMatrixProvider.MAP_SALON2009
-            )
         }
     }
     override fun onDestroy() {
@@ -434,6 +347,6 @@ class Salon2009 : AppCompatActivity(),
     }
 
     companion object {
-        private const val TAG = "Salon2009"
+        private const val TAG = "Salon2004"
     }
 }
