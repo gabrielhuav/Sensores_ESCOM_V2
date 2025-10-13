@@ -42,6 +42,8 @@ class MapMatrixProvider {
         const val MAP_BIBLIOTECA = "escom_biblioteca"
         const val MAP_ENCB = "encb"
 
+        const val MAP_CIDETEC = "escom_cidetec"
+
         fun normalizeMapName(mapName: String?): String {
             if (mapName.isNullOrBlank()) return MAP_MAIN
 
@@ -72,6 +74,8 @@ class MapMatrixProvider {
                 lowerMap.contains("zaca") || lowerMap.contains("zacatenco") -> MAP_ZACATENCO
                 // Lindavista
                 lowerMap.contains("linda") || lowerMap.contains("lindavista") -> MAP_LINDAVISTA
+                // Cidetec
+                lowerMap.contains("linda") || lowerMap.contains("lindavista") -> MAP_CIDETEC
                 // edificio ia
                 lowerMap.contains("ia_baja") || lowerMap.contains("edificio_ia_bajo") -> MAP_EDIFICIO_IA_BAJO
                 lowerMap.contains("ia_medio") || lowerMap.contains("edificio_ia_medio") -> MAP_EDIFICIO_IA_MEDIO
@@ -149,6 +153,7 @@ class MapMatrixProvider {
                 MAP_EDIFICIO_GOBIERNO -> createEdificioGobiernoMatrix()
                 MAP_BIBLIOTECA -> createBibliotecaMatrix()// Matriz para palapas de ISC
                 MAP_ENCB -> createEncbMatrix()
+                MAP_CIDETEC -> createCidetecMatrix()
                 else -> createDefaultMatrix() // Por defecto, un mapa básico
             }
         }
@@ -582,6 +587,38 @@ class MapMatrixProvider {
                     /**else if (i % 7 == 0 && j % 8 == 0) {
                     matrix[i][j] = INACCESSIBLE
                     }**/
+                    // Caminos especiales
+                    else if ((i % 5 == 0 || j % 5 == 0) && i > 5 && j > 5) {
+                        matrix[i][j] = PATH
+                    }
+                }
+            }
+
+            // Áreas de juego específicas
+            // Zona central despejada
+            for (i in 15..25) {
+                for (j in 15..25) {
+                    matrix[i][j] = PATH
+                }
+            }
+
+            return matrix
+        }
+
+        private fun createCidetecMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Configuración de bordes
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    // Bordes exteriores
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = WALL
+                    }
+                    // Zonas interactivas (edificios, entradas)
+                    else if (i == 22 && j == 11) {
+                        matrix[i][j] = INTERACTIVE // Entrada a ESCOM
+                    }
                     // Caminos especiales
                     else if ((i % 5 == 0 || j % 5 == 0) && i > 5 && j > 5) {
                         matrix[i][j] = PATH
