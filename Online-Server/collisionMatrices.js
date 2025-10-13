@@ -577,10 +577,177 @@ for (let i = 6; i <= 25; i++) {
 // Coordenadas: (x: 38, y: 38)
 palapasISCCollisionMatrix[38][38] = 2;
 
+// =================================================================
+// Matriz de colisión para ESIA (40x40)
+// =================================================================
+const esiaCollisionMatrix = Array(40).fill().map(() => Array(40).fill(1)); // Todo WALL por defecto
+
+// Crear un área rectangular simple y grande para toda la ESIA
+for (let i = 3; i < 37; i++) {
+    for (let j = 3; j < 37; j++) {
+        esiaCollisionMatrix[i][j] = 2; // PATH
+    }
+}
+
+// Bloquear la zona superior derecha (figura roja grande)
+for (let i = 3; i < 12; i++) {
+    for (let j = 20; j < 37; j++) {
+        const diagonal = (i - 3) + (j - 20);
+        if (diagonal > 6) {
+            esiaCollisionMatrix[i][j] = 1; // WALL
+        }
+    }
+}
+
+// Bloquear más zona superior derecha (extensión de la figura roja)
+for (let i = 3; i < 8; i++) {
+    for (let j = 15; j < 37; j++) {
+        esiaCollisionMatrix[i][j] = 1; // WALL
+    }
+}
+
+// Bloquear la zona media derecha (figura verde compleja)
+for (let i = 15; i < 25; i++) {
+    for (let j = 28; j < 37; j++) {
+        esiaCollisionMatrix[i][j] = 1; // WALL
+    }
+}
+
+// Extensión adicional de la zona verde (parte más irregular)
+for (let i = 18; i < 22; i++) {
+    for (let j = 25; j < 28; j++) {
+        esiaCollisionMatrix[i][j] = 1; // WALL
+    }
+}
+
+// Bloquear el área verde específica que encerraste (zona superior derecha)
+for (let i = 8; i < 15; i++) {
+    for (let j = 25; j < 37; j++) {
+        esiaCollisionMatrix[i][j] = 1; // WALL
+    }
+}
+
+// Bloquear área adicional (20,12) a (24,12)
+for (let i = 12; i < 13; i++) {
+    for (let j = 20; j < 25; j++) {
+        esiaCollisionMatrix[i][j] = 1; // WALL
+    }
+}
+
+// Bloquear área adicional (20,13) a (24,13)
+for (let i = 13; i < 14; i++) {
+    for (let j = 20; j < 25; j++) {
+        esiaCollisionMatrix[i][j] = 1; // WALL
+    }
+}
+
+// Bloquear área adicional (20,14) a (24,14)
+for (let i = 14; i < 15; i++) {
+    for (let j = 20; j < 25; j++) {
+        esiaCollisionMatrix[i][j] = 1; // WALL
+    }
+}
+
+// Bloquear área adicional (21,15) a (27,15)
+for (let i = 15; i < 16; i++) {
+    for (let j = 21; j < 28; j++) {
+        esiaCollisionMatrix[i][j] = 1; // WALL
+    }
+}
+
+// Bloquear área adicional (22,16) a (27,16)
+for (let i = 16; i < 17; i++) {
+    for (let j = 22; j < 28; j++) {
+        esiaCollisionMatrix[i][j] = 1; // WALL
+    }
+}
+
+// Bloquear área adicional (23,17) a (27,17)
+for (let i = 17; i < 18; i++) {
+    for (let j = 23; j < 28; j++) {
+        esiaCollisionMatrix[i][j] = 1; // WALL
+    }
+}
+
+// Bloquear puntos específicos adicionales
+// Punto (29, 25)
+esiaCollisionMatrix[25][29] = 1; // WALL
+
+// Punto (27, 22)
+esiaCollisionMatrix[22][27] = 1; // WALL
+
+// Punto (24, 18)
+esiaCollisionMatrix[18][24] = 1; // WALL
+
+// Bloquear área (16,8) a (21,8)
+for (let i = 8; i < 9; i++) {
+    for (let j = 16; j < 22; j++) {
+        esiaCollisionMatrix[i][j] = 1; // WALL
+    }
+}
+
+// Bloquear área (17,9) a (20,9)
+for (let i = 9; i < 10; i++) {
+    for (let j = 17; j < 21; j++) {
+        esiaCollisionMatrix[i][j] = 1; // WALL
+    }
+}
+
+// Bloquear área (18,10) a (19,10)
+for (let i = 10; i < 11; i++) {
+    for (let j = 18; j < 20; j++) {
+        esiaCollisionMatrix[i][j] = 1; // WALL
+    }
+}
+
+// Bloquear punto (19,11)
+esiaCollisionMatrix[11][19] = 1; // WALL
+
+// Bloquear la zona inferior derecha (triángulo inferior)
+for (let i = 25; i < 37; i++) {
+    for (let j = 30; j < 37; j++) {
+        const diagonal = (37 - i) + (j - 30);
+        if (diagonal > 8) {
+            esiaCollisionMatrix[i][j] = 1; // WALL
+        }
+    }
+}
+
+// Bloquear figura negra superior izquierda
+for (let i = 3; i < 10; i++) {
+    for (let j = 3; j < 12; j++) {
+        esiaCollisionMatrix[i][j] = 1; // WALL
+    }
+}
+
+// Bloquear figura negra superior derecha (zona más específica)
+for (let i = 3; i < 7; i++) {
+    for (let j = 12; j < 20; j++) {
+        esiaCollisionMatrix[i][j] = 1; // WALL
+    }
+}
+
+// Bloquear el rectángulo superior final
+for (let i = 3; i < 8; i++) {
+    for (let j = 8; j < 30; j++) {
+        esiaCollisionMatrix[i][j] = 1; // WALL
+    }
+}
+
+// Punto de salida hacia Zacatenco (puerta principal en la parte inferior)
+esiaCollisionMatrix[35][25] = 0; // INTERACTIVE
+
+
+
 // Exportar las matrices
 module.exports = {
     cafeteriaCollisionMatrix,
     edificioGobiernoCollisionMatrix,
+<<<<<<< HEAD
     esimeCollisionMatrix,
     palapasISCCollisionMatrix
+=======
+    palapasISCCollisionMatrix,
+    esiaCollisionMatrix
+>>>>>>> upstream/main
 };

@@ -127,6 +127,11 @@
         <activity
             android:name=".presentation.locations.buildings.gobierno.EdificioGobierno"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
+
+        <activity
+            android:name=".presentation.locations.outdoor.ESIA"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+
         <!-- DeviceList Activity -->
         <activity
             android:name=".data.map.Bluetooth.DeviceListActivity"

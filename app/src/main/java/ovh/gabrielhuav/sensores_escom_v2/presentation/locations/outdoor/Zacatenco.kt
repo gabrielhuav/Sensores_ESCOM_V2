@@ -119,10 +119,21 @@ class Zacatenco : AppCompatActivity(),
         }
 
         if (savedInstanceState == null) {
-            // Inicializar el estado del juego desde el Intent
+            // ✅ SISTEMA DE POSICIÓN GUARDADA - CORREGIDO
             gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
-            gameState.playerPosition =
-                (intent.getParcelableExtra("INITIAL_POSITION")  ?: Pair(10, 12)) as Pair<Int, Int>
+
+            // Primero intentar usar la posición del Intent - MÉTODO CORREGIDO
+            var initialPosition = intent.getSerializableExtra("INITIAL_POSITION") as? Pair<Int, Int>
+
+            // Si no hay posición en el Intent, usar la posición guardada
+            if (initialPosition == null) {
+                initialPosition = getSavedPosition() ?: Pair(10, 12)
+                Log.d(TAG, "Zacatenco: Usando posición guardada: $initialPosition")
+            } else {
+                Log.d(TAG, "Zacatenco: Usando posición del Intent: $initialPosition")
+            }
+
+            gameState.playerPosition = initialPosition
         } else {
             restoreState(savedInstanceState)
         }
@@ -139,6 +150,32 @@ class Zacatenco : AppCompatActivity(),
 
         // Configurar el bridge para el servidor websocket
         serverConnectionManager.onlineServerManager.setListener(this)
+    }
+
+    // ✅ MÉTODO PARA GUARDAR LA POSICIÓN ACTUAL
+    private fun saveCurrentPosition() {
+        val sharedPrefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        with(sharedPrefs.edit()) {
+            putInt(LAST_POSITION_X, gameState.playerPosition.first)
+            putInt(LAST_POSITION_Y, gameState.playerPosition.second)
+            apply()
+        }
+        Log.d(TAG, "Zacatenco: Posición guardada: ${gameState.playerPosition}")
+    }
+
+    // ✅ MÉTODO PARA CARGAR LA ÚLTIMA POSICIÓN GUARDADA
+    private fun getSavedPosition(): Pair<Int, Int>? {
+        val sharedPrefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        val x = sharedPrefs.getInt(LAST_POSITION_X, -1)
+        val y = sharedPrefs.getInt(LAST_POSITION_Y, -1)
+
+        return if (x != -1 && y != -1) {
+            Log.d(TAG, "Zacatenco: Posición cargada: ($x, $y)")
+            Pair(x, y)
+        } else {
+            Log.d(TAG, "Zacatenco: No hay posición guardada")
+            null
+        }
     }
 
     private fun initializeViews() {
@@ -381,7 +418,7 @@ class Zacatenco : AppCompatActivity(),
                     when (targetDestination) {
                         "main" -> returnToMainActivity()
                         "lindavista" -> startLindavistaActivity()
-                        "esia" -> viewESIA()
+                        "esia" -> startESIAActivity()
                         "esfm" -> viewESFM()
                         "cidetec" -> viewCIDETEC()
                         "cic" -> viewCIC()
@@ -397,10 +434,19 @@ class Zacatenco : AppCompatActivity(),
             }
         }
     }
-    private fun viewESIA(){
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.esiaz.ipn.mx/"))
-        startActivity(intent)
+    private fun startESIAActivity() {
+        // ✅ GUARDAR LA POSICIÓN ACTUAL ANTES DE IR A ESIA
+        saveCurrentPosition()
 
+        val intent = Intent(this, ESIA::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(25, 35)) // Posición inicial en ESIA
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
     }
     private fun viewESFM(){
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.esfm.ipn.mx/"))
@@ -442,6 +488,8 @@ class Zacatenco : AppCompatActivity(),
         finish()
     }
     private fun returnToMainActivity() {
+        saveCurrentPosition()
+
         // Obtener la posición previa del intent
         val previousPosition = intent.getSerializableExtra("PREVIOUS_POSITION") as? Pair<Int, Int>
             ?: Pair(11, 4) // Posición por defecto si no hay previa
@@ -751,5 +799,9 @@ class Zacatenco : AppCompatActivity(),
 
     companion object {
         private const val TAG = "GameplayActivity"
+
+        private const val PREFS_NAME = "ZacatencoPosition"
+        private const val LAST_POSITION_X = "last_position_x"
+        private const val LAST_POSITION_Y = "last_position_y"
     }
 }
