@@ -17,7 +17,7 @@ import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.MovementMa
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.ServerConnectionManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
-import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.locations.esime.buildings.Edificio3Activity
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.Zacatenco
 
 class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapView.MapTransitionListener {
 
@@ -121,28 +121,59 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
 
             // 🔴 DEFINIR RECTÁNGULOS GRANDES PARA BLOQUEAR ACCESO A EDIFICIOS
             // Cada edificio tiene un área rectangular grande bloqueada alrededor de su entrada
+            //Pasillo (15,y)
+            //Pasillo (18,y)
+            //Pasillo (30,y)
+            //Pasillo (x,33)
+            //Pasillo (x,30)
+            //Pasillo (x,27)
+            //Pasillo (x,24)
+            //Pasillo (x,21)
+            //Pasillo (x,17)
+            //Pasillo (x,14)
+            //Pasillo (x,11)
+            //Pasillo (x,8)
+            //Pasillo (x,5)
 
             // Edificio 1 - Rectángulo grande bloqueado (desde X=8 hacia la derecha)
-            collisionAreas.add(Rect(8, 25, 15, 35))   // Rectángulo grande desde entrada del Edificio 1
+            collisionAreas.add(Rect(7, 28, 14 ,29))   // Rectángulo grande desde entrada del Edificio 1
+            collisionAreas.add(Rect(16, 28, 17, 29))  //Cuadrado que deja pasillo
+            collisionAreas.add(Rect(7, 31, 14, 32))   //Parte inferior
 
             // Edificio 2 - Rectángulo grande bloqueado (desde X=8 hacia la derecha)
-            collisionAreas.add(Rect(8, 19, 15, 29))   // Rectángulo grande desde entrada del Edificio 2
+            collisionAreas.add(Rect(7, 22, 14, 23))   // Rectángulo grande desde entrada del Edificio 2
+            collisionAreas.add(Rect(16, 22, 17, 23))  //Cuadrado que deja pasillo
+            collisionAreas.add(Rect(7, 25, 14, 26))   //Parte inferior
 
             // Edificio 3 - Solo bloquear área derecha, dejar entrada libre frontal
-            collisionAreas.add(Rect(8, 12, 15, 22))   // Área derecha bloqueada del Edificio 3
+            collisionAreas.add(Rect(7, 15, 14, 16))   // Área derecha bloqueada del Edificio 3
+            collisionAreas.add(Rect(16, 15, 17, 16))  //Cuadrado que deja pasillo
+            collisionAreas.add(Rect(7, 18, 14, 19))   //Parte inferior
             // NOTA: La entrada frontal (X=8, Y=17) permanece accesible
 
             // Edificio 4 - Rectángulo grande bloqueado (desde X=8 hacia la derecha)
-            collisionAreas.add(Rect(8, 6, 15, 16))    // Rectángulo grande desde entrada del Edificio 4
+            collisionAreas.add(Rect(7, 9, 14, 10))    // Rectángulo grande desde entrada del Edificio 4
+            collisionAreas.add(Rect(16, 9, 17, 10))   //Cuadrado que deja pasillo
+            collisionAreas.add(Rect(7, 12, 14, 13))   //Parte inferior
 
             // Edificio 5 - Rectángulo grande bloqueado (desde X=8 hacia la derecha)
-            collisionAreas.add(Rect(8, 0, 15, 10))    // Rectángulo grande desde entrada del Edificio 5
+            collisionAreas.add(Rect(7, 3, 14, 4))    // Rectángulo grande desde entrada del Edificio 5
+            collisionAreas.add(Rect(16, 3, 17, 4))   // Cuadrado que deja pasillo
+            collisionAreas.add(Rect(7, 6, 14, 7))
 
-            // 🔴 BORDES DEL MAPA - Para evitar que el jugador se salga
-            collisionAreas.add(Rect(0, 0, 1, 40))     // Borde izquierdo
-            collisionAreas.add(Rect(14, 0, 15, 40))   // Borde derecho
-            collisionAreas.add(Rect(0, 0, 15, 1))     // Borde superior
-            collisionAreas.add(Rect(0, 39, 15, 40))   // Borde inferior
+            //Pastos
+            collisionAreas.add(Rect(7, 34, 38, 38))
+            collisionAreas.add(Rect(32, 29, 38, 38))
+            collisionAreas.add(Rect(24, 6, 29, 18))
+
+            //Zona inaccesible
+            collisionAreas.add(Rect(7, 1, 38, 4))
+
+            // BORDES DEL MAPA - Para evitar que el jugador se salga
+            collisionAreas.add(Rect(0, 0, 0, 40))     // Borde izquierdo
+            collisionAreas.add(Rect(40, 0, 40, 40))   // Borde derecho
+            collisionAreas.add(Rect(0, 0, 40, 0))     // Borde superior
+            collisionAreas.add(Rect(0, 40, 40, 40))   // Borde inferior
 
             Log.d("ESIME_COLLISIONS", "✅ ${collisionAreas.size} áreas de colisión configuradas")
 
@@ -187,43 +218,10 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
 
     private fun addFixedBuildingMarkersToMap() {
         try {
-            // 🔴 SOLUCIÓN: Usar un enfoque diferente para marcadores estáticos
-            // Intentar acceder al método de dibujo personalizado
-            setupStaticMarkersWithReflection()
-
-            // También intentar con PlayerManager pero con posiciones FIJAS
+            // Configurar marcadores de edificios usando PlayerManager
             setupBuildingMarkersWithPlayerManager()
-
         } catch (e: Exception) {
-            Log.e("ESIME_MARKERS", "No se pudieron agregar marcadores automáticos: ${e.message}")
-        }
-    }
-
-    private fun setupStaticMarkersWithReflection() {
-        try {
-            // Intentar encontrar un método para agregar marcadores estáticos
-            val mapViewClass = mapView.javaClass
-
-            // Buscar métodos para agregar marcadores estáticos
-            val possibleMethods = arrayOf(
-                "addStaticMarker", "setStaticMarkers", "addBuildingMarker",
-                "setBuildingLocations", "addFixedPoint"
-            )
-
-            for (methodName in possibleMethods) {
-                try {
-                    val method = mapViewClass.getDeclaredMethod(methodName, Map::class.java)
-                    method.isAccessible = true
-                    method.invoke(mapView, buildingLocations)
-                    Log.d("ESIME_MARKERS", "✅ Método encontrado: $methodName")
-                    break
-                } catch (e: NoSuchMethodException) {
-                    continue
-                }
-            }
-
-        } catch (e: Exception) {
-            Log.d("ESIME_MARKERS", "No se encontraron métodos para marcadores estáticos")
+            Log.e("ESIME_MARKERS", "Error configurando marcadores: ${e.message}")
         }
     }
 
@@ -296,80 +294,13 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
         }
     }
 
-    // 🔴🔴🔴 MÉTODO PARA CONFIGURAR COLORES ROJOS 🔴🔴🔴
+    // Configurar colores de jugadores
     private fun configureRedPlayers() {
         try {
-            val mapViewClass = mapView.javaClass
-
-            // Intentar encontrar y modificar el paint de jugadores
-            val possiblePaintFields = arrayOf(
-                "playerPaint", "remotePlayerPaint", "mPlayerPaint",
-                "playerCirclePaint", "defaultPlayerPaint"
-            )
-
-            for (fieldName in possiblePaintFields) {
-                try {
-                    val field = mapViewClass.getDeclaredField(fieldName)
-                    field.isAccessible = true
-                    val paint = field.get(mapView) as? android.graphics.Paint
-                    paint?.let {
-                        it.color = Color.RED
-                        it.strokeWidth = 4f
-                        it.isAntiAlias = true
-                        Log.d("ESIME_COLOR", "✅ Paint modificado: $fieldName -> ROJO")
-                    }
-                } catch (e: NoSuchFieldException) {
-                    continue
-                }
-            }
-
-            // Intentar modificar el radio de los jugadores
-            val possibleRadiusFields = arrayOf(
-                "playerRadius", "mPlayerRadius", "defaultPlayerRadius",
-                "circleRadius", "playerCircleRadius"
-            )
-
-            for (fieldName in possibleRadiusFields) {
-                try {
-                    val field = mapViewClass.getDeclaredField(fieldName)
-                    field.isAccessible = true
-                    field.setFloat(mapView, 25f)
-                    Log.d("ESIME_COLOR", "✅ Radio modificado: $fieldName -> 25f")
-                } catch (e: NoSuchFieldException) {
-                    continue
-                }
-            }
-
+            Log.d("ESIME_COLOR", "Configurando colores de jugadores")
             mapView.invalidate()
-
         } catch (e: Exception) {
-            Log.e("ESIME_COLOR", "❌ No se pudo configurar colores: ${e.message}")
-            tryFallbackColorConfiguration()
-        }
-    }
-
-    // 🔴 Método fallback si la reflexión no funciona
-    private fun tryFallbackColorConfiguration() {
-        try {
-            val playerManagerField = mapView.javaClass.getDeclaredField("playerManager")
-            playerManagerField.isAccessible = true
-            val playerManager = playerManagerField.get(mapView)
-
-            val playerManagerClass = playerManager.javaClass
-            val colorFields = arrayOf("remotePlayerColor", "defaultPlayerColor", "playerColor")
-
-            for (fieldName in colorFields) {
-                try {
-                    val field = playerManagerClass.getDeclaredField(fieldName)
-                    field.isAccessible = true
-                    field.setInt(playerManager, Color.RED)
-                    Log.d("ESIME_COLOR", "✅ Color en PlayerManager: $fieldName -> ROJO")
-                } catch (e: NoSuchFieldException) {
-                    continue
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("ESIME_COLOR", "❌ Fallback también falló: ${e.message}")
+            Log.e("ESIME_COLOR", "Error configurando colores: ${e.message}")
         }
     }
 
@@ -405,45 +336,13 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
         updatePlayerPosition(playerPosition)
     }
 
-    // 🔴 CONFIGURAR MOVEMENT MANAGER CON SISTEMA DE COLISIONES
+    // Configurar MovementManager con verificación básica de colisiones
     private fun setupMovementManagerWithCollisions() {
         try {
-            // Usar reflexión para configurar colisiones en MovementManager
-            val movementManagerClass = movementManager.javaClass
-
-            // Intentar encontrar el método setCollisionAreas
-            try {
-                val setCollisionMethod = movementManagerClass.getDeclaredMethod("setCollisionAreas", List::class.java)
-                setCollisionMethod.isAccessible = true
-                setCollisionMethod.invoke(movementManager, collisionAreas)
-                Log.d("ESIME_COLLISIONS", "✅ Colisiones configuradas en MovementManager")
-            } catch (e: NoSuchMethodException) {
-                // Si no existe el método, usar enfoque alternativo
-                setupCollisionsAlternative()
-            }
-
+            Log.d("ESIME_COLLISIONS", "Configurando sistema de colisiones básico")
+            // La verificación de colisiones se manejará en handleMovementWithCollisions
         } catch (e: Exception) {
-            Log.e("ESIME_COLLISIONS", "Error configurando colisiones en MovementManager: ${e.message}")
-            setupCollisionsAlternative()
-        }
-    }
-
-    // 🔴 ENFOQUE ALTERNATIVO PARA COLISIONES
-    private fun setupCollisionsAlternative() {
-        try {
-            // Agregar campo de colisiones al MovementManager via reflexión
-            val collisionField = movementManager.javaClass.getDeclaredField("collisionAreas")
-            collisionField.isAccessible = true
-            val existingCollisions = collisionField.get(movementManager) as? MutableList<Rect> ?: mutableListOf()
-            existingCollisions.clear()
-            existingCollisions.addAll(collisionAreas)
-            collisionField.set(movementManager, existingCollisions)
-
-            Log.d("ESIME_COLLISIONS", "✅ Colisiones configuradas (enfoque alternativo)")
-        } catch (e: Exception) {
-            Log.e("ESIME_COLLISIONS", "❌ No se pudo configurar sistema de colisiones")
-            // Fallback: mostrar mensaje de áreas bloqueadas
-            Toast.makeText(this, "Áreas alrededor de edificios están bloqueadas", Toast.LENGTH_LONG).show()
+            Log.e("ESIME_COLLISIONS", "Error configurando colisiones: ${e.message}")
         }
     }
 
@@ -608,15 +507,9 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
     }
 
     private fun enterBuilding3() {
-        val intent = Intent(this, Edificio3Activity::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", isServer)
-            putExtra("INITIAL_POSITION", Pair(2, 2))
-            putExtra("PREVIOUS_POSITION", playerPosition)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        startActivity(intent)
-        finish()
+        // TODO: Implementar navegación al Edificio 3 cuando esté disponible
+        Toast.makeText(this, "Acceso al Edificio 3 - En desarrollo", Toast.LENGTH_LONG).show()
+        Log.d("Esime", "Intento de acceso al Edificio 3 desde posición: $playerPosition")
     }
 
     private fun showBuildingNotAvailable(buildingNumber: Int) {
