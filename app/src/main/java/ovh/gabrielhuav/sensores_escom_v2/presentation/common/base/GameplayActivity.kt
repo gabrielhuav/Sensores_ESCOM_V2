@@ -33,6 +33,7 @@ import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProv
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.buildingIA.PalapasIA
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.gobierno.EdificioGobierno
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.GlobalMapActivity
 import kotlin.collections.iterator
 
 class GameplayActivity : AppCompatActivity(),
@@ -275,6 +276,7 @@ class GameplayActivity : AppCompatActivity(),
                         "palapas_ia" -> startPalapasIAActivity()
                         "palapas_isc" -> startPalapasISCActivity()
                         "edificio_gobierno" -> startEdificioGobiernoActivity()
+                        "global_map" -> startGlobalMapActivity()
 
                         else -> showToast("No hay interacción disponible en esta posición")
                     }
@@ -396,12 +398,30 @@ class GameplayActivity : AppCompatActivity(),
         finish()
     }
 
+    private fun startGlobalMapActivity() {
+        val intent = Intent(this, GlobalMapActivity::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
+
     private var canChangeMap = false  // Variable para controlar si se puede cambiar de mapa
     private var targetDestination: String? = null  // Variable para almacenar el destino
 
     private fun checkPositionForMapChange(position: Pair<Int, Int>) {
         // Comprobar múltiples ubicaciones de transición
         when {
+            position.first == 14 && position.second == 18 -> {
+                canChangeMap = true
+                targetDestination = "global_map"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para ir al mapa global", Toast.LENGTH_SHORT).show()
+                }
+            }
             position.first == 15 && position.second == 10 -> {
                 canChangeMap = true
                 targetDestination = "edificio2"

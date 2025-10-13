@@ -41,6 +41,10 @@ class MapMatrixProvider {
         const val MAP_PALAPAS_ISC = "escom_palapas_isc"
         const val MAP_EDIFICIO_GOBIERNO = "escom_edificio_gobierno"
         const val MAP_BIBLIOTECA = "escom_biblioteca"
+        const val MAP_ENCB = "encb"
+
+        const val MAP_ESIA = "esia"
+
 
         fun normalizeMapName(mapName: String?): String {
             if (mapName.isNullOrBlank()) return MAP_MAIN
@@ -80,6 +84,9 @@ class MapMatrixProvider {
                 lowerMap.contains("palapas_ia") -> MAP_PALAPAS_IA
                 lowerMap.contains("gobierno") || lowerMap.contains("edificio_gobierno") -> MAP_EDIFICIO_GOBIERNO
                 lowerMap.contains("biblioteca") -> MAP_BIBLIOTECA
+                // ESIA
+                lowerMap.contains("esia") -> MAP_ESIA
+                lowerMap.contains("encb") -> MAP_ENCB
                 // Si no coincide con ninguno de los anteriores, devolver el original
                 else -> mapName
             }
@@ -123,6 +130,10 @@ class MapMatrixProvider {
         val MAIN_TO_BIBLIOTECA = Pair(35, 15)
         val BIBLIOTECA_TO_MAIN = Pair(2, 20)
 
+        // NUEVOS PUNTOS DE TRANSICIÓN PARA ESIA
+        val ZACATENCO_TO_ESIA_POSITION = Pair(25, 12)
+        val ESIA_TO_ZACATENCO_POSITION = Pair(25, 35)
+
 
         /**
          * Obtiene la matriz para el mapa especificado
@@ -151,6 +162,8 @@ class MapMatrixProvider {
                 MAP_PALAPAS_ISC -> createPalapasISCMatrix()
                 MAP_EDIFICIO_GOBIERNO -> createEdificioGobiernoMatrix()
                 MAP_BIBLIOTECA -> createBibliotecaMatrix()// Matriz para palapas de ISC
+                MAP_ESIA -> createESIAMatrix()
+                MAP_ENCB -> createEncbMatrix()
                 else -> createDefaultMatrix() // Por defecto, un mapa básico
             }
         }
@@ -201,9 +214,11 @@ class MapMatrixProvider {
 
             matrix[21][31] = INTERACTIVE // entrar edificio ia
             matrix[29][8] = INTERACTIVE // Entrar a las palapas de ISC
+            // Punto de transición para el mapa global
+            matrix[18][14] = INTERACTIVE
             // Áreas de juego específicas
             // Zona central despejada
-            for (i in 15..25) {
+            for (i in 18..25) {
                 for (j in 15..25) {
                     matrix[i][j] = PATH
                 }
@@ -281,6 +296,9 @@ class MapMatrixProvider {
                     else if (i == 19 && j == 4) {
                         matrix[i][j] = INTERACTIVE // Entrada a ESCOM
                     }
+                    else if(i == 24 && j == 12){
+                        matrix[i][j] = INTERACTIVE // Entrada a ENCB
+                    }
                     // Obstáculos (árboles, bancas, etc)
                     /**else if (i % 7 == 0 && j % 8 == 0) {
                     matrix[i][j] = INACCESSIBLE
@@ -300,6 +318,257 @@ class MapMatrixProvider {
                 }
             }
 
+            return matrix
+        }
+        //Mapa de la ENCB
+        private fun createEncbMatrix(): Array<Array<Int>> {
+            // Inicializar todo como PATH (camino libre)
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // ============================================
+            // BORDES EXTERIORES - Fila por fila
+            // ============================================
+
+            // Borde superior (fila 0)
+            for (j in 0 until MAP_WIDTH) {
+                matrix[0][j] = WALL
+            }
+
+            // Borde inferior (fila 39)
+            for (j in 0 until MAP_WIDTH) {
+                matrix[39][j] = WALL
+            }
+
+            // Borde izquierdo (columna 0)
+            for (i in 0 until MAP_HEIGHT) {
+                matrix[i][0] = WALL
+            }
+
+            // Borde derecho (columna 39)
+            for (i in 0 until MAP_HEIGHT) {
+                matrix[i][39] = WALL
+            }
+
+            // ============================================
+            // SALA 1 - SUPERIOR IZQUIERDA
+            // Coordenadas: (3,3) hasta (10,12)
+            // ============================================
+
+            // Pared superior sala 1
+            matrix[3][3] = WALL; matrix[3][4] = WALL; matrix[3][5] = WALL
+            matrix[3][6] = WALL; matrix[3][7] = WALL; matrix[3][8] = WALL
+            matrix[3][9] = WALL; matrix[3][10] = WALL; matrix[3][11] = WALL; matrix[3][12] = WALL
+
+            // Pared izquierda sala 1
+            matrix[4][3] = WALL; matrix[5][3] = WALL; matrix[6][3] = WALL
+            matrix[7][3] = WALL; matrix[8][3] = WALL; matrix[9][3] = WALL; matrix[10][3] = WALL
+
+            // Pared derecha sala 1
+            matrix[4][12] = WALL; matrix[5][12] = WALL; matrix[6][12] = WALL
+            matrix[7][12] = WALL; matrix[8][12] = WALL; matrix[9][12] = WALL; matrix[10][12] = WALL
+
+            // Pared inferior sala 1 (con puerta ancha de 3 casillas)
+            matrix[10][3] = WALL; matrix[10][4] = WALL; matrix[10][5] = WALL
+            // Puerta: matrix[10][6], matrix[10][7] y matrix[10][8] quedan como PATH
+            matrix[10][9] = WALL; matrix[10][10] = WALL; matrix[10][11] = WALL; matrix[10][12] = WALL
+
+            // Obstáculos internos sala 1 (mesas)
+            matrix[5][5] = INACCESSIBLE; matrix[5][6] = INACCESSIBLE
+            matrix[5][9] = INACCESSIBLE; matrix[5][10] = INACCESSIBLE
+            matrix[8][5] = INACCESSIBLE; matrix[8][6] = INACCESSIBLE
+            matrix[8][9] = INACCESSIBLE; matrix[8][10] = INACCESSIBLE
+
+            // ============================================
+            // SALA 2 - SUPERIOR CENTRO
+            // Coordenadas: (3,15) hasta (10,24)
+            // ============================================
+
+            // Pared superior sala 2
+            matrix[3][15] = WALL; matrix[3][16] = WALL; matrix[3][17] = WALL
+            matrix[3][18] = WALL; matrix[3][19] = WALL; matrix[3][20] = WALL
+            matrix[3][21] = WALL; matrix[3][22] = WALL; matrix[3][23] = WALL; matrix[3][24] = WALL
+
+            // Pared izquierda sala 2
+            matrix[4][15] = WALL; matrix[5][15] = WALL; matrix[6][15] = WALL
+            matrix[7][15] = WALL; matrix[8][15] = WALL; matrix[9][15] = WALL; matrix[10][15] = WALL
+
+            // Pared derecha sala 2
+            matrix[4][24] = WALL; matrix[5][24] = WALL; matrix[6][24] = WALL
+            matrix[7][24] = WALL; matrix[8][24] = WALL; matrix[9][24] = WALL; matrix[10][24] = WALL
+
+            // Pared inferior sala 2 (con puerta ancha de 3 casillas)
+            matrix[10][15] = WALL; matrix[10][16] = WALL; matrix[10][17] = WALL
+            // Puerta: matrix[10][18], matrix[10][19] y matrix[10][20] quedan como PATH
+            matrix[10][21] = WALL; matrix[10][22] = WALL; matrix[10][23] = WALL; matrix[10][24] = WALL
+
+            // Obstáculos internos sala 2
+            matrix[5][17] = INACCESSIBLE; matrix[5][18] = INACCESSIBLE
+            matrix[5][21] = INACCESSIBLE; matrix[5][22] = INACCESSIBLE
+            matrix[8][17] = INACCESSIBLE; matrix[8][18] = INACCESSIBLE
+            matrix[8][21] = INACCESSIBLE; matrix[8][22] = INACCESSIBLE
+
+            // ============================================
+            // SALA 3 - SUPERIOR DERECHA
+            // Coordenadas: (3,27) hasta (10,36)
+            // ============================================
+
+            // Pared superior sala 3
+            matrix[3][27] = WALL; matrix[3][28] = WALL; matrix[3][29] = WALL
+            matrix[3][30] = WALL; matrix[3][31] = WALL; matrix[3][32] = WALL
+            matrix[3][33] = WALL; matrix[3][34] = WALL; matrix[3][35] = WALL; matrix[3][36] = WALL
+
+            // Pared izquierda sala 3
+            matrix[4][27] = WALL; matrix[5][27] = WALL; matrix[6][27] = WALL
+            matrix[7][27] = WALL; matrix[8][27] = WALL; matrix[9][27] = WALL; matrix[10][27] = WALL
+
+            // Pared derecha sala 3
+            matrix[4][36] = WALL; matrix[5][36] = WALL; matrix[6][36] = WALL
+            matrix[7][36] = WALL; matrix[8][36] = WALL; matrix[9][36] = WALL; matrix[10][36] = WALL
+
+            // Pared inferior sala 3 (con puerta ancha de 3 casillas)
+            matrix[10][27] = WALL; matrix[10][28] = WALL; matrix[10][29] = WALL
+            // Puerta: matrix[10][30], matrix[10][31] y matrix[10][32] quedan como PATH
+            matrix[10][33] = WALL; matrix[10][34] = WALL; matrix[10][35] = WALL; matrix[10][36] = WALL
+
+            // Obstáculos internos sala 3
+            matrix[5][29] = INACCESSIBLE; matrix[5][30] = INACCESSIBLE
+            matrix[5][33] = INACCESSIBLE; matrix[5][34] = INACCESSIBLE
+            matrix[8][29] = INACCESSIBLE; matrix[8][30] = INACCESSIBLE
+            matrix[8][33] = INACCESSIBLE; matrix[8][34] = INACCESSIBLE
+
+            // ============================================
+            // ÁREA CENTRAL COMPLETAMENTE ABIERTA
+            // Filas 11-28 son PATH (área de juego grande)
+            // Ya están como PATH por defecto
+            // ============================================
+
+            // ============================================
+            // SALA 4 - INFERIOR IZQUIERDA
+            // Coordenadas: (29,3) hasta (36,12)
+            // ============================================
+
+            // Pared superior sala 4 (con puerta ancha de 3 casillas)
+            matrix[29][3] = WALL; matrix[29][4] = WALL; matrix[29][5] = WALL
+            // Puerta: matrix[29][6], matrix[29][7] y matrix[29][8] quedan como PATH
+            matrix[29][9] = WALL; matrix[29][10] = WALL; matrix[29][11] = WALL; matrix[29][12] = WALL
+
+            // Pared izquierda sala 4
+            matrix[30][3] = WALL; matrix[31][3] = WALL; matrix[32][3] = WALL
+            matrix[33][3] = WALL; matrix[34][3] = WALL; matrix[35][3] = WALL; matrix[36][3] = WALL
+
+            // Pared derecha sala 4
+            matrix[30][12] = WALL; matrix[31][12] = WALL; matrix[32][12] = WALL
+            matrix[33][12] = WALL; matrix[34][12] = WALL; matrix[35][12] = WALL; matrix[36][12] = WALL
+
+            // Pared inferior sala 4
+            matrix[36][3] = WALL; matrix[36][4] = WALL; matrix[36][5] = WALL
+            matrix[36][6] = WALL; matrix[36][7] = WALL; matrix[36][8] = WALL
+            matrix[36][9] = WALL; matrix[36][10] = WALL; matrix[36][11] = WALL; matrix[36][12] = WALL
+
+            // Obstáculos internos sala 4 (laboratorio - mesas de trabajo)
+            matrix[31][5] = INACCESSIBLE; matrix[31][6] = INACCESSIBLE; matrix[31][7] = INACCESSIBLE
+            matrix[31][9] = INACCESSIBLE; matrix[31][10] = INACCESSIBLE
+
+            matrix[34][5] = INACCESSIBLE; matrix[34][6] = INACCESSIBLE; matrix[34][7] = INACCESSIBLE
+            matrix[34][9] = INACCESSIBLE; matrix[34][10] = INACCESSIBLE
+
+            // ============================================
+            // SALA 5 - INFERIOR CENTRO
+            // Coordenadas: (29,15) hasta (36,24)
+            // ============================================
+
+            // Pared superior sala 5 (con puerta ancha de 3 casillas)
+            matrix[29][15] = WALL; matrix[29][16] = WALL; matrix[29][17] = WALL
+            // Puerta: matrix[29][18], matrix[29][19] y matrix[29][20] quedan como PATH
+            matrix[29][21] = WALL; matrix[29][22] = WALL; matrix[29][23] = WALL; matrix[29][24] = WALL
+
+            // Pared izquierda sala 5
+            matrix[30][15] = WALL; matrix[31][15] = WALL; matrix[32][15] = WALL
+            matrix[33][15] = WALL; matrix[34][15] = WALL; matrix[35][15] = WALL; matrix[36][15] = WALL
+
+            // Pared derecha sala 5
+            matrix[30][24] = WALL; matrix[31][24] = WALL; matrix[32][24] = WALL
+            matrix[33][24] = WALL; matrix[34][24] = WALL; matrix[35][24] = WALL; matrix[36][24] = WALL
+
+            // Pared inferior sala 5
+            matrix[36][15] = WALL; matrix[36][16] = WALL; matrix[36][17] = WALL
+            matrix[36][18] = WALL; matrix[36][19] = WALL; matrix[36][20] = WALL
+            matrix[36][21] = WALL; matrix[36][22] = WALL; matrix[36][23] = WALL; matrix[36][24] = WALL
+
+            // Obstáculos internos sala 5 (cafetería - mesas)
+            matrix[31][17] = INACCESSIBLE; matrix[31][18] = INACCESSIBLE
+            matrix[31][21] = INACCESSIBLE; matrix[31][22] = INACCESSIBLE
+
+            matrix[34][17] = INACCESSIBLE; matrix[34][18] = INACCESSIBLE
+            matrix[34][21] = INACCESSIBLE; matrix[34][22] = INACCESSIBLE
+
+            // ============================================
+            // SALA 6 - INFERIOR DERECHA
+            // Coordenadas: (29,27) hasta (36,36)
+            // ============================================
+
+            // Pared superior sala 6 (con puerta ancha de 3 casillas)
+            matrix[29][27] = WALL; matrix[29][28] = WALL; matrix[29][29] = WALL
+            // Puerta: matrix[29][30], matrix[29][31] y matrix[29][32] quedan como PATH
+            matrix[29][33] = WALL; matrix[29][34] = WALL; matrix[29][35] = WALL; matrix[29][36] = WALL
+
+            // Pared izquierda sala 6
+            matrix[30][27] = WALL; matrix[31][27] = WALL; matrix[32][27] = WALL
+            matrix[33][27] = WALL; matrix[34][27] = WALL; matrix[35][27] = WALL; matrix[36][27] = WALL
+
+            // Pared derecha sala 6
+            matrix[30][36] = WALL; matrix[31][36] = WALL; matrix[32][36] = WALL
+            matrix[33][36] = WALL; matrix[34][36] = WALL; matrix[35][36] = WALL; matrix[36][36] = WALL
+
+            // Pared inferior sala 6
+            matrix[36][27] = WALL; matrix[36][28] = WALL; matrix[36][29] = WALL
+            matrix[36][30] = WALL; matrix[36][31] = WALL; matrix[36][32] = WALL
+            matrix[36][33] = WALL; matrix[36][34] = WALL; matrix[36][35] = WALL; matrix[36][36] = WALL
+
+            // Obstáculos internos sala 6 (biblioteca - estanterías)
+            matrix[31][29] = INACCESSIBLE; matrix[31][30] = INACCESSIBLE
+            matrix[31][33] = INACCESSIBLE; matrix[31][34] = INACCESSIBLE
+
+            matrix[34][29] = INACCESSIBLE; matrix[34][30] = INACCESSIBLE
+            matrix[34][33] = INACCESSIBLE; matrix[34][34] = INACCESSIBLE
+
+            // ============================================
+            // ALGUNOS OBSTÁCULOS DECORATIVOS EN ÁREA CENTRAL
+            // Para hacer el juego más interesante
+            // ============================================
+
+            // Jardín/bancas en área central superior
+            matrix[15][8] = INACCESSIBLE; matrix[15][9] = INACCESSIBLE
+            matrix[15][19] = INACCESSIBLE; matrix[15][20] = INACCESSIBLE
+            matrix[15][30] = INACCESSIBLE; matrix[15][31] = INACCESSIBLE
+
+            // Jardín/bancas en área central inferior
+            matrix[24][8] = INACCESSIBLE; matrix[24][9] = INACCESSIBLE
+            matrix[24][19] = INACCESSIBLE; matrix[24][20] = INACCESSIBLE
+            matrix[24][30] = INACCESSIBLE; matrix[24][31] = INACCESSIBLE
+
+            // Algunas columnas/pilares en el centro
+            matrix[17][20] = INACCESSIBLE
+            matrix[22][20] = INACCESSIBLE
+
+            // ============================================
+            // PUNTOS INTERACTIVOS
+            // ============================================
+
+            // Marcar puertas como interactivas (centro de cada puerta de 3 casillas)
+            matrix[10][7] = INTERACTIVE  // Puerta sala 1
+            matrix[10][19] = INTERACTIVE // Puerta sala 2
+            matrix[10][31] = INTERACTIVE // Puerta sala 3
+            matrix[29][7] = INTERACTIVE  // Puerta sala 4
+            matrix[29][19] = INTERACTIVE // Puerta sala 5
+            matrix[29][31] = INTERACTIVE // Puerta sala 6
+
+            // Salida principal a Zacatenco (entrada más ancha)
+            matrix[20][0] = INTERACTIVE
+            matrix[19][0] = INTERACTIVE
+            matrix[21][0] = INTERACTIVE
+
+            Log.d("MapMatrix", "Matriz ENCB creada con 6 salas y área central grande - ${MAP_WIDTH}x${MAP_HEIGHT}")
             return matrix
         }
 
@@ -1605,6 +1874,170 @@ class MapMatrixProvider {
 
             return matrix
         }
+
+        private fun createESIAMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
+
+            // Crear un área rectangular simple y grande para toda la ESIA
+            for (i in 3 until 37) {
+                for (j in 3 until 37) {
+                    matrix[i][j] = PATH
+                }
+            }
+
+            // Bloquear la zona superior derecha (figura roja grande)
+            for (i in 3 until 12) {
+                for (j in 20 until 37) {
+                    val diagonal = (i - 3) + (j - 20)
+                    if (diagonal > 6) {
+                        matrix[i][j] = WALL
+                    }
+                }
+            }
+
+            // Bloquear más zona superior derecha (extensión de la figura roja)
+            for (i in 3 until 8) {
+                for (j in 15 until 37) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // Bloquear la zona media derecha (figura verde compleja)
+            for (i in 15 until 25) {
+                for (j in 28 until 37) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // Extensión adicional de la zona verde (parte más irregular)
+            for (i in 18 until 22) {
+                for (j in 25 until 28) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // Bloquear el área verde específica que encerraste (zona superior derecha)
+            for (i in 8 until 15) {
+                for (j in 25 until 37) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // Bloquear área adicional (20,12) a (24,12)
+            for (i in 12 until 13) {
+                for (j in 20 until 25) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // Bloquear área adicional (20,13) a (24,13)
+            for (i in 13 until 14) {
+                for (j in 20 until 25) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // Bloquear área adicional (20,14) a (24,14)
+            for (i in 14 until 15) {
+                for (j in 20 until 25) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // Bloquear área adicional (21,15) a (27,15)
+            for (i in 15 until 16) {
+                for (j in 21 until 28) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // Bloquear área adicional (22,16) a (27,16)
+            for (i in 16 until 17) {
+                for (j in 22 until 28) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // Bloquear área adicional (23,17) a (27,17)
+            for (i in 17 until 18) {
+                for (j in 23 until 28) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // NUEVO: Bloquear puntos específicos adicionales
+            // Punto (29, 25)
+            matrix[25][29] = WALL
+
+            // Punto (27, 22)
+            matrix[22][27] = WALL
+
+            // Punto (24, 18)
+            matrix[18][24] = WALL
+
+            // NUEVO: Bloquear área (16,8) a (21,8)
+            for (i in 8 until 9) {
+                for (j in 16 until 22) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // NUEVO: Bloquear área (17,9) a (20,9)
+            for (i in 9 until 10) {
+                for (j in 17 until 21) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // NUEVO: Bloquear área (18,10) a (19,10)
+            for (i in 10 until 11) {
+                for (j in 18 until 20) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // NUEVO: Bloquear punto (19,11)
+            matrix[11][19] = WALL
+
+            // Bloquear la zona inferior derecha (triángulo inferior)
+            for (i in 25 until 37) {
+                for (j in 30 until 37) {
+                    val diagonal = (37 - i) + (j - 30)
+                    if (diagonal > 8) {
+                        matrix[i][j] = WALL
+                    }
+                }
+            }
+
+            // Bloquear figura negra superior izquierda
+            for (i in 3 until 10) {
+                for (j in 3 until 12) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // Bloquear figura negra superior derecha (zona más específica)
+            for (i in 3 until 7) {
+                for (j in 12 until 20) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // Bloquear el rectángulo superior final
+            for (i in 3 until 8) {
+                for (j in 8 until 30) {
+                    matrix[i][j] = WALL
+                }
+            }
+
+            // Punto de salida hacia Zacatenco (puerta principal en la parte inferior)
+            matrix[35][25] = INTERACTIVE
+
+            return matrix
+        }
+
+
+
         /**
          * Comprueba si la coordenada especificada es un punto de transición entre mapas
          */
@@ -1731,6 +2164,16 @@ class MapMatrixProvider {
             if (mapId == MAP_BIBLIOTECA && x == 2 && y == 20) {
                 return MAP_MAIN
             }
+
+            // TRANSICIONES PARA ESIA
+            if (mapId == MAP_ESIA && x == 25 && y == 35) {
+                return MAP_ZACATENCO
+            }
+
+            if (mapId == MAP_ZACATENCO && x == 25 && y == 12) {
+                return MAP_ESIA
+            }
+
             // Resto de transiciones...
 
             return null
@@ -1757,6 +2200,7 @@ class MapMatrixProvider {
                 MAP_PALAPAS_ISC -> Pair(38, 38) // Posición inicial dentro de palapas ISC
                 MAP_EDIFICIO_GOBIERNO -> Pair(17, 5)  // Posición cerca de la entrada
                 MAP_BIBLIOTECA -> Pair(17, 5)  // Posición cerca de la entrada
+                MAP_ESIA -> Pair(25, 35) // Posición inicial en ESIA (cerca de la entrada)
                 else -> Pair(MAP_WIDTH / 2, MAP_HEIGHT / 2)
             }
         }
