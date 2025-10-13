@@ -433,12 +433,11 @@ class Zacatenco : AppCompatActivity(),
     }
 
     private fun startPlazaTorresActivity() {
-        val intent = Intent(this, PlazaTorres::class.java).apply {
+        val intent = Intent(this, PlazaTorresPb::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
-            putExtra("IS_CONNECTED", gameState.isConnected)
-            putExtra("INITIAL_POSITION", Pair(18, 18))
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition)
+            putExtra("INITIAL_POSITION", Pair(20, 10))
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         startActivity(intent)
