@@ -209,9 +209,11 @@ class MapMatrixProvider {
 
             matrix[21][31] = INTERACTIVE // entrar edificio ia
             matrix[29][8] = INTERACTIVE // Entrar a las palapas de ISC
+            // Punto de transición para el mapa global
+            matrix[18][14] = INTERACTIVE
             // Áreas de juego específicas
             // Zona central despejada
-            for (i in 15..25) {
+            for (i in 18..25) {
                 for (j in 15..25) {
                     matrix[i][j] = PATH
                 }
