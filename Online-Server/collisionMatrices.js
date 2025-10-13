@@ -537,6 +537,42 @@ for (let i = 3; i < 8; i++) {
 // Punto de salida hacia Zacatenco (puerta principal en la parte inferior)
 esiaCollisionMatrix[35][25] = 0; // INTERACTIVE
 
+// =================================================================
+// Matriz de colisión para Plaza Vista Norte (40x40)
+// =================================================================
+const plazaVistaNorteCollisionMatrix = Array(40).fill().map(() => Array(40).fill(2)); // Todo PATH por defecto
+
+// Bordes exteriores (WALL = 1)
+for (let i = 0; i < 40; i++) {
+    plazaVistaNorteCollisionMatrix[0][i] = 1;      // Pared superior
+    plazaVistaNorteCollisionMatrix[39][i] = 1;     // Pared inferior
+    plazaVistaNorteCollisionMatrix[i][0] = 1;      // Pared izquierda
+    plazaVistaNorteCollisionMatrix[i][39] = 1;     // Pared derecha
+}
+
+// Jardineras (INACCESSIBLE = 3)
+// Jardinera superior
+for (let i = 5; i <= 10; i++) {
+    for (let j = 5; j <= 35; j++) {
+        plazaVistaNorteCollisionMatrix[i][j] = 3;
+    }
+}
+// Jardinera inferior
+for (let i = 30; i <= 35; i++) {
+    for (let j = 5; j <= 35; j++) {
+        plazaVistaNorteCollisionMatrix[i][j] = 3;
+    }
+}
+
+// Bancas (INACCESSIBLE = 3)
+plazaVistaNorteCollisionMatrix[15][10] = 3; plazaVistaNorteCollisionMatrix[15][11] = 3;
+plazaVistaNorteCollisionMatrix[15][28] = 3; plazaVistaNorteCollisionMatrix[15][29] = 3;
+plazaVistaNorteCollisionMatrix[25][10] = 3; plazaVistaNorteCollisionMatrix[25][11] = 3;
+plazaVistaNorteCollisionMatrix[25][28] = 3; plazaVistaNorteCollisionMatrix[25][29] = 3;
+
+// Puntos interactivos (INTERACTIVE = 0)
+// Punto de transición para volver a Lindavista
+plazaVistaNorteCollisionMatrix[6][1] = 0;
 
 
 // Exportar las matrices
@@ -544,5 +580,6 @@ module.exports = {
     cafeteriaCollisionMatrix,
     edificioGobiernoCollisionMatrix,
     palapasISCCollisionMatrix,
-    esiaCollisionMatrix
+    esiaCollisionMatrix,
+    plazaVistaNorteCollisionMatrix
 };

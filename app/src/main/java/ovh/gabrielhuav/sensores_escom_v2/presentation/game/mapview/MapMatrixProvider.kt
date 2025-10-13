@@ -41,11 +41,9 @@ class MapMatrixProvider {
         const val MAP_EDIFICIO_GOBIERNO = "escom_edificio_gobierno"
         const val MAP_BIBLIOTECA = "escom_biblioteca"
         const val MAP_ENCB = "encb"
-
+        const val MAP_ESIA = "escom_esia"
         const val MAP_CIDETEC = "escom_cidetec"
-
-        const val MAP_ESIA = "esia"
-
+        const val MAP_PLAZA_VISTA_NORTE = "plazaVistaNorte"
 
         fun normalizeMapName(mapName: String?): String {
             if (mapName.isNullOrBlank()) return MAP_MAIN
@@ -77,6 +75,7 @@ class MapMatrixProvider {
                 lowerMap.contains("zaca") || lowerMap.contains("zacatenco") -> MAP_ZACATENCO
                 // Lindavista
                 lowerMap.contains("linda") || lowerMap.contains("lindavista") -> MAP_LINDAVISTA
+                lowerMap.contains("plazaVistaNorte") -> MAP_PLAZA_VISTA_NORTE
                 // Cidetec
                 lowerMap.contains("linda") || lowerMap.contains("lindavista") -> MAP_CIDETEC
                 // edificio ia
@@ -164,6 +163,7 @@ class MapMatrixProvider {
                 MAP_BIBLIOTECA -> createBibliotecaMatrix()// Matriz para palapas de ISC
                 MAP_ESIA -> createESIAMatrix()
                 MAP_ENCB -> createEncbMatrix()
+                MAP_PLAZA_VISTA_NORTE -> createPlazaVistaNorteMatrix()
                 MAP_CIDETEC -> createCidetecMatrix()
                 else -> createDefaultMatrix() // Por defecto, un mapa básico
             }
@@ -574,6 +574,49 @@ class MapMatrixProvider {
             Log.d("MapMatrix", "Matriz ENCB creada con 6 salas y área central grande - ${MAP_WIDTH}x${MAP_HEIGHT}")
             return matrix
         }
+
+        /**
+         * Matriz para el mapa de Plaza Vista Norte
+         */
+        private fun createPlazaVistaNorteMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Bordes exteriores
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = WALL
+                    }
+                }
+            }
+
+            // Jardineras (INACCESSIBLE)
+            // Jardinera superior
+            for (i in 5..10) {
+                for (j in 5..35) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            // Jardinera inferior
+            for (i in 30..35) {
+                for (j in 5..35) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            // Bancas (INACCESSIBLE)
+            matrix[15][10] = INACCESSIBLE; matrix[15][11] = INACCESSIBLE
+            matrix[15][28] = INACCESSIBLE; matrix[15][29] = INACCESSIBLE
+            matrix[25][10] = INACCESSIBLE; matrix[25][11] = INACCESSIBLE
+            matrix[25][28] = INACCESSIBLE; matrix[25][29] = INACCESSIBLE
+
+            // Puntos interactivos
+            // Punto de transición para volver a Lindavista
+            matrix[6][1] = INTERACTIVE
+
+            return matrix
+        }
+
 
         private fun createLindavistaMatrix(): Array<Array<Int>> {
             val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }

@@ -440,7 +440,7 @@ class Zacatenco : AppCompatActivity(),
     }
     private fun viewESIA() {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.esiaz.ipn.mx/"))
-        startActivity(intent)   f
+        startActivity(intent)
     }
     private fun startESIAActivity() {
         // ✅ GUARDAR LA POSICIÓN ACTUAL ANTES DE IR A ESIA
