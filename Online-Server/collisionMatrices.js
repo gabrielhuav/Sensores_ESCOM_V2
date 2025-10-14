@@ -538,11 +538,59 @@ for (let i = 3; i < 8; i++) {
 esiaCollisionMatrix[35][25] = 0; // INTERACTIVE
 
 
+// =================================================================
+// Matriz de colisión para CIDETEC (40x40)
+// =================================================================
+const cidetecCollisionMatrix = Array(40).fill().map(() => Array(40).fill(1)); // Todo WALL por defecto
+
+// Crear un área rectangular simple y grande para todo CIDETEC
+for (let i = 3; i < 37; i++) {
+    for (let j = 3; j < 37; j++) {
+        cidetecCollisionMatrix[i][j] = 2; // PATH
+    }
+}
+
+// Bloquear área (10,21) a (10,37)
+for (let i = 21; i < 38; i++) {
+    for (let j = 10; j < 11; j++) {
+        cidetecCollisionMatrix[i][j] = 1; // WALL
+    }
+}
+
+// Bloquear área (10,3) a (10,18)
+for (let i = 3; i < 19; i++) {
+    for (let j = 10; j < 11; j++) {
+        cidetecCollisionMatrix[i][j] = 1; // WALL
+    }
+}
+
+// Bloquear área (10,37) a (30,37)
+for (let i = 37; i < 38; i++) {
+    for (let j = 10; j < 31; j++) {
+        cidetecCollisionMatrix[i][j] = 1; // WALL
+    }
+}
+
+// Bloquear área (30,37) a (30,3)
+for (let i = 37; i < 3; i++) {
+    for (let j = 30; j < 31; j++) {
+        cidetecCollisionMatrix[i][j] = 1; // WALL
+    }
+}
+
+// Bloquear área (10,3) a (30,3)
+for (let i = 3; i < 4; i++) {
+    for (let j = 10; j < 31; j++) {
+        cidetecCollisionMatrix[i][j] = 1; // WALL
+    }
+}
+
 
 // Exportar las matrices
 module.exports = {
     cafeteriaCollisionMatrix,
     edificioGobiernoCollisionMatrix,
     palapasISCCollisionMatrix,
-    esiaCollisionMatrix
+    esiaCollisionMatrix,
+    cidetecCollisionMatrix
 };
