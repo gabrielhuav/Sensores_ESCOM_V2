@@ -934,7 +934,7 @@ module.exports = {
     edificioGobiernoCollisionMatrix,
     palapasISCCollisionMatrix,
     esiaCollisionMatrix,
-    metroPolitecnicoCollisionMatrix
+    metroPolitecnicoCollisionMatrix,
     esimeCollisionMatrix,
     esiaCollisionMatrix,
     plazaVistaNorteCollisionMatrix

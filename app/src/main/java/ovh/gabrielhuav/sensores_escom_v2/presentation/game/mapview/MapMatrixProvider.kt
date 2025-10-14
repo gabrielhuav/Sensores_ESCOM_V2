@@ -1,7 +1,6 @@
 package ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview
 
 import android.util.Log
-import kotlin.text.set
 
 /**
  * Provee matrices específicas para cada mapa del juego.
@@ -37,6 +36,7 @@ class MapMatrixProvider {
         const val MAP_EDIFICIO_IA_ALTO = "edificio_ia_alto"
         const val MAP_CABLEBUS = "cablebus"
         const val MAP_SALIDAMETRO = "escom_salidametro"
+        const val MAP_METRO_POLITECNICO = "metro_politecnico"
         const val MAP_PALAPAS_IA = "escom_palapas_ia"
         const val MAP_ESIME = "esime_zacatenco"
         const val MAP_PALAPAS_ISC = "escom_palapas_isc"
@@ -126,6 +126,9 @@ class MapMatrixProvider {
 
         val MAIN_TO_SALIDAMETRO_POSITION = Pair(2, 2)       // Desde mapa principal
         val SALIDAMETRO_TO_MAIN_POSITION = Pair(1, 1)         // Vuelta al mapa principal
+        //Del mapa Salida del Metro a Metro Politécnico
+        val MAIN_TO_METROPOLUTECNICO_POSITION = Pair(2, 2)       // Desde mapa principal
+        val METROPOLITECNICO_TO_MAIN_POSITION = Pair(1, 1)
         // Del Estacionamiento al segundo mapa (Tramo Atrás Plaza)
         val ESTACIONAMIENTO_TO_PLAZA_POSITION = Pair(35, 20)
         val PLAZA_TO_ESTACIONAMIENTO_POSITION = Pair(5, 20)
@@ -141,10 +144,6 @@ class MapMatrixProvider {
         val EDIFICIO_GOBIERNO_TO_MAIN = Pair(20, 2)
         val MAIN_TO_BIBLIOTECA = Pair(35, 15)
         val BIBLIOTECA_TO_MAIN = Pair(2, 20)
-        
-        // Transiciones ESIME - Zacatenco
-        val ESIME_TO_ZACATENCO_POSITION = Pair(5, 35)
-        val ZACATENCO_TO_ESIME_POSITION = Pair(28, 24)
 
         // Transiciones ESIME - Zacatenco
         val ESIME_TO_ZACATENCO_POSITION = Pair(5, 35)
@@ -173,6 +172,7 @@ class MapMatrixProvider {
                 MAP_ZACATENCO -> createZacatencoMatrix()
                 MAP_LINDAVISTA -> createLindavistaMatrix()
                 MAP_SALIDAMETRO -> createSalidaMetroMatrix() // salida metro
+                MAP_METRO_POLITECNICO -> createMetroPolitecnicoMatrix()
                 MAP_CABLEBUS -> createCablebusMatix()
                 MAP_EDIFICIO_IA_BAJO-> createEdificioIABajoMatrix()
                 MAP_EDIFICIO_IA_MEDIO-> createEdificioIAMedioMatrix()
@@ -1258,7 +1258,7 @@ class MapMatrixProvider {
                     }
                 }
             }
-
+            matrix[5][37] = INTERACTIVE
             matrix[5][35] = INTERACTIVE
             matrix[22][17] = INTERACTIVE
             matrix[27][31] = INTERACTIVE
@@ -1274,12 +1274,19 @@ class MapMatrixProvider {
                     matrix[i][j] = BANCA
                 }
             }
+            //Contorno de la entrada del metro
+            val anchoParedMetro = 36
+            for (i in 6 until 14) {
+                matrix[i][anchoParedMetro] = PARED
+            }
+
+            val alturaParedMetro = 14
+            for (j in 36 until MAP_WIDTH) {
+                matrix[alturaParedMetro][j] = PARED
+            }
 
             return matrix
         }
-
-
-
         private fun createMetroPolitecnicoMatrix(): Array<Array<Int>> {
             val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
 
@@ -1420,7 +1427,6 @@ class MapMatrixProvider {
             return matrix
         }
 
-
         /**
          * Matriz predeterminada para cualquier otro mapa
          */
@@ -1544,7 +1550,6 @@ class MapMatrixProvider {
 
         private fun createEsimeMatrix(): Array<Array<Int>> {
             val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
-            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }            
 
             // ========== BORDES EXTERIORES ==========
             for (i in 0 until MAP_HEIGHT) {
@@ -1559,7 +1564,6 @@ class MapMatrixProvider {
             // ========== EDIFICIOS BLOQUEADOS - SINCRONIZADO CON Esime.kt ==========
             // Basado exactamente en las definiciones de collisionAreas en Esime.kt
 
-            
             // Edificio 1 - Rectángulos bloqueados
             // Rect(7, 28, 14, 29) - Rectángulo grande desde entrada del Edificio 1
             for (i in 7..14) {
@@ -2191,26 +2195,6 @@ class MapMatrixProvider {
             return matrix
         }
 
-        /**
-         * NUEVO MAPA: Plaza Torres Nivel 1
-         */
-        private fun createPlazaTorresN1Matrix(): Array<Array<Int>> {
-            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
-
-            // Área jugable (un rectángulo)
-            val startX = 10
-            val startY = 15
-            val roomWidth = 20
-            val roomHeight = 10
-
-            for (y in startY until startY + roomHeight) {
-                for (x in startX until startX + roomWidth) {
-                    matrix[y][x] = PATH
-                }
-            }
-
-            // Punto de salida para regresar a la planta baja
-            matrix[startY + roomHeight - 1][startX + roomWidth / 2] = INTERACTIVE // Salida
         private fun createESIAMatrix(): Array<Array<Int>> {
             val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
 
@@ -2568,4 +2552,3 @@ class MapMatrixProvider {
         }
     }
 }
-
