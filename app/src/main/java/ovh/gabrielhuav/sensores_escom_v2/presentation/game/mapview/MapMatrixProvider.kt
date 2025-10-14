@@ -2039,6 +2039,10 @@ class MapMatrixProvider {
 
             // Punto de salida para regresar a la planta baja
             matrix[startY + roomHeight - 1][startX + roomWidth / 2] = INTERACTIVE // Salida
+
+            return matrix
+        }
+
         private fun createESIAMatrix(): Array<Array<Int>> {
             val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
 

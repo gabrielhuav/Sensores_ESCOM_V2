@@ -774,6 +774,30 @@ plazaVistaNorteCollisionMatrix[25][28] = 3; plazaVistaNorteCollisionMatrix[25][2
 // Punto de transición para volver a Lindavista
 plazaVistaNorteCollisionMatrix[6][1] = 0;
 
+const plazaTorresCollisionMatrix = Array(40).fill().map(() => Array(40).fill(0)); // Todo WALL por defecto
+
+// --- ZONAS DE TIENDAS (INACCESSIBLE = 3) ---
+for (let i = 20; i < 39; i++) { for (let j = 1; j < 22; j++) { plazaTorresCollisionMatrix[i][j] = 3; } } // Walmart
+for (let i = 1; i < 16; i++) { for (let j = 14; j < 36; j++) { plazaTorresCollisionMatrix[i][j] = 3; } } // Suburbia
+for (let i = 1; i < 11; i++) { for (let j = 1; j < 12; j++) { plazaTorresCollisionMatrix[i][j] = 3; } } // Smart Fit
+for (let i = 1; i < 18; i++) { for (let j = 37; j < 39; j++) { plazaTorresCollisionMatrix[i][j] = 3; } } // Restaurantes
+for (let i = 12; i < 18; i++) { for (let j = 32; j < 37; j++) { plazaTorresCollisionMatrix[i][j] = 3; } } // Restaurantes
+
+// --- PASILLOS (PATH = 2) ---
+for (let i = 16; i < 22; i++) { for (let j = 10; j < 38; j++) { plazaTorresCollisionMatrix[i][j] = 2; } } // Pasillo horizontal
+for (let i = 16; i < 38; i++) { for (let j = 22; j < 28; j++) { plazaTorresCollisionMatrix[i][j] = 2; } } // Pasillo vertical
+for (let i = 11; i < 16; i++) { for (let j = 8; j < 14; j++) { plazaTorresCollisionMatrix[i][j] = 2; } }  // Pasillo a Smart Fit
+for (let i = 11; i < 20; i++) { for (let j = 11; j < 14; j++) { plazaTorresCollisionMatrix[i][j] = 2; } } // Pasillo a Smart Fit
+
+// --- PUNTOS INTERACTIVOS (INTERACTIVE = 0) ---
+// Salidas a Zacatenco
+plazaTorresCollisionMatrix[14][10] = 0;
+plazaTorresCollisionMatrix[20][31] = 0;
+plazaTorresCollisionMatrix[37][24] = 0;
+
+// Entrada al Cine (Nivel 1)
+plazaTorresCollisionMatrix[18][25] = 0;
+
 // Exportar las matrices
 module.exports = {
     cafeteriaCollisionMatrix,
@@ -781,5 +805,6 @@ module.exports = {
     palapasISCCollisionMatrix,
     esimeCollisionMatrix,
     esiaCollisionMatrix,
-    plazaVistaNorteCollisionMatrix
+    plazaVistaNorteCollisionMatrix,
+    plazaTorresCollisionMatrix
 };

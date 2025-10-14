@@ -336,7 +336,7 @@ class GameplayActivity : AppCompatActivity(),
             putExtra("IS_SERVER", gameState.isServer)
 
             // La pasamos en el Intent con la clave "INITIAL_POSITION"
-            putExtra("INITIAL_POSITION", initialPos)
+            putExtra("INITIAL_POSITION", Pair(15, 37))
 
             putExtra("PREVIOUS_POSITION", gameState.playerPosition)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
