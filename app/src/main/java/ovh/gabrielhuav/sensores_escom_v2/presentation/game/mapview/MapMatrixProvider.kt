@@ -1,6 +1,7 @@
 package ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview
 
 import android.util.Log
+import kotlin.text.set
 
 /**
  * Provee matrices específicas para cada mapa del juego.
@@ -36,20 +37,23 @@ class MapMatrixProvider {
         const val MAP_EDIFICIO_IA_ALTO = "edificio_ia_alto"
         const val MAP_CABLEBUS = "cablebus"
         const val MAP_SALIDAMETRO = "escom_salidametro"
-        const val MAP_METRO_POLITECNICO = "metro_politecnico"
         const val MAP_PALAPAS_IA = "escom_palapas_ia"
+        const val MAP_ESIME = "esime_zacatenco"
         const val MAP_PALAPAS_ISC = "escom_palapas_isc"
         const val MAP_EDIFICIO_GOBIERNO = "escom_edificio_gobierno"
         const val MAP_BIBLIOTECA = "escom_biblioteca"
         const val MAP_ENCB = "encb"
-
-        const val MAP_ESIA = "esia"
-
+        const val MAP_PLAZA_TORRES = "plaza_torres"
+        const val MAP_PLAZA_TORRES_N1 = "plaza_torres_n1"
+        const val MAP_ESIA = "escom_esia"
+        const val MAP_CIDETEC = "escom_cidetec"
+        const val MAP_PLAZA_VISTA_NORTE = "plazaVistaNorte"
 
         fun normalizeMapName(mapName: String?): String {
             if (mapName.isNullOrBlank()) return MAP_MAIN
 
             val lowerMap = mapName.lowercase()
+
 
             return when {
                 // Mapa principal
@@ -76,17 +80,28 @@ class MapMatrixProvider {
                 lowerMap.contains("zaca") || lowerMap.contains("zacatenco") -> MAP_ZACATENCO
                 // Lindavista
                 lowerMap.contains("linda") || lowerMap.contains("lindavista") -> MAP_LINDAVISTA
+                lowerMap.contains("plazaVistaNorte") -> MAP_PLAZA_VISTA_NORTE
+                // Cidetec
+                lowerMap.contains("linda") || lowerMap.contains("lindavista") -> MAP_CIDETEC
                 // edificio ia
                 lowerMap.contains("ia_baja") || lowerMap.contains("edificio_ia_bajo") -> MAP_EDIFICIO_IA_BAJO
                 lowerMap.contains("ia_medio") || lowerMap.contains("edificio_ia_medio") -> MAP_EDIFICIO_IA_MEDIO
                 lowerMap.contains("ia_alto") || lowerMap.contains("edificio_ia_alto") -> MAP_EDIFICIO_IA_ALTO
                 lowerMap.contains("cable") || lowerMap.contains("cablebus") -> MAP_CABLEBUS
                 lowerMap.contains("palapas_ia") -> MAP_PALAPAS_IA
+
                 lowerMap.contains("gobierno") || lowerMap.contains("edificio_gobierno") -> MAP_EDIFICIO_GOBIERNO
                 lowerMap.contains("biblioteca") -> MAP_BIBLIOTECA
+
+                //ESIME
+                lowerMap.contains("esime") || lowerMap.contains("esime_zacatenco") -> MAP_ESIME
+
+
                 // ESIA
                 lowerMap.contains("esia") -> MAP_ESIA
                 lowerMap.contains("encb") -> MAP_ENCB
+                lowerMap.contains("plaza_torres") -> MAP_PLAZA_TORRES
+                lowerMap.contains("plaza_torres_n1") -> MAP_PLAZA_TORRES_N1
                 // Si no coincide con ninguno de los anteriores, devolver el original
                 else -> mapName
             }
@@ -111,9 +126,6 @@ class MapMatrixProvider {
 
         val MAIN_TO_SALIDAMETRO_POSITION = Pair(2, 2)       // Desde mapa principal
         val SALIDAMETRO_TO_MAIN_POSITION = Pair(1, 1)         // Vuelta al mapa principal
-        //Del mapa Salida del Metro a Metro Politécnico
-        val MAIN_TO_METROPOLUTECNICO_POSITION = Pair(2, 2)       // Desde mapa principal
-        val METROPOLITECNICO_TO_MAIN_POSITION = Pair(1, 1)
         // Del Estacionamiento al segundo mapa (Tramo Atrás Plaza)
         val ESTACIONAMIENTO_TO_PLAZA_POSITION = Pair(35, 20)
         val PLAZA_TO_ESTACIONAMIENTO_POSITION = Pair(5, 20)
@@ -129,6 +141,10 @@ class MapMatrixProvider {
         val EDIFICIO_GOBIERNO_TO_MAIN = Pair(20, 2)
         val MAIN_TO_BIBLIOTECA = Pair(35, 15)
         val BIBLIOTECA_TO_MAIN = Pair(2, 20)
+
+        // Transiciones ESIME - Zacatenco
+        val ESIME_TO_ZACATENCO_POSITION = Pair(5, 35)
+        val ZACATENCO_TO_ESIME_POSITION = Pair(28, 24)
 
         // NUEVOS PUNTOS DE TRANSICIÓN PARA ESIA
         val ZACATENCO_TO_ESIA_POSITION = Pair(25, 12)
@@ -153,7 +169,6 @@ class MapMatrixProvider {
                 MAP_ZACATENCO -> createZacatencoMatrix()
                 MAP_LINDAVISTA -> createLindavistaMatrix()
                 MAP_SALIDAMETRO -> createSalidaMetroMatrix() // salida metro
-                MAP_METRO_POLITECNICO -> createMetroPolitecnicoMatrix()
                 MAP_CABLEBUS -> createCablebusMatix()
                 MAP_EDIFICIO_IA_BAJO-> createEdificioIABajoMatrix()
                 MAP_EDIFICIO_IA_MEDIO-> createEdificioIAMedioMatrix()
@@ -161,9 +176,14 @@ class MapMatrixProvider {
                 MAP_PALAPAS_IA -> createPalapasIAMapMatrix()
                 MAP_PALAPAS_ISC -> createPalapasISCMatrix()
                 MAP_EDIFICIO_GOBIERNO -> createEdificioGobiernoMatrix()
-                MAP_BIBLIOTECA -> createBibliotecaMatrix()// Matriz para palapas de ISC
+                MAP_BIBLIOTECA -> createBibliotecaMatrix()
                 MAP_ESIA -> createESIAMatrix()
                 MAP_ENCB -> createEncbMatrix()
+                MAP_PLAZA_TORRES -> createPlazaTorresMatrix()
+                MAP_PLAZA_TORRES_N1 -> createPlazaTorresN1Matrix()
+                MAP_ESIME -> createEsimeMatrix()
+                MAP_PLAZA_VISTA_NORTE -> createPlazaVistaNorteMatrix()
+                MAP_CIDETEC -> createCidetecMatrix()
                 else -> createDefaultMatrix() // Por defecto, un mapa básico
             }
         }
@@ -295,6 +315,11 @@ class MapMatrixProvider {
                     }
                     else if (i == 19 && j == 4) {
                         matrix[i][j] = INTERACTIVE // Entrada a ESCOM
+                    }else if( i == 10 && j == 1){
+                        matrix[i][j] == INTERACTIVE
+                    }
+                    else if (i == 24 && j == 28) {
+                        matrix[i][j] = INTERACTIVE // Entrada a ESIME
                     }
                     else if(i == 24 && j == 12){
                         matrix[i][j] = INTERACTIVE // Entrada a ENCB
@@ -317,6 +342,8 @@ class MapMatrixProvider {
                     matrix[i][j] = PATH
                 }
             }
+
+            matrix[10][20] = INTERACTIVE
 
             return matrix
         }
@@ -572,6 +599,49 @@ class MapMatrixProvider {
             return matrix
         }
 
+        /**
+         * Matriz para el mapa de Plaza Vista Norte
+         */
+        private fun createPlazaVistaNorteMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Bordes exteriores
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = WALL
+                    }
+                }
+            }
+
+            // Jardineras (INACCESSIBLE)
+            // Jardinera superior
+            for (i in 5..10) {
+                for (j in 5..35) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            // Jardinera inferior
+            for (i in 30..35) {
+                for (j in 5..35) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            // Bancas (INACCESSIBLE)
+            matrix[15][10] = INACCESSIBLE; matrix[15][11] = INACCESSIBLE
+            matrix[15][28] = INACCESSIBLE; matrix[15][29] = INACCESSIBLE
+            matrix[25][10] = INACCESSIBLE; matrix[25][11] = INACCESSIBLE
+            matrix[25][28] = INACCESSIBLE; matrix[25][29] = INACCESSIBLE
+
+            // Puntos interactivos
+            // Punto de transición para volver a Lindavista
+            matrix[6][1] = INTERACTIVE
+
+            return matrix
+        }
+
+
         private fun createLindavistaMatrix(): Array<Array<Int>> {
             val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
 
@@ -599,6 +669,38 @@ class MapMatrixProvider {
                     /**else if (i % 7 == 0 && j % 8 == 0) {
                     matrix[i][j] = INACCESSIBLE
                     }**/
+                    // Caminos especiales
+                    else if ((i % 5 == 0 || j % 5 == 0) && i > 5 && j > 5) {
+                        matrix[i][j] = PATH
+                    }
+                }
+            }
+
+            // Áreas de juego específicas
+            // Zona central despejada
+            for (i in 15..25) {
+                for (j in 15..25) {
+                    matrix[i][j] = PATH
+                }
+            }
+
+            return matrix
+        }
+
+        private fun createCidetecMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Configuración de bordes
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    // Bordes exteriores
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = WALL
+                    }
+                    // Zonas interactivas (edificios, entradas)
+                    else if (i == 22 && j == 11) {
+                        matrix[i][j] = INTERACTIVE // Entrada a ESCOM
+                    }
                     // Caminos especiales
                     else if ((i % 5 == 0 || j % 5 == 0) && i > 5 && j > 5) {
                         matrix[i][j] = PATH
@@ -1136,6 +1238,44 @@ class MapMatrixProvider {
             return matrix
         }
 
+        private fun createSalidaMetroMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Constantes
+            val PARED = WALL
+            val BANCA = INACCESSIBLE
+
+
+            // Bordes exteriores
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = PARED
+                    }
+                }
+            }
+
+            matrix[5][35] = INTERACTIVE
+            matrix[22][17] = INTERACTIVE
+            matrix[27][31] = INTERACTIVE
+            // Pared al 70% de la altura desde arriba (equivale a 30% desde abajo)
+            val alturaPared = (MAP_HEIGHT * 0.7).toInt() // 28 en un mapa 40x40
+            for (j in 0 until MAP_WIDTH) {
+                matrix[alturaPared][j] = PARED
+            }
+
+            // Rectángulo inaccesible (cuadro) con esquinas en (6,1), (6,21), (29,21) y (29,1)
+            for (i in 1..21) {
+                for (j in 6..29) {
+                    matrix[i][j] = BANCA
+                }
+            }
+
+            return matrix
+        }
+
+
+
         private fun createMetroPolitecnicoMatrix(): Array<Array<Int>> {
             val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
 
@@ -1276,52 +1416,6 @@ class MapMatrixProvider {
             return matrix
         }
 
-        private fun createSalidaMetroMatrix(): Array<Array<Int>> {
-            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
-
-            // Constantes
-            val PARED = WALL
-            val BANCA = INACCESSIBLE
-
-
-            // Bordes exteriores
-            for (i in 0 until MAP_HEIGHT) {
-                for (j in 0 until MAP_WIDTH) {
-                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
-                        matrix[i][j] = PARED
-                    }
-                }
-            }
-
-            matrix[5][37] = INTERACTIVE
-            matrix[5][35] = INTERACTIVE
-            matrix[22][17] = INTERACTIVE
-            matrix[27][31] = INTERACTIVE
-            // Pared al 70% de la altura desde arriba (equivale a 30% desde abajo)
-            val alturaPared = (MAP_HEIGHT * 0.7).toInt() // 28 en un mapa 40x40
-            for (j in 0 until MAP_WIDTH) {
-                matrix[alturaPared][j] = PARED
-            }
-
-            // Rectángulo inaccesible (cuadro) con esquinas en (6,1), (6,21), (29,21) y (29,1)
-            for (i in 1..21) {
-                for (j in 6..29) {
-                    matrix[i][j] = BANCA
-                }
-            }
-            //Contorno de la entrada del metro
-            val anchoParedMetro = 36
-            for (i in 6 until 14) {
-                matrix[i][anchoParedMetro] = PARED
-            }
-
-            val alturaParedMetro = 14
-            for (j in 36 until MAP_WIDTH) {
-                matrix[alturaParedMetro][j] = PARED
-            }
-
-            return matrix
-        }
 
         /**
          * Matriz predeterminada para cualquier otro mapa
@@ -1444,6 +1538,164 @@ class MapMatrixProvider {
             return matrix
         }
 
+        private fun createEsimeMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // ========== BORDES EXTERIORES ==========
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    // Bordes exteriores
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = WALL
+                    }
+                }
+            }
+
+            // ========== EDIFICIOS BLOQUEADOS - SINCRONIZADO CON Esime.kt ==========
+            // Basado exactamente en las definiciones de collisionAreas en Esime.kt
+
+            // Edificio 1 - Rectángulos bloqueados
+            // Rect(7, 28, 14, 29) - Rectángulo grande desde entrada del Edificio 1
+            for (i in 7..14) {
+                for (j in 28..29) {
+                    matrix[j][i] = INACCESSIBLE
+                }
+            }
+            // Rect(16, 28, 17, 29) - Cuadrado que deja pasillo
+            for (i in 16..17) {
+                for (j in 28..29) {
+                    matrix[j][i] = INACCESSIBLE
+                }
+            }
+            // Rect(7, 31, 14, 32) - Parte inferior
+            for (i in 7..14) {
+                for (j in 31..32) {
+                    matrix[j][i] = INACCESSIBLE
+                }
+            }
+
+            // Edificio 2 - Rectángulos bloqueados
+            // Rect(7, 22, 14, 23) - Rectángulo grande desde entrada del Edificio 2
+            for (i in 7..14) {
+                for (j in 22..23) {
+                    matrix[j][i] = INACCESSIBLE
+                }
+            }
+            // Rect(16, 22, 17, 23) - Cuadrado que deja pasillo
+            for (i in 16..17) {
+                for (j in 22..23) {
+                    matrix[j][i] = INACCESSIBLE
+                }
+            }
+            // Rect(7, 25, 14, 26) - Parte inferior
+            for (i in 7..14) {
+                for (j in 25..26) {
+                    matrix[j][i] = INACCESSIBLE
+                }
+            }
+
+            // Edificio 3 - Solo bloquear área derecha, dejar entrada libre frontal
+            // Rect(7, 15, 14, 16) - Área derecha bloqueada del Edificio 3
+            for (i in 7..14) {
+                for (j in 15..16) {
+                    matrix[j][i] = INACCESSIBLE
+                }
+            }
+            // Rect(16, 15, 17, 16) - Cuadrado que deja pasillo
+            for (i in 16..17) {
+                for (j in 15..16) {
+                    matrix[j][i] = INACCESSIBLE
+                }
+            }
+            // Rect(7, 18, 14, 19) - Parte inferior
+            for (i in 7..14) {
+                for (j in 18..19) {
+                    matrix[j][i] = INACCESSIBLE
+                }
+            }
+
+            // Edificio 4 - Rectángulos bloqueados
+            // Rect(7, 9, 14, 10) - Rectángulo grande desde entrada del Edificio 4
+            for (i in 7..14) {
+                for (j in 9..10) {
+                    matrix[j][i] = INACCESSIBLE
+                }
+            }
+            // Rect(16, 9, 17, 10) - Cuadrado que deja pasillo
+            for (i in 16..17) {
+                for (j in 9..10) {
+                    matrix[j][i] = INACCESSIBLE
+                }
+            }
+            // Rect(7, 12, 14, 13) - Parte inferior
+            for (i in 7..14) {
+                for (j in 12..13) {
+                    matrix[j][i] = INACCESSIBLE
+                }
+            }
+
+            // Edificio 5 - Rectángulos bloqueados
+            // Rect(7, 3, 14, 4) - Rectángulo grande desde entrada del Edificio 5
+            for (i in 7..14) {
+                for (j in 3..4) {
+                    matrix[j][i] = INACCESSIBLE
+                }
+            }
+            // Rect(16, 3, 17, 4) - Cuadrado que deja pasillo
+            for (i in 16..17) {
+                for (j in 3..4) {
+                    matrix[j][i] = INACCESSIBLE
+                }
+            }
+            // Rect(7, 6, 14, 7) - Parte superior edificio 5
+            for (i in 7..14) {
+                for (j in 6..7) {
+                    matrix[j][i] = INACCESSIBLE
+                }
+            }
+
+            // ========== ÁREAS ADICIONALES BLOQUEADAS ==========
+            // Pastos - Rect(7, 34, 38, 38)
+            for (i in 7..38) {
+                for (j in 34..38) {
+                    matrix[j][i] = INACCESSIBLE
+                }
+            }
+
+            // Pastos laterales - Rect(32, 29, 38, 38)
+            for (i in 32..38) {
+                for (j in 29..38) {
+                    matrix[j][i] = INACCESSIBLE
+                }
+            }
+
+            // Área central bloqueada - Rect(24, 6, 29, 18)
+            for (i in 24..29) {
+                for (j in 6..18) {
+                    matrix[j][i] = INACCESSIBLE
+                }
+            }
+
+            // Zona inaccesible superior - Rect(7, 1, 38, 4)
+            for (i in 7..38) {
+                for (j in 1..4) {
+                    matrix[j][i] = INACCESSIBLE
+                }
+            }
+
+            // ========== PUNTOS INTERACTIVOS ==========
+            // Entrada al Edificio 3 (accesible) - Posición de entrada frontal libre
+            matrix[17][8] = INTERACTIVE // Entrada Edificio 3
+
+            // Punto de transición ESIME a Zacatenco (basado en ESIME_TO_ZACATENCO_POSITION)
+            matrix[ESIME_TO_ZACATENCO_POSITION.second][ESIME_TO_ZACATENCO_POSITION.first] = INTERACTIVE
+
+            // Punto de entrada desde Zacatenco (basado en las definiciones de transición)
+            matrix[2][38] = INTERACTIVE // Entrada desde Zacatenco
+
+            return matrix
+        }
+
         // Función para crear la matriz de palapas ISC
         private fun createPalapasISCMatrix(): Array<Array<Int>> {
             // Empezamos con una matriz donde todo es un camino (PATH) por defecto
@@ -1519,9 +1771,6 @@ class MapMatrixProvider {
 
             return matrix
         }
-        /**
-         * NUEVO MAPA: Edificio Gobierno
-         */
         /**
          * NUEVO MAPA: Edificio Gobierno
          */
@@ -1694,6 +1943,8 @@ class MapMatrixProvider {
                     matrix[i][j] = INACCESSIBLE
                 }
             }
+
+
 
             for (i in 38..38) {
                 for (j in 35..35) {
@@ -1875,6 +2126,65 @@ class MapMatrixProvider {
             return matrix
         }
 
+        private fun createPlazaTorresN1Matrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
+
+            // Área jugable (un rectángulo)
+            val startX = 10
+            val startY = 15
+            val roomWidth = 20
+            val roomHeight = 10
+
+            for (y in startY until startY + roomHeight) {
+                for (x in startX until startX + roomWidth) {
+                    matrix[y][x] = PATH
+                }
+            }
+
+            // Punto de salida para regresar a la planta baja
+            matrix[startY + roomHeight - 1][startX + roomWidth / 2] = INTERACTIVE // Salida
+
+            return matrix
+        }
+
+        /**
+         * NUEVO MAPA: Plaza Torres
+         */
+        private fun createPlazaTorresMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Walmart (Área grande azul en la parte inferior izquierda)
+            for (i in 20 until 39) { for (j in 1 until 22) { matrix[i][j] = INACCESSIBLE } }
+            // Suburbia (Área grande rosa en la parte superior)
+            for (i in 1 until 16) { for (j in 14 until 36) { matrix[i][j] = INACCESSIBLE } }
+            // Smart Fit (Área azul en la esquina superior izquierda)
+            for (i in 1 until 11) { for (j in 1 until 12) { matrix[i][j] = INACCESSIBLE } }
+            // Zona de restaurantes (Vips, Burger King, etc. - Área verde a la derecha)
+            for (i in 1 until 18) { for (j in 37 until 39) { matrix[i][j] = INACCESSIBLE } }
+            for (i in 12 until 18) { for (j in 32 until 37) { matrix[i][j] = INACCESSIBLE } }
+
+            // Pasillo horizontal principal (debajo de Suburbia)
+            for (i in 16 until 22) { for (j in 10 until 38) { matrix[i][j] = PATH } }
+            // Pasillo vertical principal (entre Walmart y las tiendas pequeñas)
+            for (i in 16 until 38) { for (j in 22 until 28) { matrix[i][j] = PATH } }
+            // Pasillo secundario (hacia Smart Fit y Citibanamex)
+            for (i in 11 until 16) { for (j in 8 until 14) { matrix[i][j] = PATH } }
+            for (i in 11 until 20) { for (j in 11 until 14) { matrix[i][j] = PATH } }
+
+            // SALIDA A ZACATENCO
+            matrix[14][10] = INTERACTIVE // Punto azul cerca de Smart Fit
+            matrix[20][31] = INTERACTIVE // Punto azul en el pasillo central
+            matrix[37][24] = INTERACTIVE // Punto azul en la salida cerca de Walmart
+
+            // Kioscos o islas
+            matrix[18][15] = INACCESSIBLE
+            matrix[18][30] = INACCESSIBLE
+
+            matrix[18][25] = INTERACTIVE // Punto para subir al nivel del Cinepolis
+
+            return matrix
+        }
+
         private fun createESIAMatrix(): Array<Array<Int>> {
             val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
 
@@ -2036,8 +2346,6 @@ class MapMatrixProvider {
             return matrix
         }
 
-
-
         /**
          * Comprueba si la coordenada especificada es un punto de transición entre mapas
          */
@@ -2058,7 +2366,7 @@ class MapMatrixProvider {
                     return MAP_SALON2009
                 }
 
-                if (x == 24 && y == 22 || x == 24 && y == 23 ) {
+                if (x == 24 && y == 22 || x == 24 && y == 23) {
                     return MAP_SALON2010
                 }
 
@@ -2066,13 +2374,13 @@ class MapMatrixProvider {
                 if (x == 5 && y == 5) {
                     return MAP_MAIN
                 }
-                if(x == 1 && y == 1){
+                if (x == 1 && y == 1) {
                     return MAP_MAIN
                 }
             }
 
-            if(mapId == MAP_BUILDING2_PISO1){
-                if(x == 17 && y == 23){
+            if (mapId == MAP_BUILDING2_PISO1) {
+                if (x == 17 && y == 23) {
                     return MAP_BUILDING2
                 }
             }
@@ -2091,7 +2399,7 @@ class MapMatrixProvider {
                 }
             }
 
-            if(mapId == MAP_BUILDING2 && x == 17 && y == 15){
+            if (mapId == MAP_BUILDING2 && x == 17 && y == 15) {
                 return MAP_BUILDING2_PISO1
             }
 
@@ -2176,6 +2484,31 @@ class MapMatrixProvider {
 
             // Resto de transiciones...
 
+            // Transición DESDE Zacatenco HACIA Plaza Torres
+            if (mapId == MAP_ZACATENCO && x == 20 && y == 10) { // Coordenada del punto azul en Zacatenco
+                return MAP_PLAZA_TORRES
+            }
+
+            // Transición DESDE Plaza Torres HACIA Zacatenco
+            if (mapId == MAP_PLAZA_TORRES) {
+                if ((x == 10 && y == 14) || // Cerca de Smart Fit
+                    (x == 31 && y == 20) || // Pasillo central
+                    (x == 24 && y == 37))   // Cerca de Walmart
+                {
+                    return MAP_ZACATENCO
+                }
+
+                // Transición DESDE Plaza Torres HACIA el nivel 1
+                if (x == 25 && y == 18) {
+                    return MAP_PLAZA_TORRES_N1
+                }
+            }
+
+            // Transición DESDE el nivel 1 HACIA Plaza Torres
+            if (mapId == MAP_PLAZA_TORRES_N1 && x == 20 && y == 24) {
+                return MAP_PLAZA_TORRES
+            }
+
             return null
         }
 
@@ -2197,12 +2530,16 @@ class MapMatrixProvider {
                 MAP_EDIFICIO_IA_MEDIO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
                 MAP_EDIFICIO_IA_ALTO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
                 MAP_PALAPAS_IA -> Pair(2, 2)
+
                 MAP_PALAPAS_ISC -> Pair(38, 38) // Posición inicial dentro de palapas ISC
                 MAP_EDIFICIO_GOBIERNO -> Pair(17, 5)  // Posición cerca de la entrada
                 MAP_BIBLIOTECA -> Pair(17, 5)  // Posición cerca de la entrada
+                MAP_PLAZA_TORRES -> Pair(18, 18) //Entrada ESCOM
+                MAP_PLAZA_TORRES_N1 -> Pair(20, 16) //Entrada cinepolis plaza torres
                 MAP_ESIA -> Pair(25, 35) // Posición inicial en ESIA (cerca de la entrada)
                 else -> Pair(MAP_WIDTH / 2, MAP_HEIGHT / 2)
             }
         }
     }
 }
+
