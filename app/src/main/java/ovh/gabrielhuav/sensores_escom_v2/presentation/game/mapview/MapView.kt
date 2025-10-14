@@ -650,6 +650,7 @@ class MapView @JvmOverloads constructor(
             color = Color.rgb(0, 100, 0)  // Verde oscuro para zombies
             style = Paint.Style.FILL
         }
+
         val rabbitPaint = Paint().apply {
             color = Color.rgb(255, 182, 193) // rosa para los conejos
             style = Paint.Style.FILL

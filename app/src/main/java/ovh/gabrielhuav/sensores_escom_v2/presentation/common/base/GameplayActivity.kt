@@ -1,5 +1,6 @@
 package ovh.gabrielhuav.sensores_escom_v2.presentation.common.base
 
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
 import android.content.res.Configuration
@@ -32,6 +33,8 @@ import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.buildi
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.buildingIA.PalapasIA
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.cidetec.Cidetec
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.OSMMapActivity
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.gobierno.EdificioGobierno
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.GlobalMapActivity
 import kotlin.collections.iterator
@@ -274,8 +277,10 @@ class GameplayActivity : AppCompatActivity(),
                         "zacatenco" -> startZacatencoActivity()
                         "Edificioiabajo" -> startEdificioIABajoActivity()
                         "palapas_ia" -> startPalapasIAActivity()
+                        "osm_view" -> startOSMActivity()
                         "palapas_isc" -> startPalapasISCActivity()
                         "edificio_gobierno" -> startEdificioGobiernoActivity()
+                        "cidetec" -> startCidetecActivity()
                         "global_map" -> startGlobalMapActivity()
 
                         else -> showToast("No hay interacción disponible en esta posición")
@@ -285,6 +290,17 @@ class GameplayActivity : AppCompatActivity(),
                 }
             }
         }
+    }
+    private fun startOSMActivity(){
+        val intent = Intent(this@GameplayActivity, OSMMapActivity::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_LAT", 19.504633)  // ESCOM coordinates
+            putExtra("INITIAL_LON", -99.146744)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
     }
     //  NUEVA FUNCIÓN PARA INICIAR EL EDIFICIO DE GOBIERNO
     private fun startEdificioGobiernoActivity() {
@@ -309,6 +325,7 @@ class GameplayActivity : AppCompatActivity(),
         startActivity(intent)
         finish()
     }
+
     // Función para iniciar la Activity de las Palapas ISC
     private fun startPalapasISCActivity() {
         // Obtenemos la posición inicial correcta desde el proveedor
@@ -388,6 +405,18 @@ class GameplayActivity : AppCompatActivity(),
 
     private fun startEstacionamientoEscomActivity() {
         val intent = Intent(this, EstacionamientoEscom::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(4, 25))  // Posición dentro del estacionamiento
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda posición actual para regreso
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
+
+    private fun startCidetecActivity() {
+        val intent = Intent(this, Cidetec::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_POSITION", Pair(4, 25))  // Posición dentro del estacionamiento
@@ -504,6 +533,14 @@ class GameplayActivity : AppCompatActivity(),
                     ).show()
                 }
             }
+            position.first == 11 && position.second == 1 -> {
+                canChangeMap = true
+                targetDestination = "osm_view"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para vista de mapa real", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
             position.first == 8 && position.second == 29 -> {
                 canChangeMap = true
                 targetDestination = "palapas_isc" // Un identificador único
@@ -578,6 +615,7 @@ class GameplayActivity : AppCompatActivity(),
     }
 
     // Bluetooth Callbacks
+    @SuppressLint("MissingPermission")
     override fun onBluetoothDeviceConnected(device: BluetoothDevice) {
         gameState.remotePlayerName = device.name
         uiManager.updateBluetoothStatus("Conectado a ${device.name}")
@@ -596,6 +634,7 @@ class GameplayActivity : AppCompatActivity(),
         onBluetoothConnectionFailed(message)
     }
 
+    @SuppressLint("MissingPermission")
     override fun onDeviceConnected(device: BluetoothDevice) {
         gameState.remotePlayerName = device.name
     }
@@ -737,6 +776,7 @@ class GameplayActivity : AppCompatActivity(),
         serverConnectionManager.onlineServerManager.requestPositionsUpdate()
     }
 
+    @SuppressLint("MissingPermission")
     override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
         runOnUiThread {
             val deviceName = device.name ?: "Unknown"

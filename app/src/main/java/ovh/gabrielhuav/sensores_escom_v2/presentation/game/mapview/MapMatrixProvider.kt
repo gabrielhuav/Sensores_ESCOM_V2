@@ -141,6 +141,10 @@ class MapMatrixProvider {
         val EDIFICIO_GOBIERNO_TO_MAIN = Pair(20, 2)
         val MAIN_TO_BIBLIOTECA = Pair(35, 15)
         val BIBLIOTECA_TO_MAIN = Pair(2, 20)
+        
+        // Transiciones ESIME - Zacatenco
+        val ESIME_TO_ZACATENCO_POSITION = Pair(5, 35)
+        val ZACATENCO_TO_ESIME_POSITION = Pair(28, 24)
 
         // Transiciones ESIME - Zacatenco
         val ESIME_TO_ZACATENCO_POSITION = Pair(5, 35)
@@ -1540,6 +1544,7 @@ class MapMatrixProvider {
 
         private fun createEsimeMatrix(): Array<Array<Int>> {
             val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }            
 
             // ========== BORDES EXTERIORES ==========
             for (i in 0 until MAP_HEIGHT) {
@@ -1554,6 +1559,7 @@ class MapMatrixProvider {
             // ========== EDIFICIOS BLOQUEADOS - SINCRONIZADO CON Esime.kt ==========
             // Basado exactamente en las definiciones de collisionAreas en Esime.kt
 
+            
             // Edificio 1 - Rectángulos bloqueados
             // Rect(7, 28, 14, 29) - Rectángulo grande desde entrada del Edificio 1
             for (i in 7..14) {
@@ -2185,6 +2191,26 @@ class MapMatrixProvider {
             return matrix
         }
 
+        /**
+         * NUEVO MAPA: Plaza Torres Nivel 1
+         */
+        private fun createPlazaTorresN1Matrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
+
+            // Área jugable (un rectángulo)
+            val startX = 10
+            val startY = 15
+            val roomWidth = 20
+            val roomHeight = 10
+
+            for (y in startY until startY + roomHeight) {
+                for (x in startX until startX + roomWidth) {
+                    matrix[y][x] = PATH
+                }
+            }
+
+            // Punto de salida para regresar a la planta baja
+            matrix[startY + roomHeight - 1][startX + roomWidth / 2] = INTERACTIVE // Salida
         private fun createESIAMatrix(): Array<Array<Int>> {
             val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
 

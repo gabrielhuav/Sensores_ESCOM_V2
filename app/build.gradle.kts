@@ -33,6 +33,9 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+    buildFeatures {
+        viewBinding = true
+    }
 }
 
 dependencies {
@@ -50,4 +53,7 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    implementation("org.osmdroid:osmdroid-android:6.1.17")
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")
+    implementation("androidx.cardview:cardview:1.0.0")
 }
