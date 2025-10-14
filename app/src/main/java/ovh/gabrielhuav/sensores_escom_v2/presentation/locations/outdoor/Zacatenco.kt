@@ -440,7 +440,7 @@ class Zacatenco : AppCompatActivity(),
     }
     private fun viewESIA() {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.esiaz.ipn.mx/"))
-        startActivity(intent)   f
+        startActivity(intent)
     }
     private fun startESIAActivity() {
         // ✅ GUARDAR LA POSICIÓN ACTUAL ANTES DE IR A ESIA
@@ -509,6 +509,18 @@ class Zacatenco : AppCompatActivity(),
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_POSITION", Pair(1, 6))
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
+
+    private fun startCidetecActivity() {
+        val intent = Intent(this, Cidetec::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(11, 22))
             putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
