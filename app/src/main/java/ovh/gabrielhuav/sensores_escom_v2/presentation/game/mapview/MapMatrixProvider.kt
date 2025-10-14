@@ -42,6 +42,8 @@ class MapMatrixProvider {
         const val MAP_EDIFICIO_GOBIERNO = "escom_edificio_gobierno"
         const val MAP_BIBLIOTECA = "escom_biblioteca"
         const val MAP_ENCB = "encb"
+        const val MAP_PLAZA_TORRES = "plaza_torres"
+        const val MAP_PLAZA_TORRES_N1 = "plaza_torres_n1"
         const val MAP_ESIA = "escom_esia"
         const val MAP_CIDETEC = "escom_cidetec"
         const val MAP_PLAZA_VISTA_NORTE = "plazaVistaNorte"
@@ -97,6 +99,8 @@ class MapMatrixProvider {
                 // ESIA
                 lowerMap.contains("esia") -> MAP_ESIA
                 lowerMap.contains("encb") -> MAP_ENCB
+                lowerMap.contains("plaza_torres") -> MAP_PLAZA_TORRES
+                lowerMap.contains("plaza_torres_n1") -> MAP_PLAZA_TORRES_N1
                 // Si no coincide con ninguno de los anteriores, devolver el original
                 else -> mapName
             }
@@ -174,6 +178,8 @@ class MapMatrixProvider {
                 MAP_BIBLIOTECA -> createBibliotecaMatrix()
                 MAP_ESIA -> createESIAMatrix()
                 MAP_ENCB -> createEncbMatrix()
+                MAP_PLAZA_TORRES -> createPlazaTorresMatrix()
+                MAP_PLAZA_TORRES_N1 -> createPlazaTorresN1Matrix()
                 MAP_ESIME -> createEsimeMatrix()
                 MAP_PLAZA_VISTA_NORTE -> createPlazaVistaNorteMatrix()
                 MAP_CIDETEC -> createCidetecMatrix()
@@ -335,6 +341,8 @@ class MapMatrixProvider {
                     matrix[i][j] = PATH
                 }
             }
+
+            matrix[10][20] = INTERACTIVE
 
             return matrix
         }
@@ -1974,6 +1982,63 @@ class MapMatrixProvider {
             return matrix
         }
 
+        /**
+         * NUEVO MAPA: Plaza Torres
+         */
+        private fun createPlazaTorresMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Walmart (Área grande azul en la parte inferior izquierda)
+            for (i in 20 until 39) { for (j in 1 until 22) { matrix[i][j] = INACCESSIBLE } }
+            // Suburbia (Área grande rosa en la parte superior)
+            for (i in 1 until 16) { for (j in 14 until 36) { matrix[i][j] = INACCESSIBLE } }
+            // Smart Fit (Área azul en la esquina superior izquierda)
+            for (i in 1 until 11) { for (j in 1 until 12) { matrix[i][j] = INACCESSIBLE } }
+            // Zona de restaurantes (Vips, Burger King, etc. - Área verde a la derecha)
+            for (i in 1 until 18) { for (j in 37 until 39) { matrix[i][j] = INACCESSIBLE } }
+            for (i in 12 until 18) { for (j in 32 until 37) { matrix[i][j] = INACCESSIBLE } }
+
+            // Pasillo horizontal principal (debajo de Suburbia)
+            for (i in 16 until 22) { for (j in 10 until 38) { matrix[i][j] = PATH } }
+            // Pasillo vertical principal (entre Walmart y las tiendas pequeñas)
+            for (i in 16 until 38) { for (j in 22 until 28) { matrix[i][j] = PATH } }
+            // Pasillo secundario (hacia Smart Fit y Citibanamex)
+            for (i in 11 until 16) { for (j in 8 until 14) { matrix[i][j] = PATH } }
+            for (i in 11 until 20) { for (j in 11 until 14) { matrix[i][j] = PATH } }
+
+            // SALIDA A ZACATENCO
+            matrix[14][10] = INTERACTIVE // Punto azul cerca de Smart Fit
+            matrix[20][31] = INTERACTIVE // Punto azul en el pasillo central
+            matrix[37][24] = INTERACTIVE // Punto azul en la salida cerca de Walmart
+
+            // Kioscos o islas
+            matrix[18][15] = INACCESSIBLE
+            matrix[18][30] = INACCESSIBLE
+
+            matrix[18][25] = INTERACTIVE // Punto para subir al nivel del Cinepolis
+
+            return matrix
+        }
+        /**
+         * NUEVO MAPA: Plaza Torres Nivel 1
+         */
+        private fun createPlazaTorresN1Matrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
+
+            // Área jugable (un rectángulo)
+            val startX = 10
+            val startY = 15
+            val roomWidth = 20
+            val roomHeight = 10
+
+            for (y in startY until startY + roomHeight) {
+                for (x in startX until startX + roomWidth) {
+                    matrix[y][x] = PATH
+                }
+            }
+
+            // Punto de salida para regresar a la planta baja
+            matrix[startY + roomHeight - 1][startX + roomWidth / 2] = INTERACTIVE // Salida
         private fun createESIAMatrix(): Array<Array<Int>> {
             val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
 
@@ -2157,7 +2222,7 @@ class MapMatrixProvider {
                     return MAP_SALON2009
                 }
 
-                if (x == 24 && y == 22 || x == 24 && y == 23 ) {
+                if (x == 24 && y == 22 || x == 24 && y == 23) {
                     return MAP_SALON2010
                 }
 
@@ -2165,13 +2230,13 @@ class MapMatrixProvider {
                 if (x == 5 && y == 5) {
                     return MAP_MAIN
                 }
-                if(x == 1 && y == 1){
+                if (x == 1 && y == 1) {
                     return MAP_MAIN
                 }
             }
 
-            if(mapId == MAP_BUILDING2_PISO1){
-                if(x == 17 && y == 23){
+            if (mapId == MAP_BUILDING2_PISO1) {
+                if (x == 17 && y == 23) {
                     return MAP_BUILDING2
                 }
             }
@@ -2190,7 +2255,7 @@ class MapMatrixProvider {
                 }
             }
 
-            if(mapId == MAP_BUILDING2 && x == 17 && y == 15){
+            if (mapId == MAP_BUILDING2 && x == 17 && y == 15) {
                 return MAP_BUILDING2_PISO1
             }
 
@@ -2275,6 +2340,31 @@ class MapMatrixProvider {
 
             // Resto de transiciones...
 
+            // Transición DESDE Zacatenco HACIA Plaza Torres
+            if (mapId == MAP_ZACATENCO && x == 20 && y == 10) { // Coordenada del punto azul en Zacatenco
+                return MAP_PLAZA_TORRES
+            }
+
+            // Transición DESDE Plaza Torres HACIA Zacatenco
+            if (mapId == MAP_PLAZA_TORRES) {
+                if ((x == 10 && y == 14) || // Cerca de Smart Fit
+                    (x == 31 && y == 20) || // Pasillo central
+                    (x == 24 && y == 37))   // Cerca de Walmart
+                {
+                    return MAP_ZACATENCO
+                }
+
+                // Transición DESDE Plaza Torres HACIA el nivel 1
+                if (x == 25 && y == 18) {
+                    return MAP_PLAZA_TORRES_N1
+                }
+            }
+
+            // Transición DESDE el nivel 1 HACIA Plaza Torres
+            if (mapId == MAP_PLAZA_TORRES_N1 && x == 20 && y == 24) {
+                return MAP_PLAZA_TORRES
+            }
+
             return null
         }
 
@@ -2300,6 +2390,8 @@ class MapMatrixProvider {
                 MAP_PALAPAS_ISC -> Pair(38, 38) // Posición inicial dentro de palapas ISC
                 MAP_EDIFICIO_GOBIERNO -> Pair(17, 5)  // Posición cerca de la entrada
                 MAP_BIBLIOTECA -> Pair(17, 5)  // Posición cerca de la entrada
+                MAP_PLAZA_TORRES -> Pair(18, 18) //Entrada ESCOM
+                MAP_PLAZA_TORRES_N1 -> Pair(20, 16) //Entrada cinepolis plaza torres
                 MAP_ESIA -> Pair(25, 35) // Posición inicial en ESIA (cerca de la entrada)
                 else -> Pair(MAP_WIDTH / 2, MAP_HEIGHT / 2)
             }
