@@ -52,7 +52,7 @@
         <activity
             android:name=".presentation.locations.buildings.encb.ENCB"
             android:configChanges="orientation|screenSize|keyboardHidden" /> <!-- Building2 Activity -->
-            android:configChanges="orientation|screenSize|keyboardHidden" />
+            <!-- android:configChanges="orientation|screenSize|keyboardHidden" /> -->
         <!--CIDETEC -->
         <activity
             android:name=".presentation.locations.buildings.cidetec.Cidetec"
@@ -94,7 +94,7 @@
             android:name=".presentation.locations.outdoor.locations.esime.buildings.Edificio3Activity"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
-            android:configChanges="orientation|screenSize|keyboardHidden" />
+            <!-- android:configChanges="orientation|screenSize|keyboardHidden" /> -->
         <activity
             android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2009"
             android:configChanges="orientation|screenSize|keyboardHidden" />
@@ -125,20 +125,12 @@
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.components.PalapasISC"
-            android:exported="false" />
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
-
-        <activity
-            android:name=".presentation.locations.buildings.buildingIA.PalapasIA"
-            android:configChanges="orientation|screenSize|keyboardHidden" />
-        <activity
-            android:name=".presentation.components.PalapasISC"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:exported="false" />
         <activity
             android:name=".presentation.locations.buildings.gobierno.EdificioGobierno"
             android:configChanges="orientation|screenSize|keyboardHidden" /> <!-- DeviceList Activity -->
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
+            <!-- android:configChanges="orientation|screenSize|keyboardHidden"/> -->
         <activity
             android:name=".presentation.locations.outdoor.GlobalMapActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
