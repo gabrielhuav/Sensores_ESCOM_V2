@@ -338,6 +338,206 @@ pasillosPrincipales.forEach(pasillo => {
     }
 });
 
+// ==================================
+//   Matriz de colisión para ESIME
+// ==================================
+const esimeCollisionMatrix = Array(40).fill().map(() => Array(40).fill(2));
+
+// ========== BORDES DEL MAPA ==========
+for (let i = 0; i < 40; i++) {
+    esimeCollisionMatrix[0][i] = 1; // Pared superior
+    esimeCollisionMatrix[39][i] = 1; // Pared inferior
+    esimeCollisionMatrix[i][0] = 1; // Pared izquierda
+    esimeCollisionMatrix[i][39] = 1; // Pared derecha
+}
+
+// SINCRONIZADO CON Esime.kt - Usando coordenadas exactas de collisionAreas
+
+// Edificio 1 - Rectángulos bloqueados basados en Esime.kt
+// Rect(7, 28, 14, 29) - Rectángulo grande desde entrada del Edificio 1
+for (let i = 7; i <= 14; i++) {
+    for (let j = 28; j <= 29; j++) {
+        esimeCollisionMatrix[j][i] = 3; // INACCESSIBLE
+    }
+}
+// Rect(16, 28, 17, 29) - Cuadrado que deja pasillo
+for (let i = 16; i <= 17; i++) {
+    for (let j = 28; j <= 29; j++) {
+        esimeCollisionMatrix[j][i] = 3; // INACCESSIBLE
+    }
+}
+// Rect(7, 31, 14, 32) - Parte inferior
+for (let i = 7; i <= 14; i++) {
+    for (let j = 31; j <= 32; j++) {
+        esimeCollisionMatrix[j][i] = 3; // INACCESSIBLE
+    }
+}
+
+// Edificio 2 - Rectángulos bloqueados basados en Esime.kt
+// Rect(7, 22, 14, 23) - Rectángulo grande desde entrada del Edificio 2
+for (let i = 7; i <= 14; i++) {
+    for (let j = 22; j <= 23; j++) {
+        esimeCollisionMatrix[j][i] = 3; // INACCESSIBLE
+    }
+}
+// Rect(16, 22, 17, 23) - Cuadrado que deja pasillo
+for (let i = 16; i <= 17; i++) {
+    for (let j = 22; j <= 23; j++) {
+        esimeCollisionMatrix[j][i] = 3; // INACCESSIBLE
+    }
+}
+// Rect(7, 25, 14, 26) - Parte inferior
+for (let i = 7; i <= 14; i++) {
+    for (let j = 25; j <= 26; j++) {
+        esimeCollisionMatrix[j][i] = 3; // INACCESSIBLE
+    }
+}
+
+// Edificio 3 - Solo bloquear área derecha, dejar entrada libre frontal
+// Rect(7, 15, 14, 16) - Área derecha bloqueada del Edificio 3
+for (let i = 7; i <= 14; i++) {
+    for (let j = 15; j <= 16; j++) {
+        esimeCollisionMatrix[j][i] = 3; // INACCESSIBLE
+    }
+}
+// Rect(16, 15, 17, 16) - Cuadrado que deja pasillo
+for (let i = 16; i <= 17; i++) {
+    for (let j = 15; j <= 16; j++) {
+        esimeCollisionMatrix[j][i] = 3; // INACCESSIBLE
+    }
+}
+// Rect(7, 18, 14, 19) - Parte inferior
+for (let i = 7; i <= 14; i++) {
+    for (let j = 18; j <= 19; j++) {
+        esimeCollisionMatrix[j][i] = 3; // INACCESSIBLE
+    }
+}
+
+// Edificio 4 - Rectángulos bloqueados basados en Esime.kt
+// Rect(7, 9, 14, 10) - Rectángulo grande desde entrada del Edificio 4
+for (let i = 7; i <= 14; i++) {
+    for (let j = 9; j <= 10; j++) {
+        esimeCollisionMatrix[j][i] = 3; // INACCESSIBLE
+    }
+}
+// Rect(16, 9, 17, 10) - Cuadrado que deja pasillo
+for (let i = 16; i <= 17; i++) {
+    for (let j = 9; j <= 10; j++) {
+        esimeCollisionMatrix[j][i] = 3; // INACCESSIBLE
+    }
+}
+// Rect(7, 12, 14, 13) - Parte inferior
+for (let i = 7; i <= 14; i++) {
+    for (let j = 12; j <= 13; j++) {
+        esimeCollisionMatrix[j][i] = 3; // INACCESSIBLE
+    }
+}
+
+// Edificio 5 - Rectángulos bloqueados basados en Esime.kt
+// Rect(7, 3, 14, 4) - Rectángulo grande desde entrada del Edificio 5
+for (let i = 7; i <= 14; i++) {
+    for (let j = 3; j <= 4; j++) {
+        esimeCollisionMatrix[j][i] = 3; // INACCESSIBLE
+    }
+}
+// Rect(16, 3, 17, 4) - Cuadrado que deja pasillo
+for (let i = 16; i <= 17; i++) {
+    for (let j = 3; j <= 4; j++) {
+        esimeCollisionMatrix[j][i] = 3; // INACCESSIBLE
+    }
+}
+// Rect(7, 6, 14, 7) - Parte superior edificio 5
+for (let i = 7; i <= 14; i++) {
+    for (let j = 6; j <= 7; j++) {
+        esimeCollisionMatrix[j][i] = 3; // INACCESSIBLE
+    }
+}
+
+// ========== ÁREAS ADICIONALES BLOQUEADAS ==========
+// Pastos - Rect(7, 34, 38, 38)
+for (let i = 7; i <= 38; i++) {
+    for (let j = 34; j <= 38; j++) {
+        esimeCollisionMatrix[j][i] = 3; // INACCESSIBLE
+    }
+}
+
+// Pastos laterales - Rect(32, 29, 38, 38)
+for (let i = 32; i <= 38; i++) {
+    for (let j = 29; j <= 38; j++) {
+        esimeCollisionMatrix[j][i] = 3; // INACCESSIBLE
+    }
+}
+
+// Área central bloqueada - Rect(24, 6, 29, 18)
+for (let i = 24; i <= 29; i++) {
+    for (let j = 6; j <= 18; j++) {
+        esimeCollisionMatrix[j][i] = 3; // INACCESSIBLE
+    }
+}
+
+// Zona inaccesible superior - Rect(7, 1, 38, 4)
+for (let i = 7; i <= 38; i++) {
+    for (let j = 1; j <= 4; j++) {
+        esimeCollisionMatrix[j][i] = 3; // INACCESSIBLE
+    }
+}
+
+// ========== PUNTOS INTERACTIVOS ==========
+// Sincronizado con las definiciones de transición en MapMatrixProvider.kt
+
+// Entrada al Edificio 3 (accesible) - Posición de entrada frontal libre
+esimeCollisionMatrix[17][8] = 0; // INTERACTIVE - Entrada Edificio 3
+
+// Punto de transición ESIME a Zacatenco (basado en ESIME_TO_ZACATENCO_POSITION)
+esimeCollisionMatrix[2][35] = 0; // INTERACTIVE - Salida a Zacatenco
+
+// Punto de transición Zacatenco a ESIME (basado en ZACATENCO_TO_ESIME_POSITION)
+esimeCollisionMatrix[38][2] = 0; // INTERACTIVE - Entrada desde Zacatenco
+
+// ========== ZONAS CAMINABLES GARANTIZADAS ==========
+// Asegurar que el área izquierda de los edificios sea caminable
+for (let i = 1; i <= 38; i++) {
+    for (let j = 1; j <= 7; j++) {
+        if (esimeCollisionMatrix[j][i] !== 0) { // No sobreescribir puntos interactivos - Formato [j][i]
+            esimeCollisionMatrix[j][i] = 2; // PATH - Formato [j][i]
+        }
+    }
+}
+
+// Asegurar pasillos horizontales entre edificios
+for (let j = 1; j <= 7; j++) {
+    // Pasillo entre Edificio 5 y 4
+    esimeCollisionMatrix[j][11] = 2; // Formato [j][i]
+    // Pasillo entre Edificio 4 y 3
+    esimeCollisionMatrix[j][17] = 2; // Formato [j][i]
+    // Pasillo entre Edificio 3 y 2
+    esimeCollisionMatrix[j][23] = 2; // Formato [j][i]
+    // Pasillo entre Edificio 2 y 1
+    esimeCollisionMatrix[j][30] = 2; // Formato [j][i]
+}
+
+// ========== ASEGURAR CONECTIVIDAD ==========
+function asegurarCaminoESIME(startRow, startCol, endRow, endCol) {
+    // Camino horizontal - Formato [j][i]
+    for (let i = Math.min(startCol, endCol); i <= Math.max(startCol, endCol); i++) {
+        if (esimeCollisionMatrix[startRow][i] !== 0) {
+            esimeCollisionMatrix[startRow][i] = 2;
+        }
+    }
+    // Camino vertical - Formato [j][i]
+    for (let j = Math.min(startRow, endRow); j <= Math.max(startRow, endRow); j++) {
+        if (esimeCollisionMatrix[j][endCol] !== 0) {
+            esimeCollisionMatrix[j][endCol] = 2;
+        }
+    }
+}
+
+// Conectar puntos importantes - Formato [j][i]
+asegurarCaminoESIME(2, 2, 5, 35); // Inicio -> Salida Zacatenco
+asegurarCaminoESIME(2, 2, 7, 17); // Inicio -> Entrada Edificio 3
+asegurarCaminoESIME(5, 35, 7, 17); // Salida -> Entrada Edificio 3
+
+
 // =================================================================
 // Matriz de colisión para Palapas ISC (40x40)
 // =================================================================
@@ -632,6 +832,7 @@ module.exports = {
     cafeteriaCollisionMatrix,
     edificioGobiernoCollisionMatrix,
     palapasISCCollisionMatrix,
+    esimeCollisionMatrix,
     esiaCollisionMatrix,
     plazaVistaNorteCollisionMatrix
 };

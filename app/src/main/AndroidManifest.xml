@@ -32,6 +32,10 @@
         android:theme="@style/Theme.Sensores_ESCOM_V2"
         android:usesCleartextTraffic="true">
 
+        <activity
+            android:name=".presentation.locations.outdoor.PlazaTorresPb"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:exported="false" />
         <!-- Actividad principal -->
         <activity
             android:name=".MainActivity"
@@ -47,6 +51,7 @@
             android:configChanges="orientation|screenSize|keyboardHidden" /> <!-- ENCB Activity -->
         <activity
             android:name=".presentation.locations.buildings.encb.ENCB"
+            android:configChanges="orientation|screenSize|keyboardHidden" /> <!-- Building2 Activity -->
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <!--CIDETEC -->
         <activity
@@ -80,6 +85,15 @@
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.components.BuildingEdificioIA_Alto"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+        <activity
+            android:name=".presentation.locations.outdoor.Esime"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+
+        <activity
+            android:name=".presentation.locations.outdoor.locations.esime.buildings.Edificio3Activity"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2009"
@@ -122,10 +136,11 @@
 
         <activity
             android:name=".presentation.locations.buildings.buildingIA.PalapasIA"
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
-
-
-        <activity android:name=".presentation.components.PalapasISC" android:exported="false" />
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+        <activity
+            android:name=".presentation.components.PalapasISC"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:exported="false" />
         <activity
             android:name=".presentation.locations.buildings.gobierno.EdificioGobierno"
             android:configChanges="orientation|screenSize|keyboardHidden" /> <!-- DeviceList Activity -->
