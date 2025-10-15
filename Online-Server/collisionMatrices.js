@@ -574,6 +574,58 @@ plazaVistaNorteCollisionMatrix[25][28] = 3; plazaVistaNorteCollisionMatrix[25][2
 // Punto de transición para volver a Lindavista
 plazaVistaNorteCollisionMatrix[6][1] = 0;
 
+/*LAB POSGRADO*/
+// Inicializa la matriz con el valor de PATH (2)
+const labPosgradoMatrix = Array.from({ length: 40 }, () =>
+  Array(40).fill(2)
+);
+
+// Bordes exteriores del laboratorio
+for (let i = 0; i < 40; i++) {
+    for (let j = 0; j < 40; j++) {
+        if (i === 0 || i === 40 - 1 || j === 0 || j === 40 - 1) {
+            labPosgradoMatrix[i][j] = 1; // WALL
+        }
+    }
+}
+
+// Pantalla del proyector en la pared derecha (inaccesible)
+const projectorScreenStart = 40 / 2 - 5;
+const projectorScreenEnd = 40 / 2 + 5;
+for (let i = projectorScreenStart; i <= projectorScreenEnd; i++) {
+    labPosgradoMatrix[i][40 - 2] = 3; // INACCESSIBLE
+}
+
+// Mesa del profesor en la parte frontal (derecha, cerca del proyector)
+for (let i = projectorScreenStart - 4; i < projectorScreenStart; i++) {
+    for (let j = 40 - 15; j < 40 - 8; j++) {
+        labPosgradoMatrix[i][j] = 3; // INACCESSIBLE
+    }
+}
+
+// Filas de computadoras en una cuadrícula
+// 4 filas de computadoras
+for (let row = 0; row <= 3; row++) {
+    const rowY = 8 + (row * 7); // Separación vertical entre filas
+
+    // 5 estaciones de cómputo por fila
+    for (let station = 0; station <= 4; station++) {
+        const stationX = 3 + (station * 4); // Separación horizontal
+
+        // Cada estación es un bloque de 2x2
+        for (let i = rowY; i <= rowY + 1; i++) {
+            for (let j = stationX; j <= stationX + 1; j++) {
+                if (i < 40 && j < 40) {
+                    labPosgradoMatrix[i][j] = 3; // INACCESSIBLE
+                }
+            }
+        }
+    }
+}
+
+// Puerta de entrada/salida en la parte inferior izquierda
+labPosgradoMatrix[40 - 4][4] = 0; // INTERACTIVE
+/*LAB POSGRADO*/
 
 // Exportar las matrices
 module.exports = {
