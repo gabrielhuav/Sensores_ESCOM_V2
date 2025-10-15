@@ -1,5 +1,6 @@
 package ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor
 
+import android.Manifest
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
 import android.graphics.Canvas
@@ -16,6 +17,7 @@ import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.RequiresPermission
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import org.json.JSONObject
@@ -47,6 +49,7 @@ class SalidaMetro : AppCompatActivity(),
     private lateinit var btnSouth: Button
     private lateinit var btnEast: Button
     private lateinit var btnWest: Button
+    private lateinit var buttonA: Button
     private lateinit var btnBackToHome: Button
     private lateinit var tvBluetoothStatus: TextView
     private lateinit var playerName: String
@@ -349,6 +352,7 @@ class SalidaMetro : AppCompatActivity(),
         btnSouth = findViewById(R.id.button_south)
         btnEast = findViewById(R.id.button_east)
         btnWest = findViewById(R.id.button_west)
+        buttonA = findViewById(R.id.button_a)
         btnBackToHome = findViewById(R.id.button_back_to_home)
         tvBluetoothStatus = findViewById(R.id.tvBluetoothStatus)
         tvBluetoothStatus.text = "Salida Metro - Conectando..."
@@ -394,17 +398,23 @@ class SalidaMetro : AppCompatActivity(),
         findViewById<Button?>(R.id.button_a)?.setOnClickListener {
             handleButtonAPress()
         }
+
+
+
     }
 
     // Método para manejar la pulsación del botón A
     private fun handleButtonAPress() {
         val position = gameState.playerPosition
         when {
+            canChangeMap && targetDestination == "politecnico" -> {
+                startMetroPolitecnicoActivity()
+            }
             position.first == 35 && position.second == 5 -> {
                 // Mostrar información del Metro y enlace
                 showInfoDialog(
                     "Metro",
-                    "Línea 6 del Metro - Estación Instituto del Petróleo\n\nHorario: 5:00 - 24:00\nTarifa: $5.00 MXN",
+                    "Línea 5 del Metro - Estación Politécnico\n\nHorario: 5:00 - 24:00\nTarifa: $5.00 MXN",
                     "https://www.metro.cdmx.gob.mx/" // <-- URL del Metro CDMX
                 )
             }
@@ -449,13 +459,22 @@ class SalidaMetro : AppCompatActivity(),
 
         builder.show()
     }
+    private var canChangeMap = false  // Variable para controlar si se puede cambiar de mapa
+    private var targetDestination: String? = null  // Variable para almacenar el destino
 
     private fun checkPositionForMapChange(position: Pair<Int, Int>) {
         // Comprobar múltiples ubicaciones de transición
         when {
+            position.first == 37 && position.second == 5 -> {
+                canChangeMap =  true
+                targetDestination = "politecnico"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para ver entrar al metro Politecnico", Toast.LENGTH_SHORT).show()
+                }
+            }
             position.first == 35 && position.second == 5 -> {
                 runOnUiThread {
-                    Toast.makeText(this, "Presiona A para ver datos del Metro", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Presiona A para ver datos del metro", Toast.LENGTH_SHORT).show()
                 }
             }
             position.first == 31 && position.second == 27 -> {
@@ -487,6 +506,16 @@ class SalidaMetro : AppCompatActivity(),
         finish()
     }
 
+    private fun startMetroPolitecnicoActivity() {
+        val intent = Intent(this, MetroPolitecnico::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(13, 3))
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
     private fun startZacatencoActivity() {
         val intent = Intent(this, Zacatenco::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
@@ -549,6 +578,7 @@ class SalidaMetro : AppCompatActivity(),
     }
 
     // Callbacks de Bluetooth
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     override fun onBluetoothDeviceConnected(device: BluetoothDevice) {
         gameState.remotePlayerName = device.name
         updateBluetoothStatus("Conectado a ${device.name}")
@@ -567,6 +597,7 @@ class SalidaMetro : AppCompatActivity(),
         onBluetoothConnectionFailed(message)
     }
 
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     override fun onDeviceConnected(device: BluetoothDevice) {
         gameState.remotePlayerName = device.name
     }
