@@ -45,6 +45,7 @@ class MapMatrixProvider {
         const val MAP_ENCB = "encb"
         const val MAP_PLAZA_TORRES = "plaza_torres"
         const val MAP_PLAZA_TORRES_N1 = "plaza_torres_n1"
+        const val MAP_LAB_POSGRADO = "escom_lab_posgrado"
         const val MAP_ESIA = "escom_esia"
         const val MAP_CIDETEC = "escom_cidetec"
         const val MAP_PLAZA_VISTA_NORTE = "plazaVistaNorte"
@@ -126,9 +127,6 @@ class MapMatrixProvider {
 
         val MAIN_TO_SALIDAMETRO_POSITION = Pair(2, 2)       // Desde mapa principal
         val SALIDAMETRO_TO_MAIN_POSITION = Pair(1, 1)         // Vuelta al mapa principal
-        //Del mapa Salida del Metro a Metro Politécnico
-        val MAIN_TO_METROPOLUTECNICO_POSITION = Pair(2, 2)       // Desde mapa principal
-        val METROPOLITECNICO_TO_MAIN_POSITION = Pair(1, 1)
         // Del Estacionamiento al segundo mapa (Tramo Atrás Plaza)
         val ESTACIONAMIENTO_TO_PLAZA_POSITION = Pair(35, 20)
         val PLAZA_TO_ESTACIONAMIENTO_POSITION = Pair(5, 20)
@@ -144,7 +142,7 @@ class MapMatrixProvider {
         val EDIFICIO_GOBIERNO_TO_MAIN = Pair(20, 2)
         val MAIN_TO_BIBLIOTECA = Pair(35, 15)
         val BIBLIOTECA_TO_MAIN = Pair(2, 20)
-
+        
         // Transiciones ESIME - Zacatenco
         val ESIME_TO_ZACATENCO_POSITION = Pair(5, 35)
         val ZACATENCO_TO_ESIME_POSITION = Pair(28, 24)
@@ -187,6 +185,7 @@ class MapMatrixProvider {
                 MAP_PLAZA_TORRES_N1 -> createPlazaTorresN1Matrix()
                 MAP_ESIME -> createEsimeMatrix()
                 MAP_PLAZA_VISTA_NORTE -> createPlazaVistaNorteMatrix()
+                MAP_LAB_POSGRADO -> createLabPosgradoMatrix()
                 MAP_CIDETEC -> createCidetecMatrix()
                 else -> createDefaultMatrix() // Por defecto, un mapa básico
             }
@@ -1258,7 +1257,7 @@ class MapMatrixProvider {
                     }
                 }
             }
-            matrix[5][37] = INTERACTIVE
+
             matrix[5][35] = INTERACTIVE
             matrix[22][17] = INTERACTIVE
             matrix[27][31] = INTERACTIVE
@@ -1549,7 +1548,7 @@ class MapMatrixProvider {
         }
 
         private fun createEsimeMatrix(): Array<Array<Int>> {
-            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }            
 
             // ========== BORDES EXTERIORES ==========
             for (i in 0 until MAP_HEIGHT) {
@@ -1563,7 +1562,7 @@ class MapMatrixProvider {
 
             // ========== EDIFICIOS BLOQUEADOS - SINCRONIZADO CON Esime.kt ==========
             // Basado exactamente en las definiciones de collisionAreas en Esime.kt
-
+            
             // Edificio 1 - Rectángulos bloqueados
             // Rect(7, 28, 14, 29) - Rectángulo grande desde entrada del Edificio 1
             for (i in 7..14) {
@@ -2158,6 +2157,84 @@ class MapMatrixProvider {
         }
 
         /**
+         * Matriz para el Laboratorio de Posgrado.
+         * Mapa ASCII Art:
+         * +-------------------------------------------------------------------------+
+         * |                          Laboratorio de Posgrado                          |
+         * |                                                                         |
+         * |   +----+  +----+  +----+  +----+  +----+                                |
+         * |   | 💻 |  | 💻 |  | 💻 |  | 💻 |  | 💻 |                                |
+         * |   +----+  +----+  +----+  +----+  +----+        +----------------+      |
+         * |                                                 |   Profesor's   |      |
+         * |   +----+  +----+  +----+  +----+  +----+        |      Desk      |      |
+         * |   | 💻 |  | 💻 |  | 💻 |  | 💻 |  | 💻 |        +----------------+      |
+         * |   +----+  +----+  +----+  +----+  +----+                                |
+         * |                                                   +----------------+    |
+         * |   +----+  +----+  +----+  +----+  +----+          |                |    |
+         * |   | 💻 |  | 💻 |  | 💻 |  | 💻 |  | 💻 |          |   Proyector    |    |
+         * |   +----+  +----+  +----+  +----+  +----+          |                |    |
+         * |                                                   +----------------+    |
+         * |   +----+  +----+  +----+  +----+  +----+                                |
+         * |   | 💻 |  | 💻 |  | 💻 |  | 💻 |  | 💻 |                                |
+         * |   +----+  +----+  +----+  +----+  +----+                                |
+         * |                                                                         |
+         * |   🚪 Salida                                                              |
+         * +-------------------------------------------------------------------------+
+         * Representa un laboratorio de cómputo con un proyector a la derecha.
+         */
+        private fun createLabPosgradoMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Bordes exteriores del laboratorio
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = WALL
+                    }
+                }
+            }
+
+            // Pantalla del proyector en la pared derecha (inaccesible)
+            val projectorScreenStart = MAP_HEIGHT / 2 - 5
+            val projectorScreenEnd = MAP_HEIGHT / 2 + 5
+            for (i in projectorScreenStart..projectorScreenEnd) {
+                matrix[i][MAP_WIDTH - 2] = INACCESSIBLE
+            }
+
+            // Mesa del profesor en la parte frontal (derecha, cerca del proyector)
+            for (i in projectorScreenStart - 4 until projectorScreenStart) {
+                for (j in MAP_WIDTH - 15 until MAP_WIDTH - 8) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            // Filas de computadoras en una cuadrícula
+            // 4 filas de computadoras
+            for (row in 0..3) {
+                val rowY = 8 + (row * 7) // Separación vertical entre filas
+
+                // 5 estaciones de cómputo por fila
+                for (station in 0..4) {
+                    val stationX = 3 + (station * 4) // Separación horizontal
+
+                    // Cada estación es un bloque de 2x2
+                    for (i in rowY..rowY + 1) {
+                        for (j in stationX..stationX + 1) {
+                            if (i < MAP_HEIGHT && j < MAP_WIDTH) {
+                                matrix[i][j] = INACCESSIBLE
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Puerta de entrada/salida en la parte inferior izquierda
+            matrix[MAP_HEIGHT - 4][4] = INTERACTIVE
+
+            return matrix
+        }
+
+        /**
          * NUEVO MAPA: Plaza Torres
          */
         private fun createPlazaTorresMatrix(): Array<Array<Int>> {
@@ -2355,6 +2432,8 @@ class MapMatrixProvider {
 
             return matrix
         }
+
+
 
         /**
          * Comprueba si la coordenada especificada es un punto de transición entre mapas

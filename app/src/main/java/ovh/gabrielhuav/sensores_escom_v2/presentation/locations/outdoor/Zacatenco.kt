@@ -574,6 +574,18 @@ class Zacatenco : AppCompatActivity(),
         finish()
     }
 
+    private fun startCidetecActivity() {
+        val intent = Intent(this, Cidetec::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(11, 22))
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
+
     private fun startFordActivity() {
         val intent = Intent(this, SalidaMetro::class.java).apply {
             putExtra("PLAYER_NAME", playerName)

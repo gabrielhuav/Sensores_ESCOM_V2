@@ -37,6 +37,7 @@ import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.cidete
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.OSMMapActivity
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.gobierno.EdificioGobierno
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.GlobalMapActivity
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.lab.LaboratorioPosgradoActivity
 import kotlin.collections.iterator
 
 class GameplayActivity : AppCompatActivity(),
@@ -281,6 +282,8 @@ class GameplayActivity : AppCompatActivity(),
                         "palapas_isc" -> startPalapasISCActivity()
                         "edificio_gobierno" -> startEdificioGobiernoActivity()
                         "cidetec" -> startCidetecActivity()
+                        "laboratorio_posgrado" -> startLaboratorioPosgradoActivity()
+                        "cidetec" -> startCidetecActivity()
                         "global_map" -> startGlobalMapActivity()
 
                         else -> showToast("No hay interacción disponible en esta posición")
@@ -405,6 +408,34 @@ class GameplayActivity : AppCompatActivity(),
 
     private fun startEstacionamientoEscomActivity() {
         val intent = Intent(this, EstacionamientoEscom::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(4, 25))  // Posición dentro del estacionamiento
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda posición actual para regreso
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
+
+    // NUEVA FUNCIÓN PARA INICIAR EL LABORATORIO DE POSGRADO
+    private fun startLaboratorioPosgradoActivity() {
+        val intent = Intent(this, LaboratorioPosgradoActivity::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra(
+                "INITIAL_POSITION",
+                Pair(5, MapMatrixProvider.MAP_HEIGHT - 5)
+            ) // Posición inicial dentro del laboratorio
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
+
+    private fun startCidetecActivity() {
+        val intent = Intent(this, Cidetec::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_POSITION", Pair(4, 25))  // Posición dentro del estacionamiento
@@ -555,6 +586,18 @@ class GameplayActivity : AppCompatActivity(),
                     Toast.makeText(
                         this,
                         "Presiona A para entrar al edificio de gobierno",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
+            position.first == 24 && position.second == 12 -> {
+                canChangeMap = true
+                targetDestination = "laboratorio_posgrado"
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        "Presiona A para entrar al Laboratorio de Posgrado",
                         Toast.LENGTH_SHORT
                     ).show()
                 }

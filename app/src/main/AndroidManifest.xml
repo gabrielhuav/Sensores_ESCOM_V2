@@ -89,6 +89,7 @@
             android:name=".presentation.locations.buildings.plaza.PlazaVistaNorte"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
+            android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2010"
             android:configChanges="orientation|screenSize|keyboardHidden" />
@@ -97,6 +98,11 @@
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.locations.buildings.cafeteria.Cafeteria"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+        <activity
+            android:name=".presentation.locations.lab.LaboratorioPosgradoActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.locations.outdoor.SalidaMetro"
