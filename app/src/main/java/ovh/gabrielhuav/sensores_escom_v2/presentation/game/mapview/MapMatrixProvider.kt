@@ -36,6 +36,7 @@ class MapMatrixProvider {
         const val MAP_EDIFICIO_IA_ALTO = "edificio_ia_alto"
         const val MAP_CABLEBUS = "cablebus"
         const val MAP_SALIDAMETRO = "escom_salidametro"
+        const val MAP_METRO_POLITECNICO = "metro_politecnico"
         const val MAP_PALAPAS_IA = "escom_palapas_ia"
         const val MAP_ESIME = "esime_zacatenco"
         const val MAP_PALAPAS_ISC = "escom_palapas_isc"
@@ -53,6 +54,7 @@ class MapMatrixProvider {
             if (mapName.isNullOrBlank()) return MAP_MAIN
 
             val lowerMap = mapName.lowercase()
+
 
             return when {
                 // Mapa principal
@@ -140,7 +142,7 @@ class MapMatrixProvider {
         val EDIFICIO_GOBIERNO_TO_MAIN = Pair(20, 2)
         val MAIN_TO_BIBLIOTECA = Pair(35, 15)
         val BIBLIOTECA_TO_MAIN = Pair(2, 20)
-
+        
         // Transiciones ESIME - Zacatenco
         val ESIME_TO_ZACATENCO_POSITION = Pair(5, 35)
         val ZACATENCO_TO_ESIME_POSITION = Pair(28, 24)
@@ -168,6 +170,7 @@ class MapMatrixProvider {
                 MAP_ZACATENCO -> createZacatencoMatrix()
                 MAP_LINDAVISTA -> createLindavistaMatrix()
                 MAP_SALIDAMETRO -> createSalidaMetroMatrix() // salida metro
+                MAP_METRO_POLITECNICO -> createMetroPolitecnicoMatrix()
                 MAP_CABLEBUS -> createCablebusMatix()
                 MAP_EDIFICIO_IA_BAJO-> createEdificioIABajoMatrix()
                 MAP_EDIFICIO_IA_MEDIO-> createEdificioIAMedioMatrix()
@@ -181,9 +184,8 @@ class MapMatrixProvider {
                 MAP_PLAZA_TORRES -> createPlazaTorresMatrix()
                 MAP_PLAZA_TORRES_N1 -> createPlazaTorresN1Matrix()
                 MAP_ESIME -> createEsimeMatrix()
-                MAP_LAB_POSGRADO -> createLabPosgradoMatrix()
-                MAP_CIDETEC -> createCidetecMatrix()
                 MAP_PLAZA_VISTA_NORTE -> createPlazaVistaNorteMatrix()
+                MAP_LAB_POSGRADO -> createLabPosgradoMatrix()
                 MAP_CIDETEC -> createCidetecMatrix()
                 else -> createDefaultMatrix() // Por defecto, un mapa básico
             }
@@ -1271,6 +1273,155 @@ class MapMatrixProvider {
                     matrix[i][j] = BANCA
                 }
             }
+            //Contorno de la entrada del metro
+            val anchoParedMetro = 36
+            for (i in 6 until 14) {
+                matrix[i][anchoParedMetro] = PARED
+            }
+
+            val alturaParedMetro = 14
+            for (j in 36 until MAP_WIDTH) {
+                matrix[alturaParedMetro][j] = PARED
+            }
+
+            return matrix
+        }
+        private fun createMetroPolitecnicoMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Constantes
+            val PARED = WALL
+            val BANCA = INACCESSIBLE
+
+
+            // Bordes exteriores
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = PARED
+                    }
+                }
+            }
+            // Pared arriba y abajo
+            for (i in 1..2){
+                for(j in 0 until MAP_WIDTH)
+                    matrix[i][j] = PARED
+            }
+            for (i in 37..38){
+                for(j in 0 until MAP_WIDTH)
+                    matrix[i][j] = PARED
+            }
+
+            for (i in 0 until MAP_HEIGHT){
+                for(j in 34 until MAP_WIDTH)
+                    matrix[i][j] = PARED
+            }
+
+            for (i in 0 until 18){
+                for(j in 0 until 13)
+                    matrix[i][j] = PARED
+            }
+
+            for (i in 0 until 18){
+                for(j in 24 until MAP_WIDTH)
+                    matrix[i][j] = PARED
+            }
+
+            for (i in 22 until MAP_HEIGHT){
+                for(j in 0 until 12)
+                    matrix[i][j] = PARED
+            }
+
+            for (i in 31 until MAP_HEIGHT){
+                for(j in 19 until MAP_WIDTH)
+                    matrix[i][j] = PARED
+            }
+            var altura = 30
+            for(j in 20 until MAP_WIDTH)
+                matrix[altura][j] = PARED
+            altura = 29
+            for(j in 21 until MAP_WIDTH)
+                matrix[altura][j] = PARED
+
+            for (i in 22 until 27){
+                for(j in 24 until MAP_WIDTH)
+                    matrix[i][j] = PARED
+            }
+
+            for (i in 3 until 8){
+                for(j in 20 until 26)
+                    matrix[i][j] = PARED
+            }
+
+            altura = 8
+            for(j in 20 until MAP_WIDTH)
+                matrix[altura][j] = PARED
+
+            altura = 9
+            for(j in 21 until MAP_WIDTH)
+                matrix[altura][j] = PARED
+
+            for (i in 10 until 13){
+                for(j in 22 until 26)
+                    matrix[i][j] = PARED
+            }
+
+            var ancho = 13
+            for(i in 8 until 14)
+                matrix[i][ancho] = PARED
+            ancho = 14
+            for(i in 9 until 13)
+                matrix[i][ancho] = PARED
+
+            ancho = 12
+            for(i in 26 until 31)
+                matrix[i][ancho] = PARED
+            ancho = 13
+            for(i in 27 until 30)
+                matrix[i][ancho] = PARED
+
+
+
+
+
+            //Taquilla arriba
+            matrix[11][21] = INTERACTIVE
+            matrix[12][21] = INTERACTIVE
+
+            //Torniquetes izquierda
+            matrix[18][10] = INTERACTIVE
+            matrix[19][10] = PARED
+            matrix[20][10] = INTERACTIVE
+            matrix[21][10] = INTERACTIVE
+
+            //Torniquetes derecha
+            matrix[18][26] = INTERACTIVE
+            matrix[19][26] = PARED
+            matrix[20][26] = INTERACTIVE
+            matrix[21][26] = INTERACTIVE
+            //Taquillas
+            matrix[27][31] = INTERACTIVE
+            matrix[28][31] = INTERACTIVE
+            matrix[27][32] = PARED
+            matrix[28][32] = PARED
+            //Máquinas abajo
+            matrix[27][14] = INTERACTIVE
+            matrix[28][14] = INTERACTIVE
+            //Puestos
+            matrix[21][12] = INTERACTIVE
+            matrix[20][32] = INTERACTIVE
+            //Escaleras
+            matrix[18][6] = INTERACTIVE
+            matrix[21][6] = INTERACTIVE
+            matrix[21][29] = INTERACTIVE
+            matrix[18][29] = INTERACTIVE
+            //Mural
+            matrix[19][1] = INTERACTIVE
+            //Mapa del Metro
+            matrix[24][12] = INTERACTIVE
+
+            matrix[27][33] = PARED
+            matrix[28][33] = PARED
 
             return matrix
         }
@@ -1397,7 +1548,7 @@ class MapMatrixProvider {
         }
 
         private fun createEsimeMatrix(): Array<Array<Int>> {
-            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }            
 
             // ========== BORDES EXTERIORES ==========
             for (i in 0 until MAP_HEIGHT) {
@@ -1411,7 +1562,7 @@ class MapMatrixProvider {
 
             // ========== EDIFICIOS BLOQUEADOS - SINCRONIZADO CON Esime.kt ==========
             // Basado exactamente en las definiciones de collisionAreas en Esime.kt
-
+            
             // Edificio 1 - Rectángulos bloqueados
             // Rect(7, 28, 14, 29) - Rectángulo grande desde entrada del Edificio 1
             for (i in 7..14) {
@@ -1802,6 +1953,8 @@ class MapMatrixProvider {
                 }
             }
 
+
+
             for (i in 38..38) {
                 for (j in 35..35) {
                     matrix[i][j] = INACCESSIBLE
@@ -1982,6 +2135,27 @@ class MapMatrixProvider {
             return matrix
         }
 
+        private fun createPlazaTorresN1Matrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
+
+            // Área jugable (un rectángulo)
+            val startX = 10
+            val startY = 15
+            val roomWidth = 20
+            val roomHeight = 10
+
+            for (y in startY until startY + roomHeight) {
+                for (x in startX until startX + roomWidth) {
+                    matrix[y][x] = PATH
+                }
+            }
+
+            // Punto de salida para regresar a la planta baja
+            matrix[startY + roomHeight - 1][startX + roomWidth / 2] = INTERACTIVE // Salida
+
+            return matrix
+        }
+
         /**
          * Matriz para el Laboratorio de Posgrado.
          * Mapa ASCII Art:
@@ -2095,28 +2269,6 @@ class MapMatrixProvider {
 
             matrix[18][25] = INTERACTIVE // Punto para subir al nivel del Cinepolis
 
-            return matrix
-        }
-        /**
-         * NUEVO MAPA: Plaza Torres Nivel 1
-         */
-        private fun createPlazaTorresN1Matrix(): Array<Array<Int>> {
-            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
-
-            // Área jugable (un rectángulo)
-            val startX = 10
-            val startY = 15
-            val roomWidth = 20
-            val roomHeight = 10
-
-            for (y in startY until startY + roomHeight) {
-                for (x in startX until startX + roomWidth) {
-                    matrix[y][x] = PATH
-                }
-            }
-
-            // Punto de salida para regresar a la planta baja
-            matrix[startY + roomHeight - 1][startX + roomWidth / 2] = INTERACTIVE // Salida
             return matrix
         }
 
