@@ -831,6 +831,7 @@ labPosgradoMatrix[40 - 4][4] = 0; // INTERACTIVE
 module.exports = {
     cafeteriaCollisionMatrix,
     edificioGobiernoCollisionMatrix,
+    labPosgradoMatrix,
     palapasISCCollisionMatrix,
     esimeCollisionMatrix,
     esiaCollisionMatrix,
