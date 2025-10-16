@@ -283,7 +283,6 @@ class GameplayActivity : AppCompatActivity(),
                         "edificio_gobierno" -> startEdificioGobiernoActivity()
                         "cidetec" -> startCidetecActivity()
                         "laboratorio_posgrado" -> startLaboratorioPosgradoActivity()
-                        "cidetec" -> startCidetecActivity()
                         "global_map" -> startGlobalMapActivity()
 
                         else -> showToast("No hay interacción disponible en esta posición")
