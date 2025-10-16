@@ -446,17 +446,6 @@ class GameplayActivity : AppCompatActivity(),
         finish()
     }
 
-    private fun startCidetecActivity() {
-        val intent = Intent(this, Cidetec::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(4, 25))  // Posición dentro del estacionamiento
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda posición actual para regreso
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        startActivity(intent)
-        finish()
-    }
 
     private fun startGlobalMapActivity() {
         val intent = Intent(this, GlobalMapActivity::class.java).apply {
