@@ -799,34 +799,61 @@ class MapMatrixProvider {
             return matrix
         }
 
+        // ============================================================
+// Función para crear la matriz del mapa de CIDETEC
+// ============================================================
         private fun createCidetecMatrix(): Array<Array<Int>> {
+            // Empezamos con una matriz donde todo es un camino (PATH) por defecto
             val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
 
-            // Configuración de bordes
+            // 1️⃣ Bordes exteriores (muros generales)
             for (i in 0 until MAP_HEIGHT) {
                 for (j in 0 until MAP_WIDTH) {
-                    // Bordes exteriores
                     if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
                         matrix[i][j] = WALL
                     }
-                    // Zonas interactivas (edificios, entradas)
-                    else if (i == 22 && j == 11) {
-                        matrix[i][j] = INTERACTIVE // Entrada a ESCOM
-                    }
-                    // Caminos especiales
-                    else if ((i % 5 == 0 || j % 5 == 0) && i > 5 && j > 5) {
-                        matrix[i][j] = PATH
-                    }
                 }
             }
 
-            // Áreas de juego específicas
-            // Zona central despejada
-            for (i in 15..25) {
-                for (j in 15..25) {
-                    matrix[i][j] = PATH
-                }
+            // ============================================================
+            // 2️⃣ PAREDES INTERNAS (INACCESSIBLE = 1)
+            // Las coordenadas se interpretan como matrix[y][x]
+            // ============================================================
+
+            // 🔹 Pared 1: (10,21) → (10,37)
+            for (i in 21..37) {
+                val j = 10
+                matrix[i][j] = INACCESSIBLE
             }
+
+            // 🔹 Pared 2: (10,3) → (10,18)
+            for (i in 3..18) {
+                val j = 10
+                matrix[i][j] = INACCESSIBLE
+            }
+
+            // 🔹 Pared 3: (10,37) → (30,37)
+            for (j in 10..30) {
+                val i = 37
+                matrix[i][j] = INACCESSIBLE
+            }
+
+            // 🔹 Pared 4: (30,37) → (30,3)
+            for (i in 3..37) {
+                val j = 30
+                matrix[i][j] = INACCESSIBLE
+            }
+
+            // 🔹 Pared 5: (10,3) → (30,3)
+            for (j in 10..30) {
+                val i = 3
+                matrix[i][j] = INACCESSIBLE
+            }
+
+            // ============================================================
+            // 3️⃣ Punto interactivo: salida hacia Zacatenco o entrada
+            // ============================================================
+            matrix[22][11] = INTERACTIVE // (x=11, y=22)
 
             return matrix
         }

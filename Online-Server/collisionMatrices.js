@@ -981,6 +981,52 @@ for (let row = 0; row <= 3; row++) {
 labPosgradoMatrix[40 - 4][4] = 0; // INTERACTIVE
 /*LAB POSGRADO*/
 
+// =================================================================
+// Matriz de colisión para CIDETEC (40x40)
+// =================================================================
+const cidetecCollisionMatrix = Array(40).fill().map(() => Array(40).fill(0));
+
+// 1. Bordes exteriores (Muro = 1)
+for (let i = 0; i < 40; i++) {
+    cidetecCollisionMatrix[0][i] = 1;      // Pared superior
+    cidetecCollisionMatrix[39][i] = 1;     // Pared inferior
+    cidetecCollisionMatrix[i][0] = 1;      // Pared izquierda
+    cidetecCollisionMatrix[i][39] = 1;     // Pared derecha
+}
+
+// 2. Paredes internas (INACCESSIBLE = 1)
+
+
+// 🔹 (10,21) → (10,37)
+for (let i = 21; i <= 37; i++) {
+    cidetecCollisionMatrix[i][10] = 1;
+}
+
+// 🔹 (10,3) → (10,18)
+for (let i = 3; i <= 18; i++) {
+    cidetecCollisionMatrix[i][10] = 1;
+}
+
+// 🔹 (10,37) → (30,37)
+for (let j = 10; j <= 30; j++) {
+    cidetecCollisionMatrix[37][j] = 1;
+}
+
+// 🔹 (30,37) → (30,3)
+for (let i = 3; i <= 37; i++) {
+    cidetecCollisionMatrix[i][30] = 1;
+}
+
+// 🔹 (10,3) → (30,3)
+for (let j = 10; j <= 30; j++) {
+    cidetecCollisionMatrix[3][j] = 1;
+}
+
+// 3. Punto de salida (Interactivo = 2)
+// Coordenadas: (x:20, y:9)
+cidetecCollisionMatrix[22][11] = 2;
+
+
 // Exportar las matrices
 module.exports = {
     cafeteriaCollisionMatrix,
@@ -990,7 +1036,8 @@ module.exports = {
     metroPolitecnicoCollisionMatrix,
     esimeCollisionMatrix,
     esiaCollisionMatrix,
-    plazaVistaNorteCollisionMatrix
+    plazaVistaNorteCollisionMatrix,
+    cidetecCollisionMatrix
 };
 
 // --- Funciones convertidas desde Kotlin -> JavaScript ---
