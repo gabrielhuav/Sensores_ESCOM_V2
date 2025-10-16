@@ -541,49 +541,47 @@ esiaCollisionMatrix[35][25] = 0; // INTERACTIVE
 // =================================================================
 // Matriz de colisión para CIDETEC (40x40)
 // =================================================================
-const cidetecCollisionMatrix = Array(40).fill().map(() => Array(40).fill(1)); // Todo WALL por defecto
+const cidetecCollisionMatrix = Array(40).fill().map(() => Array(40).fill(0));
 
-// Crear un área rectangular simple y grande para todo CIDETEC
-for (let i = 3; i < 37; i++) {
-    for (let j = 3; j < 37; j++) {
-        cidetecCollisionMatrix[i][j] = 2; // PATH
-    }
+// 1. Bordes exteriores (Muro = 1)
+for (let i = 0; i < 40; i++) {
+    cidetecCollisionMatrix[0][i] = 1;      // Pared superior
+    cidetecCollisionMatrix[39][i] = 1;     // Pared inferior
+    cidetecCollisionMatrix[i][0] = 1;      // Pared izquierda
+    cidetecCollisionMatrix[i][39] = 1;     // Pared derecha
 }
 
-// Bloquear área (10,21) a (10,37)
-for (let i = 21; i < 38; i++) {
-    for (let j = 10; j < 11; j++) {
-        cidetecCollisionMatrix[i][j] = 1; // WALL
-    }
+// 2. Paredes internas (INACCESSIBLE = 1)
+
+
+// 🔹 (10,21) → (10,37)
+for (let i = 21; i <= 37; i++) {
+    cidetecCollisionMatrix[i][10] = 1;
 }
 
-// Bloquear área (10,3) a (10,18)
-for (let i = 3; i < 19; i++) {
-    for (let j = 10; j < 11; j++) {
-        cidetecCollisionMatrix[i][j] = 1; // WALL
-    }
+// 🔹 (10,3) → (10,18)
+for (let i = 3; i <= 18; i++) {
+    cidetecCollisionMatrix[i][10] = 1;
 }
 
-// Bloquear área (10,37) a (30,37)
-for (let i = 37; i < 38; i++) {
-    for (let j = 10; j < 31; j++) {
-        cidetecCollisionMatrix[i][j] = 1; // WALL
-    }
+// 🔹 (10,37) → (30,37)
+for (let j = 10; j <= 30; j++) {
+    cidetecCollisionMatrix[37][j] = 1;
 }
 
-// Bloquear área (30,37) a (30,3)
-for (let i = 37; i < 3; i++) {
-    for (let j = 30; j < 31; j++) {
-        cidetecCollisionMatrix[i][j] = 1; // WALL
-    }
+// 🔹 (30,37) → (30,3)
+for (let i = 3; i <= 37; i++) {
+    cidetecCollisionMatrix[i][30] = 1;
 }
 
-// Bloquear área (10,3) a (30,3)
-for (let i = 3; i < 4; i++) {
-    for (let j = 10; j < 31; j++) {
-        cidetecCollisionMatrix[i][j] = 1; // WALL
-    }
+// 🔹 (10,3) → (30,3)
+for (let j = 10; j <= 30; j++) {
+    cidetecCollisionMatrix[3][j] = 1;
 }
+
+// 3. Punto de salida (Interactivo = 2)
+// Coordenadas: (x:20, y:9)
+cidetecCollisionMatrix[22][11] = 2;
 
 
 // Exportar las matrices
