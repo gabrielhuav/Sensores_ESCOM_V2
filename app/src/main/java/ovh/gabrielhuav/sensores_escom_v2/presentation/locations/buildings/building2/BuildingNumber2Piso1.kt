@@ -21,7 +21,12 @@ import ovh.gabrielhuav.sensores_escom_v2.domain.bluetooth.BluetoothManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.components.UIManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.MovementManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.ServerConnectionManager
-import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2009
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2001
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2002
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2003
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2004
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2005
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2006
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.base.GameplayActivity
@@ -46,7 +51,7 @@ class BuildingNumber2Piso1 : AppCompatActivity(),
     data class GameState(
         var isServer: Boolean = false,
         var isConnected: Boolean = false,
-        var playerPosition: Pair<Int, Int> = Pair(1, 1),
+        var playerPosition: Pair<Int, Int> = Pair(16, 20),
         var remotePlayerPositions: Map<String, PlayerInfo> = emptyMap(),
         var remotePlayerName: String? = null
     ) {
@@ -94,7 +99,7 @@ class BuildingNumber2Piso1 : AppCompatActivity(),
                     updateLocalPlayerPosition(gameState.playerPosition)
                 }
 
-                Log.d("BuildingNumber2Piso1", "Set map to: $normalizedMap")
+                Log.d("BuildingNumber2", "Set map to: $normalizedMap")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error en onCreate: ${e.message}")
@@ -114,7 +119,7 @@ class BuildingNumber2Piso1 : AppCompatActivity(),
         if (savedInstanceState == null) {
             // Inicializar el estado del juego desde el Intent
             gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
-            gameState.playerPosition = (intent.getParcelableExtra("INITIAL_POSITION") ?: Pair(17, 20)) as Pair<Int, Int>
+            gameState.playerPosition = (intent.getParcelableExtra("INITIAL_POSITION") ?: Pair(16, 20)) as Pair<Int, Int>
         } else {
             restoreState(savedInstanceState)
         }
@@ -176,19 +181,40 @@ class BuildingNumber2Piso1 : AppCompatActivity(),
         when (targetMap) {
             MapMatrixProvider.MAP_MAIN -> {
                 // Transición al mapa principal
-                //returnToMainActivity()
+                returnToMainActivity()
             }
-            MapMatrixProvider.MAP_SALON2009 -> {
-                // Transición al salón 2009
-                //startSalon2009Activity()
+            MapMatrixProvider.MAP_SALON2001 -> {
+                // Transición al salón 2001
+                startSalon2001Activity()
             }
-            MapMatrixProvider.MAP_SALON2010 -> {
-                // Transición al salón 2010
-                //startSalon2010Activity()
+            MapMatrixProvider.MAP_SALON2002 -> {
+                // Transición al salón 2002
+                startSalon2002Activity()
             }
+            MapMatrixProvider.MAP_SALON2003 -> {
+                // Transición al salón 2003
+                startSalon2003Activity()
+            }
+            MapMatrixProvider.MAP_SALON2004 -> {
+                // Transición al salón 2004
+                startSalon2004Activity()
+            }
+            MapMatrixProvider.MAP_SALON2005 -> {
+                // Transición al salón 2005
+                startSalon2005Activity()
+            }
+            MapMatrixProvider.MAP_SALON2006 -> {
+                // Transición al salón 2006
+                startSalon2006Activity()
+            }
+            MapMatrixProvider.MAP_BUILDING2_PISO2 -> {
+                // Transición al edificio 2 primera planta
+                startSegundoPisoActivity()
+            }
+
             MapMatrixProvider.MAP_BUILDING2 -> {
-                // Transición al edificio 2
-                startBuilding2Activity()
+                // Transición al edificio 2 primera planta
+                startPlantaBajaActivity()
             }
             // Añadir más casos según sea necesario para otros mapas
             else -> {
@@ -196,16 +222,94 @@ class BuildingNumber2Piso1 : AppCompatActivity(),
             }
         }
     }
-
-    // Método para iniciar la Activity del salón 2010
-    private fun startBuilding2Activity() {
-        val previousPosition = intent.getSerializableExtra("PREVIOUS_POSITION") as? Pair<Int, Int>
-            ?: Pair(17, 20) // Posición por defecto si no hay previa
-
-        val intent = Intent(this, BuildingNumber2::class.java).apply {
+    private fun startSalon2001Activity() {
+        val intent = Intent(this, Salon2001::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", previousPosition) // Usar la posición previa
+            putExtra("INITIAL_POSITION", Pair(20, 20))
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition)
+            putExtra("PREVIOUS_MAP", MapMatrixProvider.MAP_BUILDING2_PISO1)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        mapView.playerManager.cleanup()
+        startActivity(intent)
+        finish()
+    }
+    private fun startSalon2002Activity() {
+        val intent = Intent(this, Salon2002::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(20, 20))
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition)
+            putExtra("PREVIOUS_MAP", MapMatrixProvider.MAP_BUILDING2_PISO1)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        mapView.playerManager.cleanup()
+        startActivity(intent)
+        finish()
+    }
+    private fun startSalon2003Activity() {
+        val intent = Intent(this, Salon2003::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(20, 20))
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition)
+            putExtra("PREVIOUS_MAP", MapMatrixProvider.MAP_BUILDING2_PISO1)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        mapView.playerManager.cleanup()
+        startActivity(intent)
+        finish()
+    }
+    private fun startSalon2004Activity() {
+        val intent = Intent(this, Salon2004::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(20, 20))
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition)
+            putExtra("PREVIOUS_MAP", MapMatrixProvider.MAP_BUILDING2_PISO1)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        mapView.playerManager.cleanup()
+        startActivity(intent)
+        finish()
+    }
+    private fun startSalon2005Activity() {
+        val intent = Intent(this, Salon2005::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(20, 20))
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition)
+            putExtra("PREVIOUS_MAP", MapMatrixProvider.MAP_BUILDING2_PISO1)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        mapView.playerManager.cleanup()
+        startActivity(intent)
+        finish()
+    }
+    private fun startSalon2006Activity() {
+        val intent = Intent(this, Salon2006::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(20, 20))
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition)
+            putExtra("PREVIOUS_MAP", MapMatrixProvider.MAP_BUILDING2_PISO1)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        mapView.playerManager.cleanup()
+        startActivity(intent)
+        finish()
+    }
+
+    private fun startSegundoPisoActivity() {
+
+        val previousPosition = intent.getSerializableExtra("PREVIOUS_POSITION") as? Pair<Int, Int>
+            ?: Pair(20, 15) // Posición por defecto si no hay previa
+        val intent = Intent(this, BuildingNumber2Piso2::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", previousPosition) // Posición inicial en el salón
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guardar la posición actual para regresar
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
 
@@ -215,12 +319,14 @@ class BuildingNumber2Piso1 : AppCompatActivity(),
         finish()
     }
 
-    // Método para iniciar la Activity del salón 2009
-    private fun startSalon2009Activity() {
-        val intent = Intent(this, Salon2009::class.java).apply {
+    private fun startPlantaBajaActivity() {
+
+        val previousPosition = intent.getSerializableExtra("PREVIOUS_POSITION") as? Pair<Int, Int>
+            ?: Pair(17, 20) // Posición por defecto si no hay previa
+        val intent = Intent(this, BuildingNumber2::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(20, 20)) // Posición inicial en el salón
+            putExtra("INITIAL_POSITION", previousPosition) // Posición inicial en el salón
             putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guardar la posición actual para regresar
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
@@ -236,7 +342,7 @@ class BuildingNumber2Piso1 : AppCompatActivity(),
             isServer = savedInstanceState.getBoolean("IS_SERVER", false)
             isConnected = savedInstanceState.getBoolean("IS_CONNECTED", false)
             playerPosition = savedInstanceState.getSerializable("PLAYER_POSITION") as? Pair<Int, Int>
-                ?: Pair(1, 1)
+                ?: Pair(16, 20)
             @Suppress("UNCHECKED_CAST")
             remotePlayerPositions = (savedInstanceState.getSerializable("REMOTE_PLAYER_POSITIONS")
                     as? HashMap<String, GameState.PlayerInfo>)?.toMap() ?: emptyMap()
@@ -326,14 +432,29 @@ class BuildingNumber2Piso1 : AppCompatActivity(),
                     MapMatrixProvider.MAP_MAIN -> {
                         Toast.makeText(this, "Presiona A para volver al mapa principal", Toast.LENGTH_SHORT).show()
                     }
-                    MapMatrixProvider.MAP_SALON2009 -> {
-                        Toast.makeText(this, "Presiona A para entrar al salón 2009", Toast.LENGTH_SHORT).show()
+                    MapMatrixProvider.MAP_SALON2001 -> {
+                        Toast.makeText(this, "Presiona A para entrar al salón 2001", Toast.LENGTH_SHORT).show()
                     }
-                    MapMatrixProvider.MAP_SALON2010 -> {
-                        Toast.makeText(this, "Presiona A para entrar al salón 2010", Toast.LENGTH_SHORT).show()
+                    MapMatrixProvider.MAP_SALON2002 -> {
+                        Toast.makeText(this, "Presiona A para entrar al salón 2002", Toast.LENGTH_SHORT).show()
+                    }
+                    MapMatrixProvider.MAP_SALON2003 -> {
+                        Toast.makeText(this, "Presiona A para entrar al salón 2003", Toast.LENGTH_SHORT).show()
+                    }
+                    MapMatrixProvider.MAP_SALON2004 -> {
+                        Toast.makeText(this, "Presiona A para entrar al salón 2004", Toast.LENGTH_SHORT).show()
+                    }
+                    MapMatrixProvider.MAP_SALON2005 -> {
+                        Toast.makeText(this, "Presiona A para entrar al salón 2005", Toast.LENGTH_SHORT).show()
+                    }
+                    MapMatrixProvider.MAP_SALON2006 -> {
+                        Toast.makeText(this, "Presiona A para entrar al salón 2006", Toast.LENGTH_SHORT).show()
+                    }
+                    MapMatrixProvider.MAP_BUILDING2_PISO2 -> {
+                        Toast.makeText(this, "Presiona A para entrar al edificio 2 Segunda planta", Toast.LENGTH_SHORT).show()
                     }
                     MapMatrixProvider.MAP_BUILDING2 -> {
-                        Toast.makeText(this, "Presiona A para entrar al edificio 2 planta baja", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "Presiona A para entrar al edificio 2 Planta Baja", Toast.LENGTH_SHORT).show()
                     }
                     else -> {
                         Toast.makeText(this, "Presiona A para interactuar", Toast.LENGTH_SHORT).show()
@@ -384,8 +505,6 @@ class BuildingNumber2Piso1 : AppCompatActivity(),
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
 
-
-
         // Limpiar datos antes de cambiar de activity
         mapView.playerManager.cleanup()
         startActivity(intent)
@@ -401,7 +520,7 @@ class BuildingNumber2Piso1 : AppCompatActivity(),
                 mapView.updateLocalPlayerPosition(position, forceCenter = true)
 
                 if (gameState.isConnected) {
-                    serverConnectionManager.sendUpdateMessage(playerName, position, "escom_building2_primera_planta")
+                    serverConnectionManager.sendUpdateMessage(playerName, position, "escom_building2")
                 }
 
                 checkPositionForMapChange(position)
