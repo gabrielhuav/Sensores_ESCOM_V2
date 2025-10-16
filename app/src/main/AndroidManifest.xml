@@ -114,6 +114,26 @@
             android:name=".presentation.components.BuildingNumber2Piso1"
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
+            android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2001"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+        <activity
+            android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2002"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+        <activity
+            android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2003"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+        <activity
+            android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2004"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+        <activity
+            android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2005"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+        <activity
+            android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2006"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+
+
+        <activity
             android:name=".presentation.locations.transportation.Cablebus"
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
