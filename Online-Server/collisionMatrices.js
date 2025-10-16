@@ -1247,13 +1247,6 @@ function createSalon2010Matrix() {
     return matrix;
 }
 
-// --- Opcional: crear matrices y exportarlas (si quieres matrices ya instanciadas) ---
-// const salonMatrix = createSalonMatrix();
-// const building2Matrix = createBuilding2Matrix();
-// const building2Piso1Matrix = createBuilding2Piso1Matrix();
-// const building2Piso2Matrix = createBuilding2Piso2Matrix();
-// const salon2010Matrix = createSalon2010Matrix();
-
 module.exports.createSalonMatrix = createSalonMatrix;
 module.exports.createBuilding2Matrix = createBuilding2Matrix;
 module.exports.createBuilding2Piso1Matrix = createBuilding2Piso1Matrix;
