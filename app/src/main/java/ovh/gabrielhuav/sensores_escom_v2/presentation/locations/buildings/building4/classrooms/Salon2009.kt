@@ -65,7 +65,8 @@ class Salon2009 : AppCompatActivity(),
             // Esperar a que el mapView esté listo
             mapView.post {
                 // Configurar el mapa para el salón 2009
-                mapView.setCurrentMap(MapMatrixProvider.MAP_SALON2009, R.drawable.escom_salon2009)
+                val normalizedMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_SALON2009)
+                mapView.setCurrentMap(normalizedMap, R.drawable.escom_salon2009)
 
                 // Configurar el playerManager
                 mapView.playerManager.apply {
@@ -87,6 +88,7 @@ class Salon2009 : AppCompatActivity(),
             finish()
         }
     }
+
     private fun initializeComponents(savedInstanceState: Bundle?) {
         // Obtener datos desde Intent o restaurar el estado guardado
         playerName = intent.getStringExtra("PLAYER_NAME") ?: run {
@@ -323,29 +325,19 @@ class Salon2009 : AppCompatActivity(),
                                     playerData.getInt("x"),
                                     playerData.getInt("y")
                                 )
+                                val map = playerData.getString("map")
 
-                                // Obtener y normalizar el mapa
-                                val mapStr = playerData.optString("map", playerData.optString("currentMap", "main"))
-                                val normalizedMap = MapMatrixProvider.normalizeMapName(mapStr)
-
-                                // Actualizar el estado
+                                // Actualizar la posición del jugador en el mapa
                                 gameState.remotePlayerPositions = gameState.remotePlayerPositions +
                                         (playerId to BuildingNumber4.GameState.PlayerInfo(
                                             position,
-                                            normalizedMap
+                                            map
                                         ))
 
-                                // Obtener el mapa actual normalizado para comparar
-                                val currentMap = MapMatrixProvider.normalizeMapName(
-                                    MapMatrixProvider.MAP_SALON2009)
-
-                                // IMPORTANTE: Loggear para depuración
-                                Log.d(TAG, "Jugador remoto $playerId en mapa '$normalizedMap', mapa actual es '$currentMap'")
-
-                                // Solo mostrar jugadores en el mismo mapa
-                                if (normalizedMap == currentMap) {
-                                    mapView.updateRemotePlayerPosition(playerId, position, normalizedMap)
-                                    Log.d(TAG, "Updated remote player $playerId in map $normalizedMap")
+                                // Solo mostrar jugadores que estén en el mismo mapa
+                                if (map == MapMatrixProvider.MAP_SALON2009) {
+                                    mapView.updateRemotePlayerPosition(playerId, position, map)
+                                    Log.d(TAG, "Updated remote player $playerId position to $position in map $map")
                                 }
                             }
                         }
@@ -357,25 +349,19 @@ class Salon2009 : AppCompatActivity(),
                                 jsonObject.getInt("x"),
                                 jsonObject.getInt("y")
                             )
+                            val map = jsonObject.getString("map")
 
-                            // Obtener y normalizar el mapa
-                            val mapStr = jsonObject.optString("map", jsonObject.optString("currentmap", "main"))
-                            val normalizedMap = MapMatrixProvider.normalizeMapName(mapStr)
-
-                            // Actualizar el estado
+                            // Actualizar el estado del jugador
                             gameState.remotePlayerPositions = gameState.remotePlayerPositions +
                                     (playerId to BuildingNumber4.GameState.PlayerInfo(
                                         position,
-                                        normalizedMap
+                                        map
                                     ))
 
-                            // Obtener el mapa actual normalizado para comparar
-                            val currentMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_SALON2009)
-
-                            // Solo mostrar jugadores en el mismo mapa
-                            if (normalizedMap == currentMap) {
-                                mapView.updateRemotePlayerPosition(playerId, position, normalizedMap)
-                                Log.d(TAG, "Updated remote player $playerId in map $normalizedMap")
+                            // Solo mostrar jugadores que estén en el mismo mapa
+                            if (map == MapMatrixProvider.MAP_SALON2009) {
+                                mapView.updateRemotePlayerPosition(playerId, position, map)
+                                Log.d(TAG, "Updated remote player $playerId position to $position in map $map")
                             }
                         }
                     }
@@ -390,15 +376,6 @@ class Salon2009 : AppCompatActivity(),
                             MapMatrixProvider.MAP_SALON2009
                         )
                     }
-                    "disconnect" -> {
-                        // Manejar desconexión de jugador
-                        val disconnectedId = jsonObject.getString("id")
-                        if (disconnectedId != playerName) {
-                            gameState.remotePlayerPositions = gameState.remotePlayerPositions - disconnectedId
-                            mapView.removeRemotePlayer(disconnectedId)
-                            Log.d(TAG, "Player disconnected: $disconnectedId")
-                        }
-                    }
                 }
                 mapView.invalidate()
             } catch (e: Exception) {
@@ -406,6 +383,7 @@ class Salon2009 : AppCompatActivity(),
             }
         }
     }
+
     private fun updateBluetoothStatus(status: String) {
         runOnUiThread {
             tvBluetoothStatus.text = status
