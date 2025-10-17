@@ -377,9 +377,316 @@ for (let i = 6; i <= 25; i++) {
 // Coordenadas: (x: 38, y: 38)
 palapasISCCollisionMatrix[38][38] = 2;
 
+// Matriz de colisión para ENCB (40x40)
+// Edificio con 6 salas (3 superiores, 3 inferiores) y área central grande
+const encbCollisionMatrix = Array(40).fill().map(() => Array(40).fill(2)); // Todo es PATH por defecto
+
+// ============================================
+// BORDES EXTERIORES
+// ============================================
+
+// Borde superior (fila 0)
+for (let j = 0; j < 40; j++) {
+    encbCollisionMatrix[0][j] = 1;
+}
+
+// Borde inferior (fila 39)
+for (let j = 0; j < 40; j++) {
+    encbCollisionMatrix[39][j] = 1;
+}
+
+// Borde izquierdo (columna 0)
+for (let i = 0; i < 40; i++) {
+    encbCollisionMatrix[i][0] = 1;
+}
+
+// Borde derecho (columna 39)
+for (let i = 0; i < 40; i++) {
+    encbCollisionMatrix[i][39] = 1;
+}
+
+// ============================================
+// SALA 1 - SUPERIOR IZQUIERDA (3,3) hasta (10,12)
+// ============================================
+
+// Pared superior sala 1
+for (let j = 3; j <= 12; j++) {
+    encbCollisionMatrix[3][j] = 1;
+}
+
+// Pared izquierda sala 1
+for (let i = 4; i <= 10; i++) {
+    encbCollisionMatrix[i][3] = 1;
+}
+
+// Pared derecha sala 1
+for (let i = 4; i <= 10; i++) {
+    encbCollisionMatrix[i][12] = 1;
+}
+
+// Pared inferior sala 1 (con puerta ancha de 3 casillas)
+encbCollisionMatrix[10][3] = 1;
+encbCollisionMatrix[10][4] = 1;
+encbCollisionMatrix[10][5] = 1;
+// Puerta: [10][6], [10][7], [10][8] quedan como PATH
+encbCollisionMatrix[10][9] = 1;
+encbCollisionMatrix[10][10] = 1;
+encbCollisionMatrix[10][11] = 1;
+encbCollisionMatrix[10][12] = 1;
+
+// Obstáculos internos sala 1 (mesas)
+encbCollisionMatrix[5][5] = 3;
+encbCollisionMatrix[5][6] = 3;
+encbCollisionMatrix[5][9] = 3;
+encbCollisionMatrix[5][10] = 3;
+encbCollisionMatrix[8][5] = 3;
+encbCollisionMatrix[8][6] = 3;
+encbCollisionMatrix[8][9] = 3;
+encbCollisionMatrix[8][10] = 3;
+
+// ============================================
+// SALA 2 - SUPERIOR CENTRO (3,15) hasta (10,24)
+// ============================================
+
+// Pared superior sala 2
+for (let j = 15; j <= 24; j++) {
+    encbCollisionMatrix[3][j] = 1;
+}
+
+// Pared izquierda sala 2
+for (let i = 4; i <= 10; i++) {
+    encbCollisionMatrix[i][15] = 1;
+}
+
+// Pared derecha sala 2
+for (let i = 4; i <= 10; i++) {
+    encbCollisionMatrix[i][24] = 1;
+}
+
+// Pared inferior sala 2 (con puerta ancha de 3 casillas)
+encbCollisionMatrix[10][15] = 1;
+encbCollisionMatrix[10][16] = 1;
+encbCollisionMatrix[10][17] = 1;
+// Puerta: [10][18], [10][19], [10][20] quedan como PATH
+encbCollisionMatrix[10][21] = 1;
+encbCollisionMatrix[10][22] = 1;
+encbCollisionMatrix[10][23] = 1;
+encbCollisionMatrix[10][24] = 1;
+
+// Obstáculos internos sala 2
+encbCollisionMatrix[5][17] = 3;
+encbCollisionMatrix[5][18] = 3;
+encbCollisionMatrix[5][21] = 3;
+encbCollisionMatrix[5][22] = 3;
+encbCollisionMatrix[8][17] = 3;
+encbCollisionMatrix[8][18] = 3;
+encbCollisionMatrix[8][21] = 3;
+encbCollisionMatrix[8][22] = 3;
+
+// ============================================
+// SALA 3 - SUPERIOR DERECHA (3,27) hasta (10,36)
+// ============================================
+
+// Pared superior sala 3
+for (let j = 27; j <= 36; j++) {
+    encbCollisionMatrix[3][j] = 1;
+}
+
+// Pared izquierda sala 3
+for (let i = 4; i <= 10; i++) {
+    encbCollisionMatrix[i][27] = 1;
+}
+
+// Pared derecha sala 3
+for (let i = 4; i <= 10; i++) {
+    encbCollisionMatrix[i][36] = 1;
+}
+
+// Pared inferior sala 3 (con puerta ancha de 3 casillas)
+encbCollisionMatrix[10][27] = 1;
+encbCollisionMatrix[10][28] = 1;
+encbCollisionMatrix[10][29] = 1;
+// Puerta: [10][30], [10][31], [10][32] quedan como PATH
+encbCollisionMatrix[10][33] = 1;
+encbCollisionMatrix[10][34] = 1;
+encbCollisionMatrix[10][35] = 1;
+encbCollisionMatrix[10][36] = 1;
+
+// Obstáculos internos sala 3
+encbCollisionMatrix[5][29] = 3;
+encbCollisionMatrix[5][30] = 3;
+encbCollisionMatrix[5][33] = 3;
+encbCollisionMatrix[5][34] = 3;
+encbCollisionMatrix[8][29] = 3;
+encbCollisionMatrix[8][30] = 3;
+encbCollisionMatrix[8][33] = 3;
+encbCollisionMatrix[8][34] = 3;
+
+// ============================================
+// SALA 4 - INFERIOR IZQUIERDA (29,3) hasta (36,12)
+// ============================================
+
+// Pared superior sala 4 (con puerta ancha de 3 casillas)
+encbCollisionMatrix[29][3] = 1;
+encbCollisionMatrix[29][4] = 1;
+encbCollisionMatrix[29][5] = 1;
+// Puerta: [29][6], [29][7], [29][8] quedan como PATH
+encbCollisionMatrix[29][9] = 1;
+encbCollisionMatrix[29][10] = 1;
+encbCollisionMatrix[29][11] = 1;
+encbCollisionMatrix[29][12] = 1;
+
+// Pared izquierda sala 4
+for (let i = 30; i <= 36; i++) {
+    encbCollisionMatrix[i][3] = 1;
+}
+
+// Pared derecha sala 4
+for (let i = 30; i <= 36; i++) {
+    encbCollisionMatrix[i][12] = 1;
+}
+
+// Pared inferior sala 4
+for (let j = 3; j <= 12; j++) {
+    encbCollisionMatrix[36][j] = 1;
+}
+
+// Obstáculos internos sala 4 (laboratorio - mesas de trabajo)
+encbCollisionMatrix[31][5] = 3;
+encbCollisionMatrix[31][6] = 3;
+encbCollisionMatrix[31][7] = 3;
+encbCollisionMatrix[31][9] = 3;
+encbCollisionMatrix[31][10] = 3;
+encbCollisionMatrix[34][5] = 3;
+encbCollisionMatrix[34][6] = 3;
+encbCollisionMatrix[34][7] = 3;
+encbCollisionMatrix[34][9] = 3;
+encbCollisionMatrix[34][10] = 3;
+
+// ============================================
+// SALA 5 - INFERIOR CENTRO (29,15) hasta (36,24)
+// ============================================
+
+// Pared superior sala 5 (con puerta ancha de 3 casillas)
+encbCollisionMatrix[29][15] = 1;
+encbCollisionMatrix[29][16] = 1;
+encbCollisionMatrix[29][17] = 1;
+// Puerta: [29][18], [29][19], [29][20] quedan como PATH
+encbCollisionMatrix[29][21] = 1;
+encbCollisionMatrix[29][22] = 1;
+encbCollisionMatrix[29][23] = 1;
+encbCollisionMatrix[29][24] = 1;
+
+// Pared izquierda sala 5
+for (let i = 30; i <= 36; i++) {
+    encbCollisionMatrix[i][15] = 1;
+}
+
+// Pared derecha sala 5
+for (let i = 30; i <= 36; i++) {
+    encbCollisionMatrix[i][24] = 1;
+}
+
+// Pared inferior sala 5
+for (let j = 15; j <= 24; j++) {
+    encbCollisionMatrix[36][j] = 1;
+}
+
+// Obstáculos internos sala 5 (cafetería - mesas)
+encbCollisionMatrix[31][17] = 3;
+encbCollisionMatrix[31][18] = 3;
+encbCollisionMatrix[31][21] = 3;
+encbCollisionMatrix[31][22] = 3;
+encbCollisionMatrix[34][17] = 3;
+encbCollisionMatrix[34][18] = 3;
+encbCollisionMatrix[34][21] = 3;
+encbCollisionMatrix[34][22] = 3;
+
+// ============================================
+// SALA 6 - INFERIOR DERECHA (29,27) hasta (36,36)
+// ============================================
+
+// Pared superior sala 6 (con puerta ancha de 3 casillas)
+encbCollisionMatrix[29][27] = 1;
+encbCollisionMatrix[29][28] = 1;
+encbCollisionMatrix[29][29] = 1;
+// Puerta: [29][30], [29][31], [29][32] quedan como PATH
+encbCollisionMatrix[29][33] = 1;
+encbCollisionMatrix[29][34] = 1;
+encbCollisionMatrix[29][35] = 1;
+encbCollisionMatrix[29][36] = 1;
+
+// Pared izquierda sala 6
+for (let i = 30; i <= 36; i++) {
+    encbCollisionMatrix[i][27] = 1;
+}
+
+// Pared derecha sala 6
+for (let i = 30; i <= 36; i++) {
+    encbCollisionMatrix[i][36] = 1;
+}
+
+// Pared inferior sala 6
+for (let j = 27; j <= 36; j++) {
+    encbCollisionMatrix[36][j] = 1;
+}
+
+// Obstáculos internos sala 6 (biblioteca - estanterías)
+encbCollisionMatrix[31][29] = 3;
+encbCollisionMatrix[31][30] = 3;
+encbCollisionMatrix[31][33] = 3;
+encbCollisionMatrix[31][34] = 3;
+encbCollisionMatrix[34][29] = 3;
+encbCollisionMatrix[34][30] = 3;
+encbCollisionMatrix[34][33] = 3;
+encbCollisionMatrix[34][34] = 3;
+
+// ============================================
+// OBSTÁCULOS DECORATIVOS EN ÁREA CENTRAL
+// ============================================
+
+// Jardín/bancas en área central superior
+encbCollisionMatrix[15][8] = 3;
+encbCollisionMatrix[15][9] = 3;
+encbCollisionMatrix[15][19] = 3;
+encbCollisionMatrix[15][20] = 3;
+encbCollisionMatrix[15][30] = 3;
+encbCollisionMatrix[15][31] = 3;
+
+// Jardín/bancas en área central inferior
+encbCollisionMatrix[24][8] = 3;
+encbCollisionMatrix[24][9] = 3;
+encbCollisionMatrix[24][19] = 3;
+encbCollisionMatrix[24][20] = 3;
+encbCollisionMatrix[24][30] = 3;
+encbCollisionMatrix[24][31] = 3;
+
+// Columnas/pilares en el centro
+encbCollisionMatrix[17][20] = 3;
+encbCollisionMatrix[22][20] = 3;
+
+// ============================================
+// PUNTOS INTERACTIVOS
+// ============================================
+
+// Marcar puertas como interactivas (centro de cada puerta de 3 casillas)
+encbCollisionMatrix[10][7] = 0;   // Puerta sala 1
+encbCollisionMatrix[10][19] = 0;  // Puerta sala 2
+encbCollisionMatrix[10][31] = 0;  // Puerta sala 3
+encbCollisionMatrix[29][7] = 0;   // Puerta sala 4
+encbCollisionMatrix[29][19] = 0;  // Puerta sala 5
+encbCollisionMatrix[29][31] = 0;  // Puerta sala 6
+
+// Salida principal a Zacatenco (entrada más ancha)
+encbCollisionMatrix[20][0] = 0;
+encbCollisionMatrix[19][0] = 0;
+encbCollisionMatrix[21][0] = 0;
+
+
 // Exportar las matrices
 module.exports = {
     cafeteriaCollisionMatrix,
     edificioGobiernoCollisionMatrix,
-    palapasISCCollisionMatrix
+    palapasISCCollisionMatrix,
+    encbCollisionMatrix
 };
