@@ -36,6 +36,7 @@ import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.buildi
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.cidetec.Cidetec
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.OSMMapActivity
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.gobierno.EdificioGobierno
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.lab.LaboratorioPosgradoActivity
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.GlobalMapActivity
 import kotlin.collections.iterator
 
