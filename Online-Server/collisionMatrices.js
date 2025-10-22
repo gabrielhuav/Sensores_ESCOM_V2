@@ -1033,6 +1033,7 @@ module.exports = {
     edificioGobiernoCollisionMatrix,
     labPosgradoMatrix,
     palapasISCCollisionMatrix,
+    esiaCollisionMatrix,
     metroPolitecnicoCollisionMatrix,
     esimeCollisionMatrix,
     esiaCollisionMatrix,
