@@ -341,6 +341,7 @@ class MapMatrixProvider {
             }
             // Explicitly set coordinates 29,22 and 29,23 as blue interactive points
             matrix[28][27] = INTERACTIVE
+            matrix[12][24] = INTERACTIVE
 
             matrix[5][25] = INTERACTIVE // Entrada al Estacionamiento de ESCOM
 
