@@ -31,7 +31,7 @@ import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProv
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.base.GameplayActivity
 
-class BuildingNumber2 : AppCompatActivity(),
+class BuildingNumber2Piso2 : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,
     BluetoothGameManager.ConnectionListener,
     OnlineServerManager.WebSocketListener,
@@ -51,7 +51,7 @@ class BuildingNumber2 : AppCompatActivity(),
     data class GameState(
         var isServer: Boolean = false,
         var isConnected: Boolean = false,
-        var playerPosition: Pair<Int, Int> = Pair(1, 22),
+        var playerPosition: Pair<Int, Int> = Pair(16, 20),
         var remotePlayerPositions: Map<String, PlayerInfo> = emptyMap(),
         var remotePlayerName: String? = null
     ) {
@@ -73,13 +73,13 @@ class BuildingNumber2 : AppCompatActivity(),
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_building2)
+        setContentView(R.layout.activity_building2piso2)
 
         try {
             // Primero inicializamos el mapView
             mapView = MapView(
                 context = this,
-                mapResourceId = R.drawable.escom_edificio_2_planta_baja
+                mapResourceId = R.drawable.escom_edificio_2_segunda_planta
             )
             findViewById<FrameLayout>(R.id.map_container).addView(mapView)
 
@@ -89,8 +89,8 @@ class BuildingNumber2 : AppCompatActivity(),
             // Esperar a que el mapView esté listo
             mapView.post {
                 // Configurar el mapa
-                val normalizedMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_BUILDING2)
-                mapView.setCurrentMap(normalizedMap, R.drawable.escom_edificio_2_planta_baja)
+                val normalizedMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_BUILDING2_PISO2)
+                mapView.setCurrentMap(normalizedMap, R.drawable.escom_edificio_2_segunda_planta)
 
                 // Después configurar el playerManager
                 mapView.playerManager.apply {
@@ -119,7 +119,7 @@ class BuildingNumber2 : AppCompatActivity(),
         if (savedInstanceState == null) {
             // Inicializar el estado del juego desde el Intent
             gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
-            gameState.playerPosition = (intent.getParcelableExtra("INITIAL_POSITION") ?: Pair(1, 22)) as Pair<Int, Int>
+            gameState.playerPosition = (intent.getParcelableExtra("INITIAL_POSITION") ?: Pair(16, 20)) as Pair<Int, Int>
         } else {
             restoreState(savedInstanceState)
         }
@@ -147,14 +147,14 @@ class BuildingNumber2 : AppCompatActivity(),
 
     private fun initializeManagers() {
         bluetoothManager = BluetoothManager.getInstance(this, uiManager.tvBluetoothStatus).apply {
-            setCallback(this@BuildingNumber2)
+            setCallback(this@BuildingNumber2Piso2)
         }
 
         bluetoothBridge = BluetoothWebSocketBridge.getInstance()
 
         // Configurar OnlineServerManager con el listener
         val onlineServerManager = OnlineServerManager.getInstance(this).apply {
-            setListener(this@BuildingNumber2)
+            setListener(this@BuildingNumber2Piso2)
         }
 
         serverConnectionManager = ServerConnectionManager(
@@ -223,7 +223,7 @@ class BuildingNumber2 : AppCompatActivity(),
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_POSITION", Pair(20, 20))
             putExtra("PREVIOUS_POSITION", gameState.playerPosition)
-            putExtra("PREVIOUS_MAP", MapMatrixProvider.MAP_BUILDING2)
+            putExtra("PREVIOUS_MAP", MapMatrixProvider.MAP_BUILDING2_PISO2)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         mapView.playerManager.cleanup()
@@ -236,7 +236,7 @@ class BuildingNumber2 : AppCompatActivity(),
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_POSITION", Pair(20, 20))
             putExtra("PREVIOUS_POSITION", gameState.playerPosition)
-            putExtra("PREVIOUS_MAP", MapMatrixProvider.MAP_BUILDING2)
+            putExtra("PREVIOUS_MAP", MapMatrixProvider.MAP_BUILDING2_PISO2)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         mapView.playerManager.cleanup()
@@ -249,7 +249,7 @@ class BuildingNumber2 : AppCompatActivity(),
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_POSITION", Pair(20, 20))
             putExtra("PREVIOUS_POSITION", gameState.playerPosition)
-            putExtra("PREVIOUS_MAP", MapMatrixProvider.MAP_BUILDING2)
+            putExtra("PREVIOUS_MAP", MapMatrixProvider.MAP_BUILDING2_PISO2)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         mapView.playerManager.cleanup()
@@ -262,7 +262,7 @@ class BuildingNumber2 : AppCompatActivity(),
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_POSITION", Pair(20, 20))
             putExtra("PREVIOUS_POSITION", gameState.playerPosition)
-            putExtra("PREVIOUS_MAP", MapMatrixProvider.MAP_BUILDING2)
+            putExtra("PREVIOUS_MAP", MapMatrixProvider.MAP_BUILDING2_PISO2)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         mapView.playerManager.cleanup()
@@ -275,7 +275,7 @@ class BuildingNumber2 : AppCompatActivity(),
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_POSITION", Pair(20, 20))
             putExtra("PREVIOUS_POSITION", gameState.playerPosition)
-            putExtra("PREVIOUS_MAP", MapMatrixProvider.MAP_BUILDING2)
+            putExtra("PREVIOUS_MAP", MapMatrixProvider.MAP_BUILDING2_PISO2)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         mapView.playerManager.cleanup()
@@ -288,7 +288,7 @@ class BuildingNumber2 : AppCompatActivity(),
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_POSITION", Pair(20, 20))
             putExtra("PREVIOUS_POSITION", gameState.playerPosition)
-            putExtra("PREVIOUS_MAP", MapMatrixProvider.MAP_BUILDING2)
+            putExtra("PREVIOUS_MAP", MapMatrixProvider.MAP_BUILDING2_PISO2)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         mapView.playerManager.cleanup()
@@ -319,7 +319,7 @@ class BuildingNumber2 : AppCompatActivity(),
             isServer = savedInstanceState.getBoolean("IS_SERVER", false)
             isConnected = savedInstanceState.getBoolean("IS_CONNECTED", false)
             playerPosition = savedInstanceState.getSerializable("PLAYER_POSITION") as? Pair<Int, Int>
-                ?: Pair(1, 22)
+                ?: Pair(16, 20)
             @Suppress("UNCHECKED_CAST")
             remotePlayerPositions = (savedInstanceState.getSerializable("REMOTE_PLAYER_POSITIONS")
                     as? HashMap<String, GameState.PlayerInfo>)?.toMap() ?: emptyMap()
@@ -422,10 +422,10 @@ class BuildingNumber2 : AppCompatActivity(),
                         Toast.makeText(this, "Presiona A para entrar al salón 2004", Toast.LENGTH_SHORT).show()
                     }
                     MapMatrixProvider.MAP_SALON2005 -> {
-                        Toast.makeText(this, "Presiona A para entrar al salón 2004", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "Presiona A para entrar al salón 2005", Toast.LENGTH_SHORT).show()
                     }
                     MapMatrixProvider.MAP_SALON2006 -> {
-                        Toast.makeText(this, "Presiona A para entrar al salón 2005", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "Presiona A para entrar al salón 2006", Toast.LENGTH_SHORT).show()
                     }
                     MapMatrixProvider.MAP_BUILDING2_PISO1 -> {
                         Toast.makeText(this, "Presiona A para entrar al edificio 2 primera planta", Toast.LENGTH_SHORT).show()

@@ -981,14 +981,322 @@ for (let row = 0; row <= 3; row++) {
 labPosgradoMatrix[40 - 4][4] = 0; // INTERACTIVE
 /*LAB POSGRADO*/
 
+// =================================================================
+// Matriz de colisión para CIDETEC (40x40)
+// =================================================================
+const cidetecCollisionMatrix = Array(40).fill().map(() => Array(40).fill(0));
+
+// 1. Bordes exteriores (Muro = 1)
+for (let i = 0; i < 40; i++) {
+    cidetecCollisionMatrix[0][i] = 1;      // Pared superior
+    cidetecCollisionMatrix[39][i] = 1;     // Pared inferior
+    cidetecCollisionMatrix[i][0] = 1;      // Pared izquierda
+    cidetecCollisionMatrix[i][39] = 1;     // Pared derecha
+}
+
+// 2. Paredes internas (INACCESSIBLE = 1)
+
+
+// 🔹 (10,21) → (10,37)
+for (let i = 21; i <= 37; i++) {
+    cidetecCollisionMatrix[i][10] = 1;
+}
+
+// 🔹 (10,3) → (10,18)
+for (let i = 3; i <= 18; i++) {
+    cidetecCollisionMatrix[i][10] = 1;
+}
+
+// 🔹 (10,37) → (30,37)
+for (let j = 10; j <= 30; j++) {
+    cidetecCollisionMatrix[37][j] = 1;
+}
+
+// 🔹 (30,37) → (30,3)
+for (let i = 3; i <= 37; i++) {
+    cidetecCollisionMatrix[i][30] = 1;
+}
+
+// 🔹 (10,3) → (30,3)
+for (let j = 10; j <= 30; j++) {
+    cidetecCollisionMatrix[3][j] = 1;
+}
+
+// 3. Punto de salida (Interactivo = 2)
+// Coordenadas: (x:20, y:9)
+cidetecCollisionMatrix[22][11] = 2;
+
+
 // Exportar las matrices
 module.exports = {
     cafeteriaCollisionMatrix,
     edificioGobiernoCollisionMatrix,
     labPosgradoMatrix,
     palapasISCCollisionMatrix,
+    esiaCollisionMatrix,
     metroPolitecnicoCollisionMatrix,
     esimeCollisionMatrix,
     esiaCollisionMatrix,
-    plazaVistaNorteCollisionMatrix
+    plazaVistaNorteCollisionMatrix,
+    cidetecCollisionMatrix
 };
+
+// --- Funciones convertidas desde Kotlin -> JavaScript ---
+// Asegúrate de que MAP_WIDTH, MAP_HEIGHT, WALL, PATH, INTERACTIVE, INACCESSIBLE estén definidas antes de usar estas funciones.
+
+function createSalonMatrix() {
+    // 1. Iniciar la matriz con todo PATH
+    const matrix = Array.from({ length: MAP_HEIGHT }, () => Array(MAP_WIDTH).fill(PATH));
+
+    // 2. Dibujar las paredes exteriores del salón.
+    for (let i = 0; i < MAP_HEIGHT; i++) {
+        for (let j = 0; j < MAP_WIDTH; j++) {
+            if (i === 0 || i === MAP_HEIGHT - 1 || j === 0 || j === MAP_WIDTH - 1) {
+                matrix[i][j] = WALL;
+            }
+        }
+    }
+
+    // 3. Colocar el pizarrón y la pantalla en la parte superior.
+    for (let j = 12; j < MAP_WIDTH - 12; j++) {
+        matrix[6][j] = WALL;
+    }
+
+    // 4. Colocar el escritorio del profesor (filas 10 a 12, columnas 25 a 29)
+    for (let i = 10; i <= 12; i++) {
+        for (let j = 25; j <= 29; j++) {
+            matrix[i][j] = WALL;
+        }
+    }
+
+    // 5. Pupitres de estudiantes (grid)
+    const numRows = 5;
+    const numCols = 8;
+    const rowSpacing = 5; // espacio vertical entre pupitres
+    const colSpacing = 4; // espacio horizontal entre pupitres
+    const startY = 15;
+    const startX = 4;
+
+    for (let row = 0; row < numRows; row++) {
+        for (let col = 0; col < numCols; col++) {
+            const deskY = startY + row * rowSpacing;
+            const deskX = startX + col * colSpacing;
+            if (deskY >= 0 && deskY < MAP_HEIGHT && deskX >= 0 && deskX < MAP_WIDTH) {
+                matrix[deskY][deskX] = WALL;
+            }
+        }
+    }
+
+    // 6. Punto de interacción para la puerta en la esquina superior izquierda (igual que Kotlin)
+    if (6 >= 0 && 0 >= 0 && 6 < MAP_HEIGHT && 0 < MAP_WIDTH) {
+        matrix[6][0] = INTERACTIVE;
+    }
+
+    return matrix;
+}
+
+function createBuilding2Matrix() {
+    const matrix = Array.from({ length: MAP_HEIGHT }, () => Array(MAP_WIDTH).fill(PATH));
+
+    // Coordenadas clave
+    const topWallY = 14;
+    const classroomDepth = 8;
+    const corridorWallY = topWallY + classroomDepth;
+    const corridorHeight = 9;
+    const bottomWallY = corridorWallY + corridorHeight;
+    const leftWallX = 1;
+    const rightWallX = MAP_WIDTH - 4;
+
+    // 1. Muros exteriores y del pasillo
+    for (let j = leftWallX; j <= rightWallX; j++) {
+        if (topWallY >= 0 && topWallY < MAP_HEIGHT) matrix[topWallY][j] = WALL;
+        if (corridorWallY >= 0 && corridorWallY < MAP_HEIGHT) matrix[corridorWallY][j] = WALL;
+        if (bottomWallY >= 0 && bottomWallY < MAP_HEIGHT) matrix[bottomWallY][j] = WALL;
+    }
+    for (let i = topWallY; i <= bottomWallY; i++) {
+        if (i >= 0 && i < MAP_HEIGHT) {
+            if (leftWallX >= 0 && leftWallX < MAP_WIDTH) matrix[i][leftWallX] = WALL;
+            if (rightWallX >= 0 && rightWallX < MAP_WIDTH) matrix[i][rightWallX] = WALL;
+        }
+    }
+
+    // 2. Paredes verticales entre salones
+    const verticalWallPositions = [6, 11, 15, 19, 23, 28, 33];
+    for (const wallX of verticalWallPositions) {
+        for (let i = topWallY; i <= corridorWallY; i++) {
+            if (i >= 0 && i < MAP_HEIGHT && wallX >= 0 && wallX < MAP_WIDTH) {
+                matrix[i][wallX] = WALL;
+            }
+        }
+    }
+
+    // 3. Puertas y puntos interactivos
+    if (corridorWallY >= 0 && corridorWallY < MAP_HEIGHT) {
+        const doors = [2, 7, 12, 16, 20, 24, 29, 34];
+        for (const x of doors) {
+            if (x >= 0 && x < MAP_WIDTH) matrix[corridorWallY][x] = INTERACTIVE;
+        }
+
+        // Escaleras: abrir hueco (16..18) y punto interactivo arriba (corridorWallY - 1, 17)
+        for (let j = 16; j <= 18; j++) {
+            if (j >= 0 && j < MAP_WIDTH) matrix[corridorWallY][j] = PATH;
+        }
+        if (corridorWallY - 1 >= 0 && 17 >= 0 && corridorWallY - 1 < MAP_HEIGHT && 17 < MAP_WIDTH) {
+            matrix[corridorWallY - 1][17] = INTERACTIVE;
+        }
+    }
+
+    // 4. Punto de salida al mapa principal
+    if (corridorWallY + 2 >= 0 && corridorWallY + 2 < MAP_HEIGHT && leftWallX >= 0 && leftWallX < MAP_WIDTH) {
+        matrix[corridorWallY + 2][leftWallX] = INTERACTIVE;
+    }
+
+    console.log("Matriz del Edificio 2 (Final) creada y alineada.");
+    return matrix;
+}
+
+function createBuilding2Piso1Matrix() {
+    const matrix = Array.from({ length: MAP_HEIGHT }, () => Array(MAP_WIDTH).fill(PATH));
+
+    const topWallY = 14;
+    const classroomDepth = 8;
+    const corridorWallY = topWallY + classroomDepth;
+    const corridorHeight = 9;
+    const bottomWallY = corridorWallY + corridorHeight;
+    const leftWallX = 1;
+    const rightWallX = MAP_WIDTH - 4;
+
+    // Muros exteriores y del pasillo
+    for (let j = leftWallX; j <= rightWallX; j++) {
+        if (topWallY >= 0 && topWallY < MAP_HEIGHT) matrix[topWallY][j] = WALL;
+        if (corridorWallY >= 0 && corridorWallY < MAP_HEIGHT) matrix[corridorWallY][j] = WALL;
+        if (bottomWallY >= 0 && bottomWallY < MAP_HEIGHT) matrix[bottomWallY][j] = WALL;
+    }
+    for (let i = topWallY; i <= bottomWallY; i++) {
+        if (i >= 0 && i < MAP_HEIGHT) {
+            if (leftWallX >= 0 && leftWallX < MAP_WIDTH) matrix[i][leftWallX] = WALL;
+            if (rightWallX >= 0 && rightWallX < MAP_WIDTH) matrix[i][rightWallX] = WALL;
+        }
+    }
+
+    // Paredes verticales entre salones
+    const verticalWallPositions = [6, 11, 15, 19, 23, 28, 33];
+    for (const wallX of verticalWallPositions) {
+        for (let i = topWallY; i <= corridorWallY; i++) {
+            if (i >= 0 && i < MAP_HEIGHT && wallX >= 0 && wallX < MAP_WIDTH) {
+                matrix[i][wallX] = WALL;
+            }
+        }
+    }
+
+    // Puertas y puntos interactivos (piso 1)
+    if (corridorWallY >= 0 && corridorWallY < MAP_HEIGHT) {
+        const doors = [2, 7, 12, 16, 20, 24, 29, 34];
+        for (const x of doors) {
+            if (x >= 0 && x < MAP_WIDTH) matrix[corridorWallY][x] = INTERACTIVE;
+        }
+
+        // Escaleras: abrir hueco y marcar puntos para subir/bajar
+        for (let j = 16; j <= 18; j++) {
+            if (j >= 0 && j < MAP_WIDTH) matrix[corridorWallY][j] = PATH;
+        }
+        if (corridorWallY - 1 >= 0 && 17 >= 0 && corridorWallY - 1 < MAP_HEIGHT && 17 < MAP_WIDTH) {
+            matrix[corridorWallY - 1][17] = INTERACTIVE; // punto para bajar
+        }
+        if (corridorWallY - 3 >= 0 && 17 >= 0 && corridorWallY - 3 < MAP_HEIGHT && 17 < MAP_WIDTH) {
+            matrix[corridorWallY - 3][17] = INTERACTIVE; // punto para subir
+        }
+    }
+
+    console.log("Matriz del Edificio 2 Piso 1 creada y alineada.");
+    return matrix;
+}
+
+function createBuilding2Piso2Matrix() {
+    const matrix = Array.from({ length: MAP_HEIGHT }, () => Array(MAP_WIDTH).fill(PATH));
+
+    const topWallY = 14;
+    const classroomDepth = 8;
+    const corridorWallY = topWallY + classroomDepth;
+    const corridorHeight = 9;
+    const bottomWallY = corridorWallY + corridorHeight;
+    const leftWallX = 1;
+    const rightWallX = MAP_WIDTH - 4;
+
+    // Muros exteriores y del pasillo
+    for (let j = leftWallX; j <= rightWallX; j++) {
+        if (topWallY >= 0 && topWallY < MAP_HEIGHT) matrix[topWallY][j] = WALL;
+        if (corridorWallY >= 0 && corridorWallY < MAP_HEIGHT) matrix[corridorWallY][j] = WALL;
+        if (bottomWallY >= 0 && bottomWallY < MAP_HEIGHT) matrix[bottomWallY][j] = WALL;
+    }
+    for (let i = topWallY; i <= bottomWallY; i++) {
+        if (i >= 0 && i < MAP_HEIGHT) {
+            if (leftWallX >= 0 && leftWallX < MAP_WIDTH) matrix[i][leftWallX] = WALL;
+            if (rightWallX >= 0 && rightWallX < MAP_WIDTH) matrix[i][rightWallX] = WALL;
+        }
+    }
+
+    // Paredes verticales entre salones
+    const verticalWallPositions = [6, 11, 15, 19, 23, 28, 33];
+    for (const wallX of verticalWallPositions) {
+        for (let i = topWallY; i <= corridorWallY; i++) {
+            if (i >= 0 && i < MAP_HEIGHT && wallX >= 0 && wallX < MAP_WIDTH) {
+                matrix[i][wallX] = WALL;
+            }
+        }
+    }
+
+    // Puertas y puntos interactivos (piso 2)
+    if (corridorWallY >= 0 && corridorWallY < MAP_HEIGHT) {
+        const doors = [2, 7, 12, 16, 20, 24, 29, 34];
+        for (const x of doors) {
+            if (x >= 0 && x < MAP_WIDTH) matrix[corridorWallY][x] = INTERACTIVE;
+        }
+
+        // Escaleras: abrir hueco (16..18) y punto interactivo para bajar
+        for (let j = 16; j <= 18; j++) {
+            if (j >= 0 && j < MAP_WIDTH) matrix[corridorWallY][j] = PATH;
+        }
+        if (corridorWallY - 1 >= 0 && 17 >= 0 && corridorWallY - 1 < MAP_HEIGHT && 17 < MAP_WIDTH) {
+            matrix[corridorWallY - 1][17] = INTERACTIVE; // punto para bajar
+        }
+    }
+
+    console.log("Matriz del Edificio 2 Piso 2 creada y alineada.");
+    return matrix;
+}
+
+function createSalon2010Matrix() {
+    const matrix = Array.from({ length: MAP_HEIGHT }, () => Array(MAP_WIDTH).fill(PATH));
+
+    for (let i = 0; i < MAP_HEIGHT; i++) {
+        for (let j = 0; j < MAP_WIDTH; j++) {
+            // Bordes exteriores
+            if (i === 0 || i === MAP_HEIGHT - 1 || j === 0 || j === MAP_WIDTH - 1) {
+                matrix[i][j] = WALL;
+            }
+            // Zonas interactivas (ejemplo: entrada al edificio 2)
+            else if (i === 10 && j === 15) {
+                matrix[i][j] = INTERACTIVE;
+            }
+            // Obstáculos (árboles, bancas, etc) - patrón
+            else if (i % 7 === 0 && j % 8 === 0) {
+                matrix[i][j] = INACCESSIBLE;
+            }
+            // Caminos especiales
+            else if ((i % 5 === 0 || j % 5 === 0) && i > 5 && j > 5) {
+                matrix[i][j] = PATH;
+            } else {
+                // ya es PATH por defecto, no hacer nada
+            }
+        }
+    }
+
+    return matrix;
+}
+
+module.exports.createSalonMatrix = createSalonMatrix;
+module.exports.createBuilding2Matrix = createBuilding2Matrix;
+module.exports.createBuilding2Piso1Matrix = createBuilding2Piso1Matrix;
+module.exports.createBuilding2Piso2Matrix = createBuilding2Piso2Matrix;
+module.exports.createSalon2010Matrix = createSalon2010Matrix;
