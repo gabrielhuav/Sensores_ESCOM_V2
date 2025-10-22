@@ -283,7 +283,7 @@ class GameplayActivity : AppCompatActivity(),
                         "edificio_gobierno" -> startEdificioGobiernoActivity()
                         "cidetec" -> startCidetecActivity()
                         "laboratorio_posgrado" -> startLaboratorioPosgradoActivity()
-                        "cidetec" -> startCidetecActivity()
+                 //       "cidetec" -> startCidetecActivity()
                         "global_map" -> startGlobalMapActivity()
 
                         else -> showToast("No hay interacción disponible en esta posición")
@@ -446,7 +446,7 @@ class GameplayActivity : AppCompatActivity(),
         finish()
     }
 
-    private fun startCidetecActivity() {
+/*    private fun startCidetecActivity() {
         val intent = Intent(this, Cidetec::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
@@ -456,7 +456,7 @@ class GameplayActivity : AppCompatActivity(),
         }
         startActivity(intent)
         finish()
-    }
+    }*/
 
     private fun startGlobalMapActivity() {
         val intent = Intent(this, GlobalMapActivity::class.java).apply {

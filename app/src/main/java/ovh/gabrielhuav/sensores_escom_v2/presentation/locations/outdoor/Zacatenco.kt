@@ -574,7 +574,7 @@ class Zacatenco : AppCompatActivity(),
         finish()
     }
 
-    private fun startCidetecActivity() {
+/*    private fun startCidetecActivity() {
         val intent = Intent(this, Cidetec::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
@@ -584,7 +584,7 @@ class Zacatenco : AppCompatActivity(),
         }
         startActivity(intent)
         finish()
-    }
+    }*/
 
     private fun startFordActivity() {
         val intent = Intent(this, SalidaMetro::class.java).apply {
