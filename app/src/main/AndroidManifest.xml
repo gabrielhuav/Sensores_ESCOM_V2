@@ -45,6 +45,14 @@
         android:name=".presentation.locations.buildings.encb.ENCB"
         android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
+            android:name=".presentation.common.base.GameplayActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+        <!--ENCB Activity -->
+        <activity
+            android:name=".presentation.locations.buildings.encb.ENCB"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+        <!-- Building2 Activity -->
+        <activity
             android:name=".presentation.locations.buildings.cidetec.Cidetec"
             android:exported="false"/>
         <activity

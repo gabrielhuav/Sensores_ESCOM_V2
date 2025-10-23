@@ -437,6 +437,9 @@ class MapMatrixProvider {
                     else if(i == 24 && j == 12){
                         matrix[i][j] = INTERACTIVE // Entrada a ENCB
                     }
+                    else if(i == 24 && j == 12){
+                        matrix[i][j] = INTERACTIVE // Entrada a ENCB
+                    }
                     // Obstáculos (árboles, bancas, etc)
                     /**else if (i % 7 == 0 && j % 8 == 0) {
                     matrix[i][j] = INACCESSIBLE
@@ -753,6 +756,7 @@ class MapMatrixProvider {
 
             return matrix
         }
+
 
 
         private fun createLindavistaMatrix(): Array<Array<Int>> {
