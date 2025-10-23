@@ -155,6 +155,36 @@ class PlayerManager {
         Log.d("PlayerManager", "Rabbit dibujado en posición ($rabbitX, $rabbitY)")
     }
     /**
+     * Dibuja un conejo en el mapa
+     */
+    private fun drawRabbit(canvas: Canvas, position: Pair<Int, Int>, cellWidth: Float, cellHeight: Float) {
+        // Configurar pinturas
+        val rabbitPaint = Paint().apply {
+            color = Color.rgb(255, 182, 193) // Rosa claro para conejos
+            style = Paint.Style.FILL_AND_STROKE
+            strokeWidth = 2f
+        }
+
+        val rabbitTextPaint = Paint().apply {
+            color = Color.WHITE
+            textSize = 30f
+            textAlign = Paint.Align.CENTER
+            setShadowLayer(3f, 0f, 0f, Color.BLACK)
+        }
+
+        // Calcular posición en píxeles
+        val rabbitX = position.first * cellWidth + cellWidth / 2
+        val rabbitY = position.second * cellHeight + cellHeight / 2
+
+        // Dibujar el cuerpo del conejo (más pequeño que un zombie)
+        canvas.drawCircle(rabbitX, rabbitY, cellWidth * 0.35f, rabbitPaint)
+
+        // Dibujar texto "RABBIT" o emoji
+        canvas.drawText("🐰", rabbitX, rabbitY - cellHeight * 0.7f, rabbitTextPaint)
+
+        Log.d("PlayerManager", "Rabbit dibujado en posición ($rabbitX, $rabbitY)")
+    }
+    /**
      * Dibuja el zombie en el mapa
      */
     private fun drawZombie(canvas: Canvas, position: Pair<Int, Int>, cellWidth: Float, cellHeight: Float) {
