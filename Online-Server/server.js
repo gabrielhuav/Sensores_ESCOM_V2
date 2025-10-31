@@ -3,6 +3,7 @@
 const express = require("express");
 const { WebSocketServer } = require("ws");
 const path = require("path");
+const { PrismaClient } = require('@prisma/client');
 
 // Importar módulos para el juego de zombies
 const {
@@ -12,6 +13,9 @@ const {
     moveZombieRandomly,
     isPlayerCaught
 } = require('./zombieController');
+
+// Inicializar Prisma Client
+const prisma = new PrismaClient();
 
 const app = express();
 const PORT = 3000;
@@ -608,6 +612,190 @@ function processZombieGameMessages(message) {
 // Middleware para parsear JSON
 app.use(express.json());
 
+// ============================================
+// ATTENDANCE ROUTES
+// ============================================
+
+// Helper function to get current time in Mexico City timezone (UTC-6)
+function getMexicoDateTime() {
+    // Create a date in UTC
+    const now = new Date();
+    // Convert to Mexico City timezone (UTC-6)
+    const mexicoTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Mexico_City' }));
+    return mexicoTime;
+}
+
+// Helper function to get start and end of day in Mexico City timezone
+function getMexicoDayBounds() {
+    const mexicoNow = getMexicoDateTime();
+    
+    // Start of day in Mexico (00:00:00)
+    const startOfDay = new Date(mexicoNow);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    // End of day in Mexico (23:59:59)
+    const endOfDay = new Date(mexicoNow);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    return { startOfDay, endOfDay };
+}
+
+// Helper function to check if attendance already exists for today
+async function hasAttendedToday(phoneID) {
+    const { startOfDay, endOfDay } = getMexicoDayBounds();
+    
+    const existingAttendance = await prisma.attendance.findFirst({
+        where: {
+            phoneID: phoneID,
+            attendanceTime: {
+                gte: startOfDay,
+                lte: endOfDay
+            }
+        }
+    });
+    
+    return existingAttendance !== null;
+}
+
+// POST /attendance - Register attendance
+app.post("/attendance", async (req, res) => {
+    try {
+        const { phoneID, fullName, group } = req.body;
+        
+        // Validate required fields
+        if (!phoneID || !fullName || !group) {
+            return res.status(400).json({
+                success: false,
+                error: "Missing required fields: phoneID, fullName, and group are required"
+            });
+        }
+        
+        // Check if user already attended today
+        const alreadyAttended = await hasAttendedToday(phoneID);
+        
+        if (alreadyAttended) {
+            return res.status(409).json({
+                success: false,
+                error: "Attendance already registered for this phoneID today"
+            });
+        }
+        
+        // Get current time in Mexico City timezone
+        const mexicoTime = getMexicoDateTime();
+        
+        // Create attendance record with Mexico time
+        const attendance = await prisma.attendance.create({
+            data: {
+                phoneID,
+                fullName,
+                group,
+                attendanceTime: mexicoTime
+            }
+        });
+        
+        res.status(201).json({
+            success: true,
+            message: "Attendance registered successfully",
+            data: attendance
+        });
+        
+    } catch (error) {
+        console.error("Error registering attendance:", error);
+        res.status(500).json({
+            success: false,
+            error: "Internal server error while registering attendance"
+        });
+    }
+});
+
+// GET /attendance/:date/:group - Get attendance list for a specific day and group
+// Date format: YYYY-MM-DD
+app.get("/attendance/:date/:group", async (req, res) => {
+    try {
+        const { date, group } = req.params;
+        
+        // Validate date format
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(date)) {
+            return res.status(400).json({
+                success: false,
+                error: "Invalid date format. Use YYYY-MM-DD"
+            });
+        }
+        
+        // Parse date in Mexico City timezone
+        // Add 'T00:00:00' to ensure proper parsing
+        const targetDate = new Date(date + 'T00:00:00');
+        if (isNaN(targetDate.getTime())) {
+            return res.status(400).json({
+                success: false,
+                error: "Invalid date"
+            });
+        }
+        
+        // Set start and end of day in Mexico timezone
+        const startOfDay = new Date(targetDate);
+        startOfDay.setHours(0, 0, 0, 0);
+        
+        const endOfDay = new Date(targetDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        
+        // Query attendance records
+        const attendanceRecords = await prisma.attendance.findMany({
+            where: {
+                group: group,
+                attendanceTime: {
+                    gte: startOfDay,
+                    lte: endOfDay
+                }
+            },
+            orderBy: {
+                attendanceTime: 'asc'
+            },
+            select: {
+                phoneID: true,
+                attendanceTime: true,
+                fullName: true,
+                group: true
+            }
+        });
+        
+        // Format dates to Mexico timezone for response
+        const formattedRecords = attendanceRecords.map(record => ({
+            ...record,
+            attendanceTime: new Date(record.attendanceTime).toLocaleString('es-MX', { 
+                timeZone: 'America/Mexico_City',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            })
+        }));
+        
+        res.json({
+            success: true,
+            date: date,
+            group: group,
+            count: formattedRecords.length,
+            attendees: formattedRecords
+        });
+        
+    } catch (error) {
+        console.error("Error fetching attendance:", error);
+        res.status(500).json({
+            success: false,
+            error: "Internal server error while fetching attendance"
+        });
+    }
+});
+
+// ============================================
+// END ATTENDANCE ROUTES
+// ============================================
+
 // Rutas administrativas para controlar el minijuego
 app.post("/admin/zombie/start", (req, res) => {
     const difficulty = req.body.difficulty || 1;
@@ -638,4 +826,17 @@ app.get("/admin/zombie/list", (req, res) => {
         zombies: zombieGame.zombies,
         zombieCount: zombieGame.zombies.length
     });
+});
+
+// Cleanup Prisma on shutdown
+process.on('SIGINT', async () => {
+    console.log('\nShutting down gracefully...');
+    await prisma.$disconnect();
+    process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+    console.log('\nShutting down gracefully...');
+    await prisma.$disconnect();
+    process.exit(0);
 });

@@ -6,6 +6,7 @@ package ovh.gabrielhuav.sensores_escom_v2.presentation.components
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
 import android.view.MotionEvent
 import android.widget.Button
@@ -48,6 +49,9 @@ class BuildingEdificioIA_Medio : AppCompatActivity(),
 
     // Reutilizamos la misma estructura de GameState que BuildingNumber2
     private var gameState = GameplayActivity.GameState()
+    
+    // Variable para controlar si ya se registró asistencia en esta sesión
+    private var attendanceRegistered = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -233,6 +237,11 @@ class BuildingEdificioIA_Medio : AppCompatActivity(),
     private var targetDestination: String? = null  // Variable para almacenar el destino
 
     private fun checkPositionForMapChange(position: Pair<Int, Int>) {
+        // Verificar si estamos en la posición de toma de lista
+        if (position.first == 11 && position.second == 5 && !attendanceRegistered) {
+            registerAttendanceAtPosition()
+        }
+        
         // Comprobar múltiples ubicaciones de transición
         when {
             position.first == 36 && position.second == 18 -> {
@@ -252,6 +261,67 @@ class BuildingEdificioIA_Medio : AppCompatActivity(),
             else -> {
                 canChangeMap = false
                 targetDestination = null
+            }
+        }
+    }
+    
+    /**
+     * Registra la asistencia del estudiante cuando llega a la posición (11, 5)
+     */
+    private fun registerAttendanceAtPosition() {
+        if (attendanceRegistered) {
+            return // Ya se registró la asistencia en esta sesión
+        }
+        
+        // Obtener el ID del dispositivo (Android ID)
+        val deviceId = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
+        
+        // El grupo es 7CV2 como se especificó
+        val group = "7CV2"
+        
+        // El nombre completo viene del playerName
+        val fullName = playerName
+        
+        Log.d(TAG, "Registrando asistencia en coordenadas (11, 5) - ID: $deviceId, Nombre: $fullName, Grupo: $group")
+        
+        runOnUiThread {
+            Toast.makeText(
+                this,
+                "📍 Llegaste al punto de asistencia. Registrando...",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+        
+        // Llamar al servidor para registrar la asistencia
+        serverConnectionManager.registerAttendance(
+            phoneID = deviceId,
+            fullName = fullName,
+            group = group
+        ) { success, message ->
+            runOnUiThread {
+                if (success) {
+                    attendanceRegistered = true
+                    Toast.makeText(
+                        this,
+                        "✅ $message",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    updateBluetoothStatus("Asistencia registrada - $group")
+                    Log.d(TAG, "Asistencia registrada exitosamente")
+                } else {
+                    Toast.makeText(
+                        this,
+                        "⚠️ $message",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    Log.w(TAG, "No se pudo registrar asistencia: $message")
+                    
+                    // Si el error es que ya se registró hoy, marcamos como registrado
+                    // para no intentarlo de nuevo en esta sesión
+                    if (message.contains("Ya registraste")) {
+                        attendanceRegistered = true
+                    }
+                }
             }
         }
     }
