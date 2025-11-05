@@ -54,6 +54,7 @@ class MapMatrixProvider {
         const val MAP_EDIFICIO_IA_BAJO = "edificio_ia_bajo"
         const val MAP_EDIFICIO_IA_MEDIO = "edificio_ia_medio"
         const val MAP_EDIFICIO_IA_ALTO = "edificio_ia_alto"
+        const val MAP_SALON4102 = "escom_salon4102"
         const val MAP_CABLEBUS = "cablebus"
         const val MAP_SALIDAMETRO = "escom_salidametro"
         const val MAP_METRO_POLITECNICO = "metro_politecnico"
@@ -132,6 +133,7 @@ class MapMatrixProvider {
                 lowerMap.contains("ia_baja") || lowerMap.contains("edificio_ia_bajo") -> MAP_EDIFICIO_IA_BAJO
                 lowerMap.contains("ia_medio") || lowerMap.contains("edificio_ia_medio") -> MAP_EDIFICIO_IA_MEDIO
                 lowerMap.contains("ia_alto") || lowerMap.contains("edificio_ia_alto") -> MAP_EDIFICIO_IA_ALTO
+                lowerMap.contains("4102") || lowerMap.contains("salon4102") -> MAP_SALON4102
                 lowerMap.contains("cable") || lowerMap.contains("cablebus") -> MAP_CABLEBUS
                 lowerMap.contains("palapas_ia") -> MAP_PALAPAS_IA
 
@@ -2898,6 +2900,7 @@ class MapMatrixProvider {
                 MAP_EDIFICIO_IA_BAJO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
                 MAP_EDIFICIO_IA_MEDIO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
                 MAP_EDIFICIO_IA_ALTO -> Pair(2, 2)  // Posición central dentro de la escomCAFE
+                MAP_SALON4102 -> Pair(20, 35)  // Entrada del salón 4102
                 MAP_PALAPAS_IA -> Pair(2, 2)
 
                 MAP_PALAPAS_ISC -> Pair(38, 38) // Posición inicial dentro de palapas ISC

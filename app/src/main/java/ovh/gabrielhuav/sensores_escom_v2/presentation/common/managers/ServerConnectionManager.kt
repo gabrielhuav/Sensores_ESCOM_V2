@@ -22,7 +22,7 @@ class ServerConnectionManager(
     private val context: Context,
     val onlineServerManager: OnlineServerManager
 ) {
-    private val serverUrl = "ws://192.168.0.21:3000"
+    private val serverUrl = "ws://172.24.115.49:3000"
     private var isConnecting = false
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -131,7 +131,7 @@ class ServerConnectionManager(
     ) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val url = URL("http://192.168.0.21:3000/attendance")
+                val url = URL("http://172.24.115.49:3000/attendance")
                 val connection = url.openConnection() as HttpURLConnection
                 
                 connection.apply {

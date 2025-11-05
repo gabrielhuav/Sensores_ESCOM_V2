@@ -32,6 +32,139 @@ const UPDATE_INTERVAL = 50;
 const players = {};
 const lastUpdateTime = {};
 
+// ============================================
+// SISTEMA DE ASIENTOS (PUPITRES)
+// ============================================
+
+// Estructura: { mapName: { "x,y": { playerId, playerName, timestamp } } }
+const seatedPlayers = {};
+
+// Inicializar asientos para salones
+function initializeSeats(mapName) {
+    if (!seatedPlayers[mapName]) {
+        seatedPlayers[mapName] = {};
+    }
+}
+
+// Obtener coordenadas de pupitre como string
+function getDeskKey(x, y) {
+    return `${x},${y}`;
+}
+
+// Verificar si un pupitre está ocupado
+function isDeskOccupied(mapName, x, y) {
+    initializeSeats(mapName);
+    const deskKey = getDeskKey(x, y);
+    return seatedPlayers[mapName][deskKey] !== undefined;
+}
+
+// Sentar a un jugador en un pupitre
+function sitPlayer(playerId, playerName, mapName, x, y) {
+    initializeSeats(mapName);
+    const deskKey = getDeskKey(x, y);
+    
+    // Verificar si el pupitre ya está ocupado
+    if (isDeskOccupied(mapName, x, y)) {
+        const occupant = seatedPlayers[mapName][deskKey];
+        if (occupant.playerId === playerId) {
+            return { success: false, message: "Ya estás sentado en este pupitre" };
+        }
+        return { success: false, message: `Pupitre ocupado por ${occupant.playerName}` };
+    }
+    
+    // Verificar si el jugador ya está sentado en otro lugar del mismo mapa
+    for (const [key, seat] of Object.entries(seatedPlayers[mapName])) {
+        if (seat.playerId === playerId) {
+            return { success: false, message: "Ya estás sentado en otro pupitre. Debes levantarte primero." };
+        }
+    }
+    
+    // Sentar al jugador
+    seatedPlayers[mapName][deskKey] = {
+        playerId,
+        playerName,
+        timestamp: Date.now()
+    };
+    
+    console.log(`✅ ${playerName} se sentó en pupitre (${x}, ${y}) del mapa ${mapName}`);
+    
+    return { 
+        success: true, 
+        message: `Te sentaste en el pupitre (${x}, ${y})`,
+        deskPosition: { x, y }
+    };
+}
+
+// Levantar a un jugador de su pupitre
+function standPlayer(playerId, mapName) {
+    initializeSeats(mapName);
+    
+    let foundDesk = null;
+    
+    // Buscar en qué pupitre está sentado el jugador
+    for (const [deskKey, seat] of Object.entries(seatedPlayers[mapName])) {
+        if (seat.playerId === playerId) {
+            foundDesk = deskKey;
+            break;
+        }
+    }
+    
+    if (!foundDesk) {
+        return { success: false, message: "No estás sentado en ningún pupitre" };
+    }
+    
+    const [x, y] = foundDesk.split(',').map(Number);
+    const playerName = seatedPlayers[mapName][foundDesk].playerName;
+    
+    // Liberar el pupitre
+    delete seatedPlayers[mapName][foundDesk];
+    
+    console.log(`🚶 ${playerName} se levantó del pupitre (${x}, ${y}) del mapa ${mapName}`);
+    
+    return { 
+        success: true, 
+        message: `Te levantaste del pupitre (${x}, ${y})`,
+        deskPosition: { x, y }
+    };
+}
+
+// Liberar todos los asientos de un jugador al desconectarse
+function releasePlayerSeats(playerId) {
+    let releasedSeats = [];
+    
+    for (const mapName in seatedPlayers) {
+        for (const [deskKey, seat] of Object.entries(seatedPlayers[mapName])) {
+            if (seat.playerId === playerId) {
+                const [x, y] = deskKey.split(',').map(Number);
+                delete seatedPlayers[mapName][deskKey];
+                releasedSeats.push({ mapName, x, y });
+                console.log(`🔓 Liberado pupitre (${x}, ${y}) del mapa ${mapName} por desconexión de ${seat.playerName}`);
+            }
+        }
+    }
+    
+    return releasedSeats;
+}
+
+// Obtener todos los asientos ocupados de un mapa
+function getOccupiedSeats(mapName) {
+    initializeSeats(mapName);
+    const seats = [];
+    
+    for (const [deskKey, seat] of Object.entries(seatedPlayers[mapName])) {
+        const [x, y] = deskKey.split(',').map(Number);
+        seats.push({
+            x,
+            y,
+            playerId: seat.playerId,
+            playerName: seat.playerName,
+            timestamp: seat.timestamp
+        });
+    }
+    
+    return seats;
+}
+
 function generateRandomColor() {
     return '#' + Math.floor(Math.random()*16777215).toString(16);
 }
@@ -190,6 +323,70 @@ wss.on("connection", (ws) => {
                         });
                     }
                     break;
+                
+                // Casos de asientos (sentarse/levantarse)
+                case "sit":
+                    const sitResult = sitPlayer(
+                        trimmedId,
+                        data.playerName || trimmedId,
+                        data.map || "main",
+                        data.x,
+                        data.y
+                    );
+                    
+                    // Enviar respuesta al jugador que intentó sentarse
+                    ws.send(JSON.stringify({
+                        type: "sit_response",
+                        success: sitResult.success,
+                        message: sitResult.message,
+                        deskPosition: sitResult.deskPosition
+                    }));
+                    
+                    // Si fue exitoso, notificar a todos los jugadores
+                    if (sitResult.success) {
+                        broadcast({
+                            type: "player_seated",
+                            playerId: trimmedId,
+                            playerName: data.playerName || trimmedId,
+                            map: data.map || "main",
+                            x: data.x,
+                            y: data.y
+                        });
+                    }
+                    break;
+                
+                case "stand":
+                    const standResult = standPlayer(trimmedId, data.map || "main");
+                    
+                    // Enviar respuesta al jugador que intentó levantarse
+                    ws.send(JSON.stringify({
+                        type: "stand_response",
+                        success: standResult.success,
+                        message: standResult.message,
+                        deskPosition: standResult.deskPosition
+                    }));
+                    
+                    // Si fue exitoso, notificar a todos los jugadores
+                    if (standResult.success) {
+                        broadcast({
+                            type: "player_stood",
+                            playerId: trimmedId,
+                            map: data.map || "main",
+                            x: standResult.deskPosition.x,
+                            y: standResult.deskPosition.y
+                        });
+                    }
+                    break;
+                
+                case "get_occupied_seats":
+                    const occupiedSeats = getOccupiedSeats(data.map || "main");
+                    ws.send(JSON.stringify({
+                        type: "occupied_seats",
+                        map: data.map || "main",
+                        seats: occupiedSeats
+                    }));
+                    break;
+                
                 case "zombie_game_update":
                 case "zombie_game_food":
                     processZombieGameMessages(data);
@@ -206,6 +403,20 @@ wss.on("connection", (ws) => {
         // Buscar y eliminar el jugador desconectado
         Object.keys(players).forEach(playerId => {
             if (players[playerId].ws === ws) {
+                // Liberar asientos del jugador
+                const releasedSeats = releasePlayerSeats(playerId);
+                
+                // Notificar a todos sobre los asientos liberados
+                releasedSeats.forEach(seat => {
+                    broadcast({
+                        type: "seat_released",
+                        playerId: playerId,
+                        map: seat.mapName,
+                        x: seat.x,
+                        y: seat.y
+                    });
+                });
+                
                 delete players[playerId];
                 delete players[`${playerId}_remote`];
                 delete lastUpdateTime[playerId];
@@ -794,6 +1005,141 @@ app.get("/attendance/:date/:group", async (req, res) => {
 
 // ============================================
 // END ATTENDANCE ROUTES
+// ============================================
+
+// ============================================
+// SEATS ROUTES
+// ============================================
+
+// GET /seats/:map - Get all occupied seats in a map
+app.get("/seats/:map", (req, res) => {
+    try {
+        const { map } = req.params;
+        const occupiedSeats = getOccupiedSeats(map);
+        
+        res.json({
+            success: true,
+            map: map,
+            count: occupiedSeats.length,
+            seats: occupiedSeats
+        });
+    } catch (error) {
+        console.error("Error fetching seats:", error);
+        res.status(500).json({
+            success: false,
+            error: "Internal server error while fetching seats"
+        });
+    }
+});
+
+// POST /seats/sit - Sit in a desk
+app.post("/seats/sit", (req, res) => {
+    try {
+        const { playerId, playerName, map, x, y } = req.body;
+        
+        if (!playerId || !map || x === undefined || y === undefined) {
+            return res.status(400).json({
+                success: false,
+                error: "Missing required fields: playerId, map, x, y"
+            });
+        }
+        
+        const result = sitPlayer(playerId, playerName || playerId, map, x, y);
+        
+        if (result.success) {
+            // Notificar a todos los clientes WebSocket
+            broadcast({
+                type: "player_seated",
+                playerId: playerId,
+                playerName: playerName || playerId,
+                map: map,
+                x: x,
+                y: y
+            });
+            
+            res.json(result);
+        } else {
+            res.status(409).json(result);
+        }
+    } catch (error) {
+        console.error("Error sitting player:", error);
+        res.status(500).json({
+            success: false,
+            error: "Internal server error while sitting"
+        });
+    }
+});
+
+// POST /seats/stand - Stand up from desk
+app.post("/seats/stand", (req, res) => {
+    try {
+        const { playerId, map } = req.body;
+        
+        if (!playerId || !map) {
+            return res.status(400).json({
+                success: false,
+                error: "Missing required fields: playerId, map"
+            });
+        }
+        
+        const result = standPlayer(playerId, map);
+        
+        if (result.success) {
+            // Notificar a todos los clientes WebSocket
+            broadcast({
+                type: "player_stood",
+                playerId: playerId,
+                map: map,
+                x: result.deskPosition.x,
+                y: result.deskPosition.y
+            });
+            
+            res.json(result);
+        } else {
+            res.status(404).json(result);
+        }
+    } catch (error) {
+        console.error("Error standing player:", error);
+        res.status(500).json({
+            success: false,
+            error: "Internal server error while standing"
+        });
+    }
+});
+
+// DELETE /seats/:map/:playerId - Force release all seats of a player in a map
+app.delete("/seats/:map/:playerId", (req, res) => {
+    try {
+        const { map, playerId } = req.params;
+        
+        const result = standPlayer(playerId, map);
+        
+        if (result.success) {
+            broadcast({
+                type: "player_stood",
+                playerId: playerId,
+                map: map,
+                x: result.deskPosition.x,
+                y: result.deskPosition.y
+            });
+        }
+        
+        res.json({
+            success: true,
+            message: "Player seats released",
+            result: result
+        });
+    } catch (error) {
+        console.error("Error releasing seats:", error);
+        res.status(500).json({
+            success: false,
+            error: "Internal server error while releasing seats"
+        });
+    }
+});
+
+// ============================================
+// END SEATS ROUTES
 // ============================================
 
 // Rutas administrativas para controlar el minijuego
