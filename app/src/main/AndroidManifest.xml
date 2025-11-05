@@ -39,11 +39,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity> <activity
-        android:name=".presentation.common.base.GameplayActivity"
-        android:configChanges="orientation|screenSize|keyboardHidden" /> <activity
-        android:name=".presentation.locations.buildings.encb.ENCB"
-        android:configChanges="orientation|screenSize|keyboardHidden" />
+        </activity>
         <activity
             android:name=".presentation.common.base.GameplayActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
@@ -83,6 +79,9 @@
             android:name=".presentation.components.BuildingEdificioIA_Alto"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
         <activity
+            android:name=".presentation.locations.buildings.buildingIA.classroom.Salon4102"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+        <activity
             android:name=".presentation.locations.outdoor.Esime"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
@@ -97,7 +96,6 @@
             android:name=".presentation.locations.buildings.plaza.PlazaVistaNorte"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
-            android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2010"
             android:configChanges="orientation|screenSize|keyboardHidden" />
@@ -110,8 +108,6 @@
         <activity
             android:name=".presentation.locations.lab.LaboratorioPosgradoActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
-
-            android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.locations.outdoor.SalidaMetro"
             android:configChanges="orientation|screenSize|keyboardHidden" />

@@ -3,9 +3,13 @@ package ovh.gabrielhuav.sensores_escom_v2.presentation.components
 
 //
 
+import android.Manifest
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
 import android.view.MotionEvent
 import android.widget.Button
@@ -13,6 +17,7 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import org.json.JSONObject
 import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
@@ -48,6 +53,9 @@ class BuildingEdificioIA_Medio : AppCompatActivity(),
 
     // Reutilizamos la misma estructura de GameState que BuildingNumber2
     private var gameState = GameplayActivity.GameState()
+    
+    // Variable para controlar si ya se registró asistencia en esta sesión
+    private var attendanceRegistered = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -102,8 +110,13 @@ class BuildingEdificioIA_Medio : AppCompatActivity(),
             // Inicializar desde el Intent
             gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
             gameState.isConnected = intent.getBooleanExtra("IS_CONNECTED", false) // Preservar estado de conexión
-            gameState.playerPosition = intent.getSerializableExtra("INITIAL_POSITION") as? Pair<Int, Int>
-                ?: Pair(20, 20)
+            @Suppress("UNCHECKED_CAST")
+            gameState.playerPosition = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent.getSerializableExtra("INITIAL_POSITION", Pair::class.java) as? Pair<Int, Int>
+            } else {
+                @Suppress("DEPRECATION")
+                intent.getSerializableExtra("INITIAL_POSITION") as? Pair<Int, Int>
+            } ?: Pair(20, 20)
         } else {
             restoreState(savedInstanceState)
         }
@@ -206,7 +219,7 @@ class BuildingEdificioIA_Medio : AppCompatActivity(),
                 when (targetDestination) {
                     "alto" -> startPlantaAltaActivity()
                     "baja" -> returnToMainActivity()
-
+                    "salon4102" -> startSalon4102Activity()
                     else -> showToast("No hay interacción disponible en esta posición")
                 }
             } else {
@@ -215,6 +228,21 @@ class BuildingEdificioIA_Medio : AppCompatActivity(),
         }
 
     }
+    private fun startSalon4102Activity() {
+        val intent = Intent(this, ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.buildingIA.classroom.Salon4102::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("IS_CONNECTED", gameState.isConnected)
+            putExtra("INITIAL_POSITION", Pair(20, 35)) // Entrada del salón
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
+            putExtra("PREVIOUS_MAP", MapMatrixProvider.MAP_EDIFICIO_IA_MEDIO) // Importante: guardar el mapa de origen
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        mapView.playerManager.cleanup()
+        startActivity(intent)
+        finish()
+    }
+    
     private fun startPlantaAltaActivity() {
         val intent = Intent(this, BuildingEdificioIA_Alto::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
@@ -235,6 +263,14 @@ class BuildingEdificioIA_Medio : AppCompatActivity(),
     private fun checkPositionForMapChange(position: Pair<Int, Int>) {
         // Comprobar múltiples ubicaciones de transición
         when {
+            position.first == 11 && position.second == 5 -> {
+                // Entrada al Salón 4102
+                canChangeMap = true
+                targetDestination = "salon4102"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para entrar al Salón 4102", Toast.LENGTH_SHORT).show()
+                }
+            }
             position.first == 36 && position.second == 18 -> {
                 canChangeMap = true
                 targetDestination = "baja"
@@ -252,6 +288,67 @@ class BuildingEdificioIA_Medio : AppCompatActivity(),
             else -> {
                 canChangeMap = false
                 targetDestination = null
+            }
+        }
+    }
+    
+    /**
+     * Registra la asistencia del estudiante cuando llega a la posición (11, 5)
+     */
+    private fun registerAttendanceAtPosition() {
+        if (attendanceRegistered) {
+            return // Ya se registró la asistencia en esta sesión
+        }
+        
+        // Obtener el ID del dispositivo (Android ID)
+        val deviceId = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
+        
+        // El grupo es 7CV2 como se especificó
+        val group = "7CV2"
+        
+        // El nombre completo viene del playerName
+        val fullName = playerName
+        
+        Log.d(TAG, "Registrando asistencia en coordenadas (11, 5) - ID: $deviceId, Nombre: $fullName, Grupo: $group")
+        
+        runOnUiThread {
+            Toast.makeText(
+                this,
+                "📍 Llegaste al punto de asistencia. Registrando...",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+        
+        // Llamar al servidor para registrar la asistencia
+        serverConnectionManager.registerAttendance(
+            phoneID = deviceId,
+            fullName = fullName,
+            group = group
+        ) { success, message ->
+            runOnUiThread {
+                if (success) {
+                    attendanceRegistered = true
+                    Toast.makeText(
+                        this,
+                        "✅ $message",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    updateBluetoothStatus("Asistencia registrada - $group")
+                    Log.d(TAG, "Asistencia registrada exitosamente")
+                } else {
+                    Toast.makeText(
+                        this,
+                        "⚠️ $message",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    Log.w(TAG, "No se pudo registrar asistencia: $message")
+                    
+                    // Si el error es que ya se registró hoy, marcamos como registrado
+                    // para no intentarlo de nuevo en esta sesión
+                    if (message.contains("Ya registraste")) {
+                        attendanceRegistered = true
+                    }
+                }
             }
         }
     }
