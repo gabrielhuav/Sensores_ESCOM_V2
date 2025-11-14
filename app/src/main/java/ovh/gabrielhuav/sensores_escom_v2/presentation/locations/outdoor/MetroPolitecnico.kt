@@ -311,37 +311,21 @@ class MetroPolitecnico : AppCompatActivity(),
                     R.drawable.puesto
                 )
             }
-
+            //ABAJO
             position.first == 29 && position.second == 21 -> {
-                // Mostrar información del Metro y enlace
-                showInfoDialog(
-                    "En construcción",
-                    "Disponible próximamente...",
-                )
+                startAndenesMetroPolitecnicoActivityAbajo()
             }
-
+            //ARRIBA
             position.first == 29 && position.second == 18 -> {
-                // Mostrar información del Metro y enlace
-                showInfoDialog(
-                    "En construcción",
-                    "Disponible próximamente...",
-                )
+                startAndenesMetroPolitecnicoActivityArriba()
             }
-
+            //ARRIBA
             position.first == 6 && position.second == 18 -> {
-                // Mostrar información del Metro y enlace
-                showInfoDialog(
-                    "En construcción",
-                    "Disponible próximamente...",
-                )
+                startAndenesMetroPolitecnicoActivityArriba()
             }
-
+            //ABAJO
             position.first == 6 && position.second == 21 -> {
-                // Mostrar información del Metro y enlace
-                showInfoDialog(
-                    "En construcción",
-                    "Disponible próximamente...",
-                )
+                startAndenesMetroPolitecnicoActivityAbajo()
             }
 
             position.first == 12 && position.second == 24 -> {
@@ -456,7 +440,7 @@ class MetroPolitecnico : AppCompatActivity(),
             position.first == 29 && position.second == 21
             ) {
             runOnUiThread {
-                Toast.makeText(this, "Presiona A para ver la información acerca de las vías del tren", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Presiona A para ingresar a los andenes", Toast.LENGTH_SHORT).show()
             }
         }else if (position.first == 32 && position.second == 20 ||
             position.first == 12 && position.second == 21) {
@@ -516,7 +500,27 @@ class MetroPolitecnico : AppCompatActivity(),
 
     }
 
+    private fun startAndenesMetroPolitecnicoActivityArriba() {
+        val intent = Intent(this, AndenesMetroPolitecnico::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(20, 3))
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
 
+    private fun startAndenesMetroPolitecnicoActivityAbajo() {
+        val intent = Intent(this, AndenesMetroPolitecnico::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(20, 35))
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
 
     private fun returnSalidaMetroActivity() {
             val intent = Intent(this, SalidaMetro::class.java).apply {

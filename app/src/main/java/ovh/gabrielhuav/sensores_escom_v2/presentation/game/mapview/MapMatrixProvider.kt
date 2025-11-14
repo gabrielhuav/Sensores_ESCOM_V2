@@ -57,6 +57,8 @@ class MapMatrixProvider {
         const val MAP_CABLEBUS = "cablebus"
         const val MAP_SALIDAMETRO = "escom_salidametro"
         const val MAP_METRO_POLITECNICO = "metro_politecnico"
+        const val MAP_ANDENES_METRO_POLITECNICO = "andenes_metro_politecnico"
+        const val MAP_RED_METRO = "red_metro"
         const val MAP_PALAPAS_IA = "escom_palapas_ia"
         const val MAP_ESIME = "esime_zacatenco"
         const val MAP_PALAPAS_ISC = "escom_palapas_isc"
@@ -280,6 +282,8 @@ class MapMatrixProvider {
                 MAP_LINDAVISTA -> createLindavistaMatrix()
                 MAP_SALIDAMETRO -> createSalidaMetroMatrix() // salida metro
                 MAP_METRO_POLITECNICO -> createMetroPolitecnicoMatrix()
+                MAP_ANDENES_METRO_POLITECNICO -> createAndenesMetroPolitecnicoMatrix()
+                MAP_RED_METRO -> createRedMetroMatrix()
                 MAP_CABLEBUS -> createCablebusMatix()
                 MAP_EDIFICIO_IA_BAJO-> createEdificioIABajoMatrix()
                 MAP_EDIFICIO_IA_MEDIO-> createEdificioIAMedioMatrix()
@@ -1420,7 +1424,7 @@ class MapMatrixProvider {
                     }
                 }
             }
-
+            matrix[5][37] = INTERACTIVE
             matrix[5][35] = INTERACTIVE
             matrix[22][17] = INTERACTIVE
             matrix[27][31] = INTERACTIVE
@@ -1480,17 +1484,17 @@ class MapMatrixProvider {
                     matrix[i][j] = PARED
             }
 
-            for (i in 0 until 18){
+            for (i in 0 until 15){
                 for(j in 0 until 13)
                     matrix[i][j] = PARED
             }
 
-            for (i in 0 until 18){
+            for (i in 0 until 15){
                 for(j in 24 until MAP_WIDTH)
                     matrix[i][j] = PARED
             }
 
-            for (i in 22 until MAP_HEIGHT){
+            for (i in 25 until MAP_HEIGHT){
                 for(j in 0 until 12)
                     matrix[i][j] = PARED
             }
@@ -1506,10 +1510,56 @@ class MapMatrixProvider {
             for(j in 21 until MAP_WIDTH)
                 matrix[altura][j] = PARED
 
-            for (i in 22 until 27){
+            for (i in 25 until 27){
                 for(j in 24 until MAP_WIDTH)
                     matrix[i][j] = PARED
             }
+            //Contorno Paredes
+            for (i in 15 until 18)
+                matrix[i][11] = PARED
+            for (i in 22 until 25)
+                matrix[i][11] = PARED
+            for (i in 15 until 18)
+                matrix[i][25] = PARED
+            for (i in 22 until 25)
+                matrix[i][25] = PARED
+            //Escaleras arriba izquierda
+            matrix[17][10] = PARED
+            matrix[17][9] = PARED
+            matrix[17][8] = PARED
+            matrix[17][7] = PARED
+            matrix[17][5] = PARED
+            matrix[17][4] = PARED
+            matrix[17][3] = PARED
+            matrix[17][2] = PARED
+            matrix[17][1] = PARED
+            //Escaleras abajo
+            matrix[22][10] = PARED
+            matrix[22][9] = PARED
+            matrix[22][8] = PARED
+            matrix[22][7] = PARED
+            matrix[22][5] = PARED
+            matrix[22][4] = PARED
+            matrix[22][3] = PARED
+            matrix[22][2] = PARED
+            matrix[22][1] = PARED
+            //Escaleras arriba derecha
+            matrix[17][26] = PARED
+            matrix[17][27] = PARED
+            matrix[17][28] = PARED
+            matrix[17][30] = PARED
+            matrix[17][31] = PARED
+            matrix[17][32] = PARED
+            matrix[17][33] = PARED
+            //Escaleras abajo
+            matrix[22][26] = PARED
+            matrix[22][27] = PARED
+            matrix[22][28] = PARED
+            matrix[22][30] = PARED
+            matrix[22][31] = PARED
+            matrix[22][32] = PARED
+            matrix[22][33] = PARED
+
 
             for (i in 3 until 8){
                 for(j in 20 until 26)
@@ -1542,9 +1592,6 @@ class MapMatrixProvider {
             ancho = 13
             for(i in 27 until 30)
                 matrix[i][ancho] = PARED
-
-
-
 
 
             //Taquilla arriba
@@ -1585,6 +1632,253 @@ class MapMatrixProvider {
 
             matrix[27][33] = PARED
             matrix[28][33] = PARED
+
+            return matrix
+        }
+
+
+        private fun createAndenesMetroPolitecnicoMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Constantes
+            val PARED = WALL
+            val BANCA = INACCESSIBLE
+
+
+            // Bordes exteriores
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = PARED
+                    }
+                }
+            }
+
+            matrix[10][20] = INTERACTIVE
+            matrix[26][20] = INTERACTIVE
+            // Pared al 60% de la altura desde arriba (equivale a 30% desde abajo)
+            val alturaPared = (MAP_HEIGHT * 0.6).toInt() // 28 en un mapa 40x40
+            for (j in 0 until MAP_WIDTH) {
+                matrix[alturaPared][j] = PARED
+            }
+            // Pared al 40% de la altura desde arriba (equivale a 30% desde abajo)
+            val alturaPared1 = (MAP_HEIGHT * 0.33).toInt() // 28 en un mapa 40x40
+            for (j in 0 until MAP_WIDTH) {
+                matrix[alturaPared1][j] = PARED
+            }
+
+            val ancho = 6
+            for(i in 4 until 36)
+                matrix[ancho][i] = PARED
+
+            val ancho1 = 32
+            for(i in 4 until 36)
+                matrix[ancho1][i] = PARED
+
+            return matrix
+        }
+
+
+        private fun createRedMetroMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Constantes
+            val PARED = WALL
+            val BANCA = INACCESSIBLE
+
+
+            // Bordes exteriores
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = PARED
+                    }
+                }
+            }
+            val ancho2 = 3
+            for(i in 1 until 39)
+                matrix[ancho2][i] = PARED
+            val ancho = 2
+            for(i in 1 until 39)
+                matrix[ancho][i] = PARED
+            val ancho1 = 1
+            for(i in 1 until 39)
+                matrix[ancho1][i] = PARED
+            //Línea 5
+            matrix[9][14] = INTERACTIVE
+            matrix[11][15] = INTERACTIVE
+            matrix[13][15] = INTERACTIVE
+            matrix[14][16] = INTERACTIVE
+            matrix[15][17] = INTERACTIVE
+            matrix[16][19] = INTERACTIVE
+            matrix[16][20] = INTERACTIVE
+            matrix[17][22] = INTERACTIVE
+            matrix[16][24] = INTERACTIVE
+            matrix[18][25] = INTERACTIVE
+            matrix[19][25] = INTERACTIVE
+            matrix[21][25] = INTERACTIVE
+            matrix[22][28] = INTERACTIVE
+            //Línea 6
+            matrix[9][5] = INTERACTIVE
+            matrix[10][6] = INTERACTIVE
+            matrix[11][7] = INTERACTIVE
+            matrix[11][9] = INTERACTIVE
+            matrix[11][11] = INTERACTIVE
+            matrix[11][13] = INTERACTIVE
+            matrix[11][16] = INTERACTIVE
+            matrix[12][18] = INTERACTIVE
+            matrix[12][20] = INTERACTIVE
+            matrix[12][22] = INTERACTIVE
+            //Línea 4
+            matrix[13][21] = INTERACTIVE
+            matrix[14][20] = INTERACTIVE
+            matrix[17][20] = INTERACTIVE
+            matrix[18][19] = INTERACTIVE
+            matrix[20][19] = INTERACTIVE
+            matrix[21][19] = INTERACTIVE
+            matrix[22][18] = INTERACTIVE
+            matrix[23][19] = INTERACTIVE
+            //Línea 7 naranja
+            matrix[11][5] = INTERACTIVE
+            matrix[12][6] = INTERACTIVE
+            matrix[14][6] = INTERACTIVE
+            matrix[15][6] = INTERACTIVE
+            matrix[17][6] = INTERACTIVE
+            matrix[19][6] = INTERACTIVE
+            matrix[20][6] = INTERACTIVE
+            matrix[22][6] = INTERACTIVE
+            matrix[23][7] = INTERACTIVE
+            matrix[25][7] = INTERACTIVE
+            matrix[26][7] = INTERACTIVE
+            matrix[28][6] = INTERACTIVE
+            matrix[29][6] = INTERACTIVE
+            //Línea 12
+            matrix[28][8] = INTERACTIVE
+            matrix[28][9] = INTERACTIVE
+            matrix[28][11] = INTERACTIVE
+            matrix[29][12] = INTERACTIVE
+            matrix[30][13] = INTERACTIVE
+            matrix[30][15] = INTERACTIVE
+            matrix[30][19] = INTERACTIVE
+            matrix[30][22] = INTERACTIVE
+            matrix[32][21] = INTERACTIVE
+            matrix[33][21] = INTERACTIVE
+            matrix[35][22] = INTERACTIVE
+            matrix[35][24] = INTERACTIVE
+            matrix[35][25] = INTERACTIVE
+            matrix[36][27] = INTERACTIVE
+            matrix[36][29] = INTERACTIVE
+            matrix[36][30] = INTERACTIVE
+            matrix[37][32] = INTERACTIVE
+            matrix[37][33] = INTERACTIVE
+            matrix[38][34] = INTERACTIVE
+            //Línea A
+            matrix[23][28] = INTERACTIVE
+            matrix[24][30] = INTERACTIVE
+            matrix[25][32] = INTERACTIVE
+            matrix[27][33] = INTERACTIVE
+            matrix[28][33] = INTERACTIVE
+            matrix[30][34] = INTERACTIVE
+            matrix[31][34] = INTERACTIVE
+            matrix[32][35] = INTERACTIVE
+            matrix[33][36] = INTERACTIVE
+            //Línea 3
+            matrix[10][19] = INTERACTIVE
+            matrix[13][17] = INTERACTIVE
+            matrix[16][14] = INTERACTIVE
+            matrix[17][14] = INTERACTIVE
+            matrix[18][14] = INTERACTIVE
+            matrix[19][14] = INTERACTIVE
+            matrix[20][14] = INTERACTIVE
+            matrix[21][13] = INTERACTIVE
+            matrix[22][13] = INTERACTIVE
+            matrix[23][13] = INTERACTIVE
+            matrix[25][12] = INTERACTIVE
+            matrix[26][12] = INTERACTIVE
+            matrix[27][12] = INTERACTIVE
+            matrix[30][10] = INTERACTIVE
+            matrix[31][9] = INTERACTIVE
+            matrix[32][8] = INTERACTIVE
+            matrix[33][9] = INTERACTIVE
+            matrix[35][9] = INTERACTIVE
+            //Línea B
+            matrix[4][36] = INTERACTIVE
+            matrix[5][35] = INTERACTIVE
+            matrix[6][34] = INTERACTIVE
+            matrix[8][34] = INTERACTIVE
+            matrix[9][33] = INTERACTIVE
+            matrix[11][32] = INTERACTIVE
+            matrix[12][31] = INTERACTIVE
+            matrix[14][31] = INTERACTIVE
+            matrix[15][30] = INTERACTIVE
+            matrix[16][28] = INTERACTIVE
+            matrix[17][26] = INTERACTIVE
+            matrix[18][23] = INTERACTIVE
+            matrix[19][22] = INTERACTIVE
+            matrix[20][20] = INTERACTIVE
+            matrix[18][18] = INTERACTIVE
+            matrix[18][17] = INTERACTIVE
+            matrix[17][15] = INTERACTIVE
+            matrix[17][13] = INTERACTIVE
+            //Línea 9
+            matrix[23][26] = INTERACTIVE
+            matrix[23][25] = INTERACTIVE
+            matrix[23][22] = INTERACTIVE
+            matrix[23][20] = INTERACTIVE
+            matrix[23][16] = INTERACTIVE
+            matrix[23][14] = INTERACTIVE
+            matrix[23][10] = INTERACTIVE
+            matrix[23][8] = INTERACTIVE
+            //Línea 2
+            matrix[15][2] = INTERACTIVE
+            matrix[15][4] = INTERACTIVE
+            matrix[16][8] = INTERACTIVE
+            matrix[16][9] = INTERACTIVE
+            matrix[17][10] = INTERACTIVE
+            matrix[18][11] = INTERACTIVE
+            matrix[18][12] = INTERACTIVE
+            matrix[18][13] = INTERACTIVE
+            matrix[18][15] = INTERACTIVE
+            matrix[19][16] = INTERACTIVE
+            matrix[19][17] = INTERACTIVE
+            matrix[20][17] = INTERACTIVE
+            matrix[22][16] = INTERACTIVE
+            matrix[24][16] = INTERACTIVE
+            matrix[25][16] = INTERACTIVE
+            matrix[26][16] = INTERACTIVE
+            matrix[27][15] = INTERACTIVE
+            matrix[28][15] = INTERACTIVE
+            matrix[31][14] = INTERACTIVE
+            matrix[32][15] = INTERACTIVE
+            //Línea 8
+            matrix[19][15] = INTERACTIVE
+            matrix[20][15] = INTERACTIVE
+            matrix[21][15] = INTERACTIVE
+            matrix[22][15] = INTERACTIVE
+            matrix[23][18] = INTERACTIVE
+            matrix[24][20] = INTERACTIVE
+            matrix[26][20] = INTERACTIVE
+            matrix[27][21] = INTERACTIVE
+            matrix[28][21] = INTERACTIVE
+            matrix[29][21] = INTERACTIVE
+            matrix[30][24] = INTERACTIVE
+            matrix[31][25] = INTERACTIVE
+            matrix[31][27] = INTERACTIVE
+            matrix[32][29] = INTERACTIVE
+            //Línea 1
+            matrix[22][26] = INTERACTIVE
+            matrix[22][24] = INTERACTIVE
+            matrix[21][23] = INTERACTIVE
+            matrix[21][22] = INTERACTIVE
+            matrix[20][21] = INTERACTIVE
+            matrix[20][18] = INTERACTIVE
+            matrix[20][16] = INTERACTIVE
+            matrix[20][13] = INTERACTIVE
+            matrix[21][11] = INTERACTIVE
+            matrix[21][10] = INTERACTIVE
+            matrix[21][8] = INTERACTIVE
+            matrix[22][8] = INTERACTIVE
+            matrix[24][4] = INTERACTIVE
 
             return matrix
         }
