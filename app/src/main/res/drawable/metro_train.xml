@@ -7,7 +7,7 @@
 
     <!-- Cuerpo del tren -->
     <path
-        android:fillColor="#FF3333"
+        android:fillColor="#F65207"
         android:pathData="M10,20 L140,20 L140,60 L10,60 Z" />
 
     <!-- Ventanas -->
