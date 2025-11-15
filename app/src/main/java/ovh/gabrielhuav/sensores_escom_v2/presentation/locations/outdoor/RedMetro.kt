@@ -177,7 +177,7 @@ class RedMetro : AppCompatActivity(),
                     )
                     // Solicitar actualizaciones de posición
                     serverConnectionManager.onlineServerManager.requestPositionsUpdate()
-                    updateBluetoothStatus("Conectado al servidor online - SALIDA METRO")
+                    updateBluetoothStatus("Conectado al servidor online - RED METRO")
                 } else {
                     updateBluetoothStatus("Error al conectar al servidor online")
                 }
@@ -432,21 +432,21 @@ class RedMetro : AppCompatActivity(),
 
         coordinates?.let { (lat, lon) ->
             Log.d(TAG, "Abriendo coordenadas: $lat, $lon para posición $position")
-            openOpenStreetMapWithCoordinates(lat, lon)
+            salirMetroActivity(lat, lon)
         } ?: run {
             Toast.makeText(this, "No hay estación de metro en esta ubicación", Toast.LENGTH_SHORT).show()
         }
     }
-    private fun openOpenStreetMapWithCoordinates(latitude: Double, longitude: Double) {
+    private fun salirMetroActivity(latitude: Double, longitude: Double) {
         try {
-            val intent = Intent(this, EstacionesMetro::class.java).apply {
+            val intent = Intent(this, SalirMetro::class.java).apply {
                 putExtra("LATITUDE", latitude)
                 putExtra("LONGITUDE", longitude)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK
             }
             startActivity(intent)
         } catch (e: Exception) {
-            Log.e(TAG, "Error al abrir EstacionesMetro: ${e.message}")
+            Log.e(TAG, "Error al abrir SalirMetro: ${e.message}")
             Toast.makeText(this, "Error al abrir el mapa", Toast.LENGTH_SHORT).show()
         }
     }
@@ -846,6 +846,6 @@ class RedMetro : AppCompatActivity(),
     }
 
     companion object {
-        private const val TAG = "SalidaMetro"
+        private const val TAG = "RedMetro"
     }
 }

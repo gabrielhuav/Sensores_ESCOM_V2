@@ -29,7 +29,6 @@ class EstacionesMetro : AppCompatActivity() {
             // Usar coordenadas directas
             setupWebViewWithCoordinates(latitude, longitude)
         } else {
-            // Fallback a búsqueda por texto
             val searchQuery = intent.getStringExtra("SEARCH_QUERY") ?: "Metro CDMX"
             setupWebViewWithSearch(searchQuery)
         }
@@ -84,13 +83,13 @@ class EstacionesMetro : AppCompatActivity() {
 
     private fun loadCoordinates(latitude: Double, longitude: Double) {
         try {
-            // URL directa con coordenadas - más preciso
+            // URL directa con coordenadas
             val url = "https://www.openstreetmap.org/#map=17/$latitude/$longitude"
             webView.loadUrl(url)
             Log.d("EstacionesMetro", "Cargando coordenadas: $latitude, $longitude")
         } catch (e: Exception) {
             Log.e("EstacionesMetro", "Error con coordenadas: ${e.message}")
-            // Fallback a búsqueda genérica si fallan las coordenadas
+            // Búsqueda genérica si fallan las coordenadas
             setupWebViewWithSearch("Metro CDMX")
         }
     }

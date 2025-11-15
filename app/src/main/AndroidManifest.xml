@@ -120,6 +120,10 @@
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:exported="false" />
         <activity
+            android:name=".presentation.locations.outdoor.SalirMetro"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:exported="false" />
+        <activity
             android:name=".presentation.components.BuildingNumber2Piso1"
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
