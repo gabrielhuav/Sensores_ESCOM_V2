@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission
@@ -37,36 +38,31 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity> <activity
-        android:name=".presentation.common.base.GameplayActivity"
-        android:configChanges="orientation|screenSize|keyboardHidden" /> <activity
-        android:name=".presentation.locations.buildings.encb.ENCB"
-        android:configChanges="orientation|screenSize|keyboardHidden" />
+        </activity>
         <activity
             android:name=".presentation.common.base.GameplayActivity"
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
-        <!--ENCB Activity -->
+            android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.locations.buildings.encb.ENCB"
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
-        <!-- Building2 Activity -->
+            android:configChanges="orientation|screenSize|keyboardHidden" /> <!-- ENCB Activity -->
         <activity
             android:name=".presentation.locations.buildings.cidetec.Cidetec"
-            android:exported="false"/>
+            android:exported="false" />
         <activity
             android:name=".presentation.components.BuildingNumber2"
-            android:configChanges="orientation|screenSize|keyboardHidden" /> <activity
-        android:name=".presentation.locations.buildings.building4.BuildingNumber4"
-        android:configChanges="orientation|screenSize|keyboardHidden" />
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+        <activity
+            android:name=".presentation.locations.buildings.building4.BuildingNumber4"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.locations.outdoor.Zacatenco"
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.locations.outdoor.Lindavista"
             android:configChanges="orientation|screenSize|keyboardHidden" />
-
         <activity
             android:name=".presentation.locations.outdoor.EstacionamientoEscom"
             android:configChanges="orientation|screenSize|keyboardHidden" />
@@ -81,22 +77,18 @@
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.components.BuildingEdificioIA_Alto"
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
+            android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.locations.outdoor.Esime"
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
-
+            android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.locations.outdoor.locations.esime.buildings.Edificio3Activity"
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
-
+            android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2009"
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.locations.buildings.plaza.PlazaVistaNorte"
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
-
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2010"
@@ -109,38 +101,49 @@
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.locations.lab.LaboratorioPosgradoActivity"
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
-
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.locations.outdoor.SalidaMetro"
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.locations.outdoor.MetroPolitecnico"
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+        <activity
+            android:name=".presentation.locations.outdoor.AndenesMetroPolitecnico"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+        <activity
+            android:name=".presentation.locations.outdoor.EstacionesMetro"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:exported="false" />
+        <activity
+            android:name=".presentation.locations.outdoor.RedMetro"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:exported="false" />
+        <activity
+            android:name=".presentation.locations.outdoor.SalirMetro"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:exported="false" />
         <activity
             android:name=".presentation.components.BuildingNumber2Piso1"
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2001"
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
+            android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2002"
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
+            android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2003"
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
+            android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2004"
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
+            android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2005"
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
+            android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.components.ipn.zacatenco.escom.buildingNumber2.classrooms.Salon2006"
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
-
-
+            android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.locations.transportation.Cablebus"
             android:configChanges="orientation|screenSize|keyboardHidden" />
@@ -156,22 +159,19 @@
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.locations.outdoor.GlobalMapActivity"
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
-
+            android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".presentation.locations.outdoor.ESIA"
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
-
+            android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".data.map.Bluetooth.DeviceListActivity"
             android:exported="true"
             android:theme="@style/Theme.Sensores_ESCOM_V2" />
-
         <activity
             android:name=".presentation.locations.outdoor.OSMMapActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
-            android:screenOrientation="sensorLandscape"
-            android:exported="false" />
+            android:exported="false"
+            android:screenOrientation="sensorLandscape" />
     </application>
 
 </manifest>

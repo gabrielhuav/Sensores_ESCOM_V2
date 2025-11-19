@@ -10,8 +10,8 @@
         <option name="gradleJvm" value="#JAVA_HOME" />
         <option name="modules">
           <set>
-            <option value="/mnt/ssd1tb/Documents/Sensores_ESCOM_V2" />
-            <option value="/mnt/ssd1tb/Documents/Sensores_ESCOM_V2/app" />
+            <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/app" />
           </set>
         </option>
       </GradleProjectSettings>
