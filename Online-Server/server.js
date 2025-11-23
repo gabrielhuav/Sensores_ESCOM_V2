@@ -101,96 +101,102 @@ wss.on("connection", (ws) => {
             const trimmedId = data.id?.trim();
             if (!trimmedId) return;
 
-            switch (data.type) {
-                case "join":
-                    if (!players[trimmedId]) {
-                        players[trimmedId] = {
-                            x: 1,
-                            y: 1,
-                            currentMap: "main",
-                            color: generateRandomColor(),
-                            type: "local"
-                        };
-                        console.log(`Player joined: ${trimmedId}`);
-                        // Informar al nuevo jugador sobre los jugadores existentes
-                        ws.send(JSON.stringify({
-                            type: "positions",
-                            players: players
-                        }));
-                    }
-                    break;
+        switch (data.type) {
+            case "join":
+                if (!players[trimmedId]) {
+                    players[trimmedId] = {
+                        x: 1,
+                        y: 1,
+                        currentMap: "main",
+                        color: generateRandomColor(),
+                        type: "local"
+                    };
+                    console.log(`Player joined: ${trimmedId}`);
+                    // Informar al nuevo jugador sobre los jugadores existentes
+                    ws.send(JSON.stringify({
+                        type: "positions",
+                        players: players
+                    }));
+                }
+                break;
 
-                case "update":
-                    if (shouldUpdate(trimmedId)) {
-                        const positions = processPosition(data);
-                        const currentMap = data.map || "main";
+            case "update":
+                if (shouldUpdate(trimmedId)) {
+                    const positions = processPosition(data);
+                    const currentMap = data.map || "main";
 
-                        if (positions) {
-                            let hasChanges = false;
+                    if (positions) {
+                        let hasChanges = false;
 
-                            // Actualizar posición local
-                            if (positions.local) {
-                                const previousPosition = players[trimmedId];
-                                if (hasPositionChangedSignificantly(previousPosition, positions.local)) {
-                                    players[trimmedId] = {
-                                        x: positions.local.x,
-                                        y: positions.local.y,
-                                        currentMap: currentMap,
-                                        color: players[trimmedId]?.color || generateRandomColor(),
-                                        type: "local"
-                                    };
-                                    hasChanges = true;
-                                }
-                            }
-
-                            // Actualizar posición remota si existe
-                            if (positions.remote) {
-                                const remoteId = `${trimmedId}_remote`;
-                                const previousRemotePosition = players[remoteId];
-                                if (hasPositionChangedSignificantly(previousRemotePosition, positions.remote)) {
-                                    players[remoteId] = {
-                                        x: positions.remote.x,
-                                        y: positions.remote.y,
-                                        currentMap: currentMap,
-                                        color: "#FF0000",
-                                        type: "remote"
-                                    };
-                                    hasChanges = true;
-                                }
-                            }
-
-                            if (hasChanges) {
-                                // Enviar actualización a todos los clientes
-                                const updateMessage = {
-                                    type: "update",
-                                    id: trimmedId,
-                                    x: positions.local.x,  // Enviar directamente x e y
+                        // Actualizar posición local
+                        if (positions.local) {
+                            const previousPosition = players[trimmedId];
+                            if (hasPositionChangedSignificantly(previousPosition, positions.local)) {
+                                players[trimmedId] = {
+                                    x: positions.local.x,
                                     y: positions.local.y,
-                                    map: currentMap
+                                    currentMap: currentMap,
+                                    color: players[trimmedId]?.color || generateRandomColor(),
+                                    type: "local"
                                 };
-                                broadcast(updateMessage);
+                                hasChanges = true;
                             }
                         }
-                    }
-                    break;
 
-                case "leave":
-                    if (players[trimmedId]) {
-                        console.log(`Player left: ${trimmedId}`);
-                        delete players[trimmedId];
-                        delete players[`${trimmedId}_remote`];
-                        delete lastUpdateTime[trimmedId];
-                        broadcast({
-                            type: "disconnect",
-                            id: trimmedId
-                        });
+                        // Actualizar posición remota si existe
+                        if (positions.remote) {
+                            const remoteId = `${trimmedId}_remote`;
+                            const previousRemotePosition = players[remoteId];
+                            if (hasPositionChangedSignificantly(previousRemotePosition, positions.remote)) {
+                                players[remoteId] = {
+                                    x: positions.remote.x,
+                                    y: positions.remote.y,
+                                    currentMap: currentMap,
+                                    color: "#FF0000",
+                                    type: "remote"
+                                };
+                                hasChanges = true;
+                            }
+                        }
+
+                        if (hasChanges) {
+                            // Enviar actualización a todos los clientes
+                            const updateMessage = {
+                                type: "update",
+                                id: trimmedId,
+                                x: positions.local.x,  // Enviar directamente x e y
+                                y: positions.local.y,
+                                map: currentMap
+                            };
+                            broadcast(updateMessage);
+                        }
                     }
-                    break;
-                case "zombie_game_update":
-                case "zombie_game_food":
-                    processZombieGameMessages(data);
-                    break;
-            }
+                }
+                break;
+
+            case "leave":
+                if (players[trimmedId]) {
+                    console.log(`Player left: ${trimmedId}`);
+                    delete players[trimmedId];
+                    delete players[`${trimmedId}_remote`];
+                    delete lastUpdateTime[trimmedId];
+                    broadcast({
+                        type: "disconnect",
+                        id: trimmedId
+                    });
+                }
+                break;
+
+            case "zombie_game_update":
+            case "zombie_game_food":
+                processZombieGameMessages(data);
+                break;
+
+            // ⬇️ AÑADE ESTE NUEVO CASE AQUÍ ⬇️
+            case "esimio_game_update":
+                processEsimioGameMessages(data);
+                break;
+        }
         } catch (error) {
             console.error("Error processing message:", error);
             console.error(error.stack);
@@ -638,4 +644,321 @@ app.get("/admin/zombie/list", (req, res) => {
         zombies: zombieGame.zombies,
         zombieCount: zombieGame.zombies.length
     });
+});
+
+
+// Estado del juego de esimios
+const esimioGame = {
+    esimios: [],
+    isActive: false,
+    difficulty: 1,
+    currentMap: "esime",
+    lastUpdateTimes: {},
+    updateIntervals: {
+        1: 1500,  // Fácil: 1.5 segundos
+        2: 1000,  // Medio: 1 segundo
+        3: 600    // Difícil: 0.6 segundos
+    },
+    esimioCount: {
+        1: 3,  // Fácil: 3 esimios
+        2: 5,  // Medio: 5 esimios
+        3: 8   // Difícil: 8 esimios
+    }
+};
+
+let esimioUpdateInterval = null;
+
+// Función para iniciar el juego de esimios
+function startEsimioGame(difficulty = 1, mapName = "esime") {
+    esimioGame.isActive = true;
+    esimioGame.difficulty = difficulty;
+    esimioGame.currentMap = mapName;
+
+    const esimioCount = esimioGame.esimioCount[difficulty] || 3;
+    esimioGame.esimios = [];
+
+    // Posiciones de spawn para esimios
+    const spawnPositions = [
+        { x: 20, y: 10 },
+        { x: 20, y: 20 },
+        { x: 20, y: 30 },
+        { x: 25, y: 15 },
+        { x: 25, y: 25 },
+        { x: 19, y: 12 },
+        { x: 19, y: 22 },
+        { x: 19, y: 32 }
+    ];
+
+    const findValidPosition = (attempt = 0) => {
+        if (attempt > 100) {
+            return spawnPositions[0];
+        }
+        const x = Math.floor(Math.random() * 20) + 18;
+        const y = Math.floor(Math.random() * 30) + 5;
+
+        if (isValidEsimioMove(x, y)) {
+            return { x, y };
+        }
+        return findValidPosition(attempt + 1);
+    };
+
+    for (let i = 0; i < esimioCount; i++) {
+        const position = findValidPosition();
+        esimioGame.esimios.push({
+            id: `esimio_${i}`,
+            position: position,
+            target: null
+        });
+
+        broadcast({
+            type: "esimio_position",
+            id: `esimio_${i}`,
+            x: position.x,
+            y: position.y,
+            map: esimioGame.currentMap
+        });
+    }
+
+    broadcast({
+        type: "esimio_game_command",
+        command: "start",
+        difficulty: difficulty,
+        map: mapName
+    });
+
+    startEsimioUpdates();
+    console.log(`Juego de esimios iniciado con dificultad ${difficulty}`);
+}
+
+function stopEsimioGame() {
+    esimioGame.isActive = false;
+    clearInterval(esimioUpdateInterval);
+    esimioUpdateInterval = null;
+
+    broadcast({
+        type: "esimio_game_command",
+        command: "stop"
+    });
+
+    console.log("Juego de esimios detenido");
+}
+
+function startEsimioUpdates() {
+    if (esimioUpdateInterval) {
+        clearInterval(esimioUpdateInterval);
+    }
+
+    const updateInterval = esimioGame.updateIntervals[esimioGame.difficulty] || 1500;
+
+    esimioUpdateInterval = setInterval(() => {
+        if (esimioGame.isActive) {
+            updateEsimioPositions();
+        } else {
+            clearInterval(esimioUpdateInterval);
+            esimioUpdateInterval = null;
+        }
+    }, updateInterval);
+}
+
+function updateEsimioPositions() {
+    if (!esimioGame.isActive) return;
+
+    const playersInMap = Object.entries(players).filter(([id, data]) => {
+        return data.currentMap === esimioGame.currentMap || data.currentMap === "esime";
+    });
+
+    if (playersInMap.length === 0) {
+        esimioGame.esimios.forEach(esimio => {
+            moveEsimioRandomly(esimio);
+            broadcast({
+                type: "esimio_position",
+                id: esimio.id,
+                x: esimio.position.x,
+                y: esimio.position.y,
+                map: esimioGame.currentMap
+            });
+        });
+        return;
+    }
+
+    esimioGame.esimios.forEach(esimio => {
+        let nearestPlayer = null;
+        let shortestDistance = Infinity;
+
+        playersInMap.forEach(([playerId, playerData]) => {
+            const distance = calculateDistance(
+                esimio.position.x, esimio.position.y,
+                playerData.x, playerData.y
+            );
+
+            if (distance < shortestDistance) {
+                shortestDistance = distance;
+                nearestPlayer = { id: playerId, data: playerData };
+            }
+        });
+
+        if (nearestPlayer) {
+            esimio.target = nearestPlayer.id;
+            moveEsimioTowardsPlayer(esimio, nearestPlayer.data);
+
+            if (isEsimioCaught(esimio, nearestPlayer.data)) {
+                broadcast({
+                    type: "esimio_game_command",
+                    command: "caught",
+                    player: nearestPlayer.id
+                });
+                console.log(`Esimio ${esimio.id} atrapó al jugador ${nearestPlayer.id}`);
+            }
+        } else {
+            moveEsimioRandomly(esimio);
+        }
+
+        broadcast({
+            type: "esimio_position",
+            id: esimio.id,
+            x: esimio.position.x,
+            y: esimio.position.y,
+            map: esimioGame.currentMap
+        });
+    });
+}
+
+function isValidEsimioMove(x, y) {
+    if (x < 0 || x >= 40 || y < 0 || y >= 40) return false;
+
+    const blockedAreas = [
+        { xMin: 7, xMax: 14, yMin: 28, yMax: 29 },
+        { xMin: 16, xMax: 17, yMin: 28, yMax: 29 },
+        { xMin: 7, xMax: 14, yMin: 31, yMax: 32 },
+        { xMin: 7, xMax: 14, yMin: 22, yMax: 23 },
+        { xMin: 16, xMax: 17, yMin: 22, yMax: 23 },
+        { xMin: 7, xMax: 14, yMin: 25, yMax: 26 },
+        { xMin: 7, xMax: 14, yMin: 15, yMax: 16 },
+        { xMin: 16, xMax: 17, yMin: 15, yMax: 16 },
+        { xMin: 7, xMax: 14, yMin: 18, yMax: 19 },
+        { xMin: 7, xMax: 14, yMin: 9, yMax: 10 },
+        { xMin: 16, xMax: 17, yMin: 9, yMax: 10 },
+        { xMin: 7, xMax: 14, yMin: 12, yMax: 13 },
+        { xMin: 7, xMax: 14, yMin: 3, yMax: 4 },
+        { xMin: 16, xMax: 17, yMin: 3, yMax: 4 },
+        { xMin: 7, xMax: 14, yMin: 6, yMax: 7 },
+        { xMin: 7, xMax: 38, yMin: 34, yMax: 38 },
+        { xMin: 32, xMax: 38, yMin: 29, yMax: 38 },
+        { xMin: 24, xMax: 29, yMin: 6, yMax: 18 },
+        { xMin: 7, xMax: 38, yMin: 1, yMax: 4 }
+    ];
+
+    return !blockedAreas.some(area =>
+        x >= area.xMin && x <= area.xMax && y >= area.yMin && y <= area.yMax
+    );
+}
+
+function moveEsimioTowardsPlayer(esimio, playerData) {
+    const currentX = esimio.position.x;
+    const currentY = esimio.position.y;
+    const dx = playerData.x - currentX;
+    const dy = playerData.y - currentY;
+
+    const possibleMoves = [];
+
+    if (dx !== 0) {
+        const newX = currentX + (dx > 0 ? 1 : -1);
+        if (isValidEsimioMove(newX, currentY)) {
+            possibleMoves.push({ x: newX, y: currentY });
+        }
+    }
+    if (dy !== 0) {
+        const newY = currentY + (dy > 0 ? 1 : -1);
+        if (isValidEsimioMove(currentX, newY)) {
+            possibleMoves.push({ x: currentX, y: newY });
+        }
+    }
+
+    if (possibleMoves.length === 0) {
+        const allMoves = [
+            { x: currentX + 1, y: currentY },
+            { x: currentX - 1, y: currentY },
+            { x: currentX, y: currentY + 1 },
+            { x: currentX, y: currentY - 1 }
+        ];
+        possibleMoves.push(...allMoves.filter(move => isValidEsimioMove(move.x, move.y)));
+    }
+
+    if (possibleMoves.length > 0) {
+        if (esimioGame.difficulty >= 2) {
+            possibleMoves.sort((a, b) => {
+                const distA = calculateDistance(a.x, a.y, playerData.x, playerData.y);
+                const distB = calculateDistance(b.x, b.y, playerData.x, playerData.y);
+                return distA - distB;
+            });
+            esimio.position = possibleMoves[0];
+        } else {
+            esimio.position = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+        }
+    }
+}
+
+function moveEsimioRandomly(esimio) {
+    const currentX = esimio.position.x;
+    const currentY = esimio.position.y;
+
+    const possibleMoves = [
+        { x: currentX, y: currentY - 1 },
+        { x: currentX + 1, y: currentY },
+        { x: currentX, y: currentY + 1 },
+        { x: currentX - 1, y: currentY }
+    ].filter(move => isValidEsimioMove(move.x, move.y));
+
+    if (possibleMoves.length > 0) {
+        esimio.position = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+    }
+}
+
+function isEsimioCaught(esimio, playerData) {
+    const distance = calculateDistance(
+        esimio.position.x, esimio.position.y,
+        playerData.x, playerData.y
+    );
+    return distance <= 1.5;
+}
+
+
+// Función para procesar mensajes de esimios
+function processEsimioGameMessages(message) {
+    if (message.type === "esimio_game_update") {
+        const action = message.action;
+
+        switch (action) {
+            case "start":
+                if (!esimioGame.isActive) {
+                    const difficulty = message.difficulty || 1;
+                    const mapName = message.map || "esime";
+                    startEsimioGame(difficulty, mapName);
+                }
+                break;
+
+            case "stop":
+                if (esimioGame.isActive) {
+                    stopEsimioGame();
+                }
+                break;
+        }
+    }
+}
+
+// Rutas administrativas
+app.post("/admin/esimio/start", (req, res) => {
+    const difficulty = req.body.difficulty || 1;
+    const mapName = req.body.map || "esime";
+    startEsimioGame(difficulty, mapName);
+    res.json({ message: "Juego de esimios iniciado", state: esimioGame });
+});
+
+app.post("/admin/esimio/stop", (req, res) => {
+    stopEsimioGame();
+    res.json({ message: "Juego de esimios detenido", state: esimioGame });
+});
+
+app.get("/admin/esimio/state", (req, res) => {
+    res.json(esimioGame);
 });
