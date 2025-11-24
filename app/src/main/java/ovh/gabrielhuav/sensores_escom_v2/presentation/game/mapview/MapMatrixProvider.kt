@@ -113,7 +113,7 @@ class MapMatrixProvider {
                 lowerMap.contains("2206") || lowerMap.contains("salon2206") -> MAP_SALON2206
                 lowerMap.contains("2009") || lowerMap.contains("salon2009") -> MAP_SALON2009
                 lowerMap.contains("2010") || lowerMap.contains("salon2010") -> MAP_SALON2010
-                
+
 
                 lowerMap.contains("1212") || lowerMap.contains("salon1212") -> MAP_SALON1212
 
@@ -228,7 +228,7 @@ class MapMatrixProvider {
         val EDIFICIO_GOBIERNO_TO_MAIN = Pair(20, 2)
         val MAIN_TO_BIBLIOTECA = Pair(35, 15)
         val BIBLIOTECA_TO_MAIN = Pair(2, 20)
-        
+
         // Transiciones ESIME - Zacatenco
         val ESIME_TO_ZACATENCO_POSITION = Pair(5, 35)
         val ZACATENCO_TO_ESIME_POSITION = Pair(28, 24)
@@ -272,7 +272,7 @@ class MapMatrixProvider {
                 MAP_SALON2206 -> createSalonMatrix()
                 MAP_SALON2009 -> createSalon2009Matrix()  // Nueva matriz para el salón 2009
                 MAP_SALON2010 -> createSalon2010Matrix()  // Nueva matriz para el salón 2010
-                
+
 
                 MAP_SALON1212 -> createSalon1212Matrix()
                 MAP_CAFETERIA -> createCafeESCOMMatrix()
@@ -294,6 +294,7 @@ class MapMatrixProvider {
                 MAP_BIBLIOTECA -> createBibliotecaMatrix()
                 MAP_ESIA -> createESIAMatrix()
                 MAP_ENCB -> createEncbMatrix()
+                MAP_ESIME -> createEsimeMatrix()
                 MAP_PLAZA_TORRES -> createPlazaTorresMatrix()
                 MAP_PLAZA_TORRES_N1 -> createPlazaTorresN1Matrix()
                 MAP_ESIME -> createEsimeMatrix()
@@ -434,6 +435,9 @@ class MapMatrixProvider {
                         matrix[i][j] = INTERACTIVE // Entrada a ESCOM
                     }else if( i == 10 && j == 1){
                         matrix[i][j] == INTERACTIVE
+                    }
+                    else if (i == 24 && j == 28) {
+                        matrix[i][j] = INTERACTIVE // Entrada a ESIME
                     }
                     else if (i == 24 && j == 28) {
                         matrix[i][j] = INTERACTIVE // Entrada a ESIME
@@ -2005,7 +2009,7 @@ class MapMatrixProvider {
         }
 
         private fun createEsimeMatrix(): Array<Array<Int>> {
-            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }            
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
 
             // ========== BORDES EXTERIORES ==========
             for (i in 0 until MAP_HEIGHT) {
@@ -2019,7 +2023,7 @@ class MapMatrixProvider {
 
             // ========== EDIFICIOS BLOQUEADOS - SINCRONIZADO CON Esime.kt ==========
             // Basado exactamente en las definiciones de collisionAreas en Esime.kt
-            
+
             // Edificio 1 - Rectángulos bloqueados
             // Rect(7, 28, 14, 29) - Rectángulo grande desde entrada del Edificio 1
             for (i in 7..14) {
@@ -2161,6 +2165,8 @@ class MapMatrixProvider {
 
             return matrix
         }
+
+
 
         // Función para crear la matriz de palapas ISC
         private fun createPalapasISCMatrix(): Array<Array<Int>> {
@@ -2527,11 +2533,6 @@ class MapMatrixProvider {
                     matrix[i][j] = INACCESSIBLE
                 }
             }
-
-
-
-
-
 
             // Punto interactivo para salir al mapa principal
             matrix[2][20] = INTERACTIVE

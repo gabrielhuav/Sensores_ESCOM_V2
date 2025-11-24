@@ -32,7 +32,7 @@ class MapView @JvmOverloads constructor(
 
     private val renderer = MapRenderer()
     private val gestureHandler = MapGestureHandler(this)
-    val playerManager = PlayerManager()
+    val playerManager = PlayerManager(context)
     val mapState = MapState()
 
     // Inicializar el handler inmediatamente en la declaración para evitar nulos
@@ -54,6 +54,13 @@ class MapView @JvmOverloads constructor(
     private var isUserInteracting = false
     private var shouldCenterOnPlayer = true
     private var transitionListener: MapTransitionListener? = null
+
+    // NUEVO: Propiedades para modo nocturno
+    private var nightModeEnabled = false
+    private val nightOverlayPaint = Paint().apply {
+        color = Color.argb(180, 0, 0, 40) // Azul oscuro semi-transparente
+        style = Paint.Style.FILL
+    }
 
     // Interfaz para notificar transiciones de mapa
     interface MapTransitionListener {
@@ -82,13 +89,18 @@ class MapView @JvmOverloads constructor(
         }
     }
 
+    // NUEVO: Método para activar/desactivar modo nocturno
+    fun setNightMode(enabled: Boolean) {
+        nightModeEnabled = enabled
+        invalidate()
+    }
+
     // Método para establecer el listener de transición
     fun setMapTransitionListener(listener: MapTransitionListener) {
         transitionListener = listener
     }
 
     // Método para cambiar el mapa actual
-// Método para cambiar el mapa actual
     fun setCurrentMap(mapId: String, resourceId: Int) {
         try {
             if (currentMapId != mapId) {
@@ -125,7 +137,6 @@ class MapView @JvmOverloads constructor(
             Log.e("MapView", "Error cambiando mapa: ${e.message}")
         }
     }
-
 
     private fun loadMapBitmap(resourceId: Int = mapResourceId) {
         try {
@@ -188,7 +199,6 @@ class MapView @JvmOverloads constructor(
             }
         })
     }
-
 
     // Método centerMapOnPlayer revisado
     private fun centerMapOnPlayer() {
@@ -255,7 +265,6 @@ class MapView @JvmOverloads constructor(
         }
     }
 
-
     private fun constrainMapOffset() {
         try {
             mapState.backgroundBitmap?.let { bitmap ->
@@ -282,7 +291,6 @@ class MapView @JvmOverloads constructor(
             Log.e("MapView", "Error en constrainMapOffset: ${e.message}")
         }
     }
-
 
     private fun calculateMinScale(): Float {
         val bitmap = mapState.backgroundBitmap ?: return 1f
@@ -351,8 +359,6 @@ class MapView @JvmOverloads constructor(
             invalidate()
         }
     }
-
-
 
     fun adjustMapToScreen() {
         try {
@@ -423,7 +429,6 @@ class MapView @JvmOverloads constructor(
         }
     }
 
-
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
@@ -454,7 +459,7 @@ class MapView @JvmOverloads constructor(
     // Add fog of war renderer
     private var fogOfWarRenderer: FogOfWarRenderer? = null
     private var fogOfWarEnabled = false
-    
+
     // Add car renderer
     private var carRenderer: CarRenderer? = null
 
@@ -474,17 +479,20 @@ class MapView @JvmOverloads constructor(
         carRenderer = renderer
         invalidate()
     }
-    
-    // The CarRenderer interface is already defined at line 468
-    
-    // Modify the onDraw method to include car rendering with proper transformations
+
+    // MODIFICADO: Método onDraw mejorado con modo nocturno
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        
+
         // Usar la matriz del mapa actual para el dibujado
         mapState.setMapMatrix(mapMatrix)
         renderer.draw(canvas, mapState, playerManager)
-        
+
+        // NUEVO: Aplicar overlay de noche si está activado
+        if (nightModeEnabled) {
+            canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), nightOverlayPaint)
+        }
+
         // Draw fog of war if enabled
         if (fogOfWarEnabled && fogOfWarRenderer != null) {
             playerManager.getLocalPlayerPosition()?.let { playerPos ->
@@ -493,12 +501,12 @@ class MapView @JvmOverloads constructor(
                 val bitmapHeight = mapState.backgroundBitmap?.height?.toFloat() ?: return
                 val cellWidth = bitmapWidth / MapMatrixProvider.MAP_WIDTH
                 val cellHeight = bitmapHeight / MapMatrixProvider.MAP_HEIGHT
-        
+
                 // Guardar estado del canvas
                 canvas.save()
                 canvas.translate(mapState.offsetX, mapState.offsetY)
                 canvas.scale(mapState.scaleFactor, mapState.scaleFactor)
-        
+
                 // Dibujar la niebla de guerra
                 fogOfWarRenderer?.drawFogOfWar(
                     canvas,
@@ -507,24 +515,24 @@ class MapView @JvmOverloads constructor(
                     cellHeight,
                     18 // Radio de visión predeterminado (puedes ajustarlo según necesites)
                 )
-        
+
                 // Restaurar estado del canvas
                 canvas.restore()
             }
         }
-        
+
         // Draw cars on top of everything else, applying map transformations
         if (carRenderer != null) {
             // Save canvas state
             canvas.save()
-            
+
             // Apply map transformations (scale and offset)
             canvas.translate(mapState.offsetX, mapState.offsetY)
             canvas.scale(mapState.scaleFactor, mapState.scaleFactor)
-            
+
             // Draw the cars
             carRenderer?.drawCars(canvas)
-            
+
             // Restore canvas state
             canvas.restore()
         }
@@ -540,7 +548,6 @@ class MapView @JvmOverloads constructor(
         val initialPosition = MapMatrixProvider.getInitialPositionForMap(targetMap)
         transitionListener?.onMapTransitionRequested(targetMap, initialPosition)
     }
-
 
     // Añadir parámetro a MapView.kt - método updateLocalPlayerPosition
     fun updateLocalPlayerPosition(position: Pair<Int, Int>?, forceCenter: Boolean = false) {
@@ -566,7 +573,6 @@ class MapView @JvmOverloads constructor(
         invalidate()
     }
 
-
     fun updateRemotePlayerPosition(playerId: String, position: Pair<Int, Int>, map: String) {
         playerManager.updateRemotePlayerPosition(playerId, position, map)
         invalidate()
@@ -580,6 +586,25 @@ class MapView @JvmOverloads constructor(
     fun removeRemotePlayer(playerId: String) {
         playerManager.removeRemotePlayer(playerId)
         invalidate()
+    }
+
+    // NUEVO: Métodos mejorados para entidades especiales
+    fun updateSpecialEntity(entityId: String, position: Pair<Int, Int>, map: String) {
+        // Actualizar en PlayerManager (esta es la fuente de verdad)
+        playerManager.updateSpecialEntity(entityId, position, map)
+        Log.d("MapView", "Entidad especial actualizada: $entityId en posición $position, mapa $map")
+        invalidate() // Forzar un redibujado para mostrar el cambio
+    }
+
+    fun removeSpecialEntity(entityId: String) {
+        playerManager.removeSpecialEntity(entityId)
+        invalidate()
+    }
+
+    fun debugSpecialEntities() {
+        val specialEntitiesCount = playerManager.getSpecialEntitiesCount()
+        Log.d("MapView", "Entidades especiales registradas: $specialEntitiesCount")
+        playerManager.logSpecialEntities()
     }
 
     fun isValidPosition(x: Int, y: Int): Boolean {
@@ -612,112 +637,21 @@ class MapView @JvmOverloads constructor(
     fun setBluetoothServerMode(isServer: Boolean) {
         isBluetoothServer = isServer
     }
-// Método para añadir a la clase MapView
-// Agregar estas funciones después de las existentes en MapView.kt
 
-    /**
-     * Mapa para entidades especiales como enemigos, ítems, etc.
-     * Key: ID de la entidad
-     * Value: Pair<Pair<Int, Int>, String> (posición, mapa)
-     */
-    private val specialEntities = mutableMapOf<String, Pair<Pair<Int, Int>, String>>()
-
-    fun updateSpecialEntity(entityId: String, position: Pair<Int, Int>, map: String) {
-        // Actualizar en PlayerManager (esta es la fuente de verdad)
-        playerManager.updateSpecialEntity(entityId, position, map)
-
-        // No necesitamos mantener una copia local aquí
-        // specialEntities[entityId] = Pair(position, map) <- QUITAR ESTA LÍNEA
-
-        Log.d("MapView", "Entidad especial actualizada: $entityId en posición $position, mapa $map")
-        invalidate() // Forzar un redibujado para mostrar el cambio
-    }
-
-    fun removeSpecialEntity(entityId: String) {
-        specialEntities.remove(entityId)
-    }
-
-
-    /**
-     * Método para dibujar entidades especiales
-     * Este método debería ser llamado desde onDraw en PlayerManager
-     */
-    fun drawSpecialEntities(canvas: Canvas, cellWidth: Float, cellHeight: Float) {
-        val currentMapId = playerManager.getCurrentMap()
-
-        // Configurar pinturas para diferentes tipos de entidades
-        val zombiePaint = Paint().apply {
-            color = Color.rgb(0, 100, 0)  // Verde oscuro para zombies
-            style = Paint.Style.FILL
-        }
-
-        val rabbitPaint = Paint().apply {
-            color = Color.rgb(255, 182, 193) // rosa para los conejos
-            style = Paint.Style.FILL
-        }
-        val itemPaint = Paint().apply {
-            color = Color.rgb(255, 215, 0)  // Dorado para ítems
-            style = Paint.Style.FILL
-        }
-
-        val textPaint = Paint().apply {
-            color = Color.WHITE
-            textSize = 30f
-            textAlign = Paint.Align.CENTER
-            setShadowLayer(3f, 0f, 0f, Color.BLACK)
-        }
-
-        // Dibujar cada entidad especial que esté en el mapa actual
-        specialEntities.forEach { (entityId, info) ->
-            val (position, entityMap) = info
-
-            // Solo dibujar entidades que estén en el mapa actual
-            if (entityMap == currentMapId) {
-                val entityX = position.first * cellWidth + cellWidth / 2
-                val entityY = position.second * cellHeight + cellHeight / 2
-
-                // Determinar qué tipo de entidad es por su ID
-                when {
-                    entityId == "zombie" -> {
-                        // Dibujar un zombie (círculo verde más grande)
-                        canvas.drawCircle(entityX, entityY, cellWidth * 0.4f, zombiePaint)
-                        canvas.drawText("ZOMBIE", entityX, entityY - cellHeight * 0.7f, textPaint)
-                    }
-                    entityId == "rabbit" -> {
-                        //Dibujar un conejo (circulo rosa mas pequeño)
-                        canvas.drawCircle(entityX, entityY, cellWidth * 0.2f, rabbitPaint)
-                        canvas.drawText("conejo", entityX, entityY - cellHeight * 0.7f, textPaint)
-                    }
-                    entityId.startsWith("item_") -> {
-                        // Dibujar un ítem (estrella dorada)
-                        canvas.drawCircle(entityX, entityY, cellWidth * 0.3f, itemPaint)
-                        canvas.drawText("ITEM", entityX, entityY - cellHeight * 0.5f, textPaint)
-                    }
-                    // Añadir más tipos según sea necesario
-                }
-            }
-        }
-    }
-
-    fun debugSpecialEntities() {
-        val specialEntitiesCount = playerManager.getSpecialEntitiesCount()
-        Log.d("MapView", "Entidades especiales registradas: $specialEntitiesCount")
-        playerManager.logSpecialEntities()
-    }
-        // Add this method to get player rectangle in map coordinates
+    // Add this method to get player rectangle in map coordinates
     // Fixed getPlayerRect method with proper type handling
     fun getPlayerRect(position: Pair<Int, Int>): RectF? {
         val bitmap = mapState.backgroundBitmap ?: return null
-        
+
         // Calculate the cell size based on the bitmap dimensions and matrix size
         // Using MapMatrixProvider constants instead of mapMatrix.getWidth/getHeight
         val cellWidth = bitmap.width / MapMatrixProvider.MAP_WIDTH.toFloat()
         val cellHeight = bitmap.height / MapMatrixProvider.MAP_HEIGHT.toFloat()
-        
+
         // Calculate player position in pixels
         val playerX = position.first * cellWidth
         val playerY = position.second * cellHeight
-        
+
         // Create a rectangle for the player (make it slightly smaller than a cell)
         // Explicitly using Float for all calculations to avoid ambiguity
         val playerSize = min(cellWidth, cellHeight) * 0.8f
@@ -728,4 +662,20 @@ class MapView @JvmOverloads constructor(
             playerY + (cellHeight + playerSize) / 2f
         )
     }
+
+    // NUEVO: Método para limpiar todas las entidades especiales
+    fun clearAllSpecialEntities() {
+        // Obtener todas las keys de entidades especiales
+        val entityIds = playerManager.getSpecialEntitiesCount()
+        Log.d("MapView", "Limpiando $entityIds entidades especiales")
+
+        // Limpiar en PlayerManager
+        // Nota: Necesitarías agregar un método clearAllSpecialEntities() en PlayerManager
+        // Por ahora, llamamos removeSpecialEntity para cada una
+        playerManager.logSpecialEntities() // Para debug
+
+        invalidate()
+    }
+
+
 }

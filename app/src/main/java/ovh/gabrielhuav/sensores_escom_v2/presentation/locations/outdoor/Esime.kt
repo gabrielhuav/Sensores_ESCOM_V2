@@ -1,6 +1,7 @@
 package ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor
 
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Rect
 import android.os.Bundle
@@ -8,6 +9,7 @@ import android.util.Log
 import android.view.MotionEvent
 import android.widget.FrameLayout
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.button.MaterialButton
 import org.json.JSONObject
@@ -15,9 +17,11 @@ import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.MovementManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.ServerConnectionManager
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.esimios.EsimioController
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
-import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.Zacatenco
+import ovh.gabrielhuav.sensores_escom_v2.presentation.common.base.GameplayActivity
+import android.view.View
 
 class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapView.MapTransitionListener {
 
@@ -32,6 +36,9 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
     private lateinit var btnWest: MaterialButton
     private lateinit var buttonA: MaterialButton
     private lateinit var btnBack: MaterialButton
+    private lateinit var btnNightMode: MaterialButton
+
+    private lateinit var nightOverlay: View
 
     private lateinit var playerName: String
 
@@ -40,6 +47,11 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
     private var canChangeMap = false
     private var canEnterBuilding = false
     private var currentBuilding: Int? = null
+
+    // Controlador de esimios
+    private lateinit var esimioController: EsimioController
+    private var esimioGameActive = false
+    private var nightMode = false
 
     // 🔴 POSICIONES FIJAS de los edificios
     private val buildingLocations = mapOf(
@@ -76,7 +88,7 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
             // Esperar a que el mapView esté listo
             mapView.post {
                 // Configurar el mapa
-                val normalizedMap = MapMatrixProvider.Companion.normalizeMapName(MapMatrixProvider.Companion.MAP_ESIME)
+                val normalizedMap = MapMatrixProvider.normalizeMapName(MapMatrixProvider.MAP_ESIME)
                 mapView.setCurrentMap(normalizedMap, R.drawable.esimemapa)
 
                 // Configurar playerManager
@@ -120,64 +132,39 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
             collisionAreas.clear()
 
             // 🔴 DEFINIR RECTÁNGULOS GRANDES PARA BLOQUEAR ACCESO A EDIFICIOS
-            // Cada edificio tiene un área rectangular grande bloqueada alrededor de su entrada
-            //Pasillo (15,y)
-            //Pasillo (18,y)
-            //Pasillo (30,y)
-            //Pasillo (x,33)
-            //Pasillo (x,30)
-            //Pasillo (x,27)
-            //Pasillo (x,24)
-            //Pasillo (x,21)
-            //Pasillo (x,17)
-            //Pasillo (x,14)
-            //Pasillo (x,11)
-            //Pasillo (x,8)
-            //Pasillo (x,5)
+            collisionAreas.add(Rect(7, 28, 14 ,29))   // Edificio 1
+            collisionAreas.add(Rect(16, 28, 17, 29))  // Cuadrado que deja pasillo
+            collisionAreas.add(Rect(7, 31, 14, 32))   // Parte inferior
 
-            // Edificio 1 - Rectángulo grande bloqueado (desde X=8 hacia la derecha)
-            collisionAreas.add(Rect(7, 28, 14 ,29))   // Rectángulo grande desde entrada del Edificio 1
-            collisionAreas.add(Rect(16, 28, 17, 29))  //Cuadrado que deja pasillo
-            collisionAreas.add(Rect(7, 31, 14, 32))   //Parte inferior
+            collisionAreas.add(Rect(7, 22, 14, 23))   // Edificio 2
+            collisionAreas.add(Rect(16, 22, 17, 23))  // Cuadrado que deja pasillo
+            collisionAreas.add(Rect(7, 25, 14, 26))   // Parte inferior
 
-            // Edificio 2 - Rectángulo grande bloqueado (desde X=8 hacia la derecha)
-            collisionAreas.add(Rect(7, 22, 14, 23))   // Rectángulo grande desde entrada del Edificio 2
-            collisionAreas.add(Rect(16, 22, 17, 23))  //Cuadrado que deja pasillo
-            collisionAreas.add(Rect(7, 25, 14, 26))   //Parte inferior
+            collisionAreas.add(Rect(7, 15, 14, 16))   // Edificio 3
+            collisionAreas.add(Rect(16, 15, 17, 16))  // Cuadrado que deja pasillo
+            collisionAreas.add(Rect(7, 18, 14, 19))   // Parte inferior
 
-            // Edificio 3 - Solo bloquear área derecha, dejar entrada libre frontal
-            collisionAreas.add(Rect(7, 15, 14, 16))   // Área derecha bloqueada del Edificio 3
-            collisionAreas.add(Rect(16, 15, 17, 16))  //Cuadrado que deja pasillo
-            collisionAreas.add(Rect(7, 18, 14, 19))   //Parte inferior
-            // NOTA: La entrada frontal (X=8, Y=17) permanece accesible
+            collisionAreas.add(Rect(7, 9, 14, 10))    // Edificio 4
+            collisionAreas.add(Rect(16, 9, 17, 10))   // Cuadrado que deja pasillo
+            collisionAreas.add(Rect(7, 12, 14, 13))   // Parte inferior
 
-            // Edificio 4 - Rectángulo grande bloqueado (desde X=8 hacia la derecha)
-            collisionAreas.add(Rect(7, 9, 14, 10))    // Rectángulo grande desde entrada del Edificio 4
-            collisionAreas.add(Rect(16, 9, 17, 10))   //Cuadrado que deja pasillo
-            collisionAreas.add(Rect(7, 12, 14, 13))   //Parte inferior
-
-            // Edificio 5 - Rectángulo grande bloqueado (desde X=8 hacia la derecha)
-            collisionAreas.add(Rect(7, 3, 14, 4))    // Rectángulo grande desde entrada del Edificio 5
-            collisionAreas.add(Rect(16, 3, 17, 4))   // Cuadrado que deja pasillo
+            collisionAreas.add(Rect(7, 3, 14, 4))     // Edificio 5
+            collisionAreas.add(Rect(16, 3, 17, 4))    // Cuadrado que deja pasillo
             collisionAreas.add(Rect(7, 6, 14, 7))
 
-            //Pastos
+            // Pastos y áreas inaccesibles
             collisionAreas.add(Rect(7, 34, 38, 38))
             collisionAreas.add(Rect(32, 29, 38, 38))
             collisionAreas.add(Rect(24, 6, 29, 18))
-
-            //Zona inaccesible
             collisionAreas.add(Rect(7, 1, 38, 4))
 
-            // BORDES DEL MAPA - Para evitar que el jugador se salga
+            // BORDES DEL MAPA
             collisionAreas.add(Rect(0, 0, 0, 40))     // Borde izquierdo
             collisionAreas.add(Rect(40, 0, 40, 40))   // Borde derecho
             collisionAreas.add(Rect(0, 0, 40, 0))     // Borde superior
             collisionAreas.add(Rect(0, 40, 40, 40))   // Borde inferior
 
             Log.d("ESIME_COLLISIONS", "✅ ${collisionAreas.size} áreas de colisión configuradas")
-
-            // Mostrar información de debug
             showCollisionAreasDebug()
 
         } catch (e: Exception) {
@@ -193,32 +180,25 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
         }
         Log.d("ESIME_COLLISIONS", debugMessage.toString())
 
-        Toast.makeText(this,
-            "🚫 Áreas bloqueadas configuradas\n" +
-                    "Solo Edificio 3 es accesible",
-            Toast.LENGTH_LONG
-        ).show()
+        //Toast.makeText(this,
+          //  "🚫 Áreas bloqueadas configuradas\nSolo Edificio 3 es accesible",
+            //Toast.LENGTH_LONG
+        //).show()
     }
 
     // 🔴🔴🔴 CONFIGURAR MARCADORES VISUALES DE EDIFICIOS FIJOS 🔴🔴🔴
     private fun setupBuildingMarkers() {
         try {
-            // Usar reflexión para agregar marcadores FIJOS
             addFixedBuildingMarkersToMap()
-
-            // Mostrar información de debug
             showBuildingLocationsDebug()
-
         } catch (e: Exception) {
             Log.e("ESIME_MARKERS", "Error configurando marcadores: ${e.message}")
-            // Fallback: mostrar coordenadas por Toast
             showBuildingCoordinates()
         }
     }
 
     private fun addFixedBuildingMarkersToMap() {
         try {
-            // Configurar marcadores de edificios usando PlayerManager
             setupBuildingMarkersWithPlayerManager()
         } catch (e: Exception) {
             Log.e("ESIME_MARKERS", "Error configurando marcadores: ${e.message}")
@@ -227,20 +207,15 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
 
     private fun setupBuildingMarkersWithPlayerManager() {
         try {
-            // 🔴 SOLUCIÓN: Actualizar constantemente las posiciones FIJAS
             buildingLocations.forEach { (buildingNumber, position) ->
                 val buildingPlayerId = "EDIFICIO_$buildingNumber"
-
-                // Actualizar la posición FIJA cada vez
                 mapView.playerManager.updateRemotePlayerPosition(
                     buildingPlayerId,
-                    position, // 🔴 SIEMPRE la misma posición FIJA
-                    MapMatrixProvider.Companion.MAP_ESIME
+                    position,
+                    MapMatrixProvider.MAP_ESIME
                 )
-
                 Log.d("ESIME_MARKERS", "Marcador FIJO edificio $buildingNumber en: $position")
             }
-
         } catch (e: Exception) {
             Log.e("ESIME_MARKERS", "Error con PlayerManager: ${e.message}")
         }
@@ -248,20 +223,17 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
 
     // 🔴 NUEVO: Mantener posiciones FIJAS actualizando constantemente
     private fun startFixedPositionUpdates() {
-        // Actualizar cada 2 segundos para mantener posiciones fijas
         android.os.Handler(mainLooper).postDelayed({
             try {
                 buildingLocations.forEach { (buildingNumber, position) ->
                     val buildingPlayerId = "EDIFICIO_$buildingNumber"
                     mapView.playerManager.updateRemotePlayerPosition(
                         buildingPlayerId,
-                        position, // 🔴 SIEMPRE la posición FIJA original
-                        MapMatrixProvider.Companion.MAP_ESIME
+                        position,
+                        MapMatrixProvider.MAP_ESIME
                     )
                 }
                 mapView.invalidate()
-
-                // 🔴 REPETIR PARA MANTENER POSICIONES FIJAS
                 startFixedPositionUpdates()
             } catch (e: Exception) {
                 Log.e("ESIME_FIXED", "Error en actualización fija: ${e.message}")
@@ -275,17 +247,15 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
             val status = if (building == 3) "✅ INTERACTIVO" else "❌ No disponible"
             debugMessage.append("Edificio $building: (${pos.first}, ${pos.second}) - $status\n")
         }
-
         Log.d("ESIME_DEBUG", debugMessage.toString())
 
-        // Mostrar organización en Toast
-        Toast.makeText(this,
-            "🏢 Edificios en columna X=8\n" +
-                    "⬆️ Y=30 (Edif 1) - BLOQUEADO\n" +
-                    "⬇️ Y=5 (Edif 5) - BLOQUEADO\n" +
-                    "Solo Edificio 3 es interactivo",
-            Toast.LENGTH_LONG
-        ).show()
+        // Toast.makeText(this,
+        //    "🏢 Edificios en columna X=8\n" +
+        //          "⬆️ Y=30 (Edif 1) - BLOQUEADO\n" +
+        //          "⬇️ Y=5 (Edif 5) - BLOQUEADO\n" +
+        //          "Solo Edificio 3 es interactivo",
+        //  Toast.LENGTH_LONG
+        // ).show()
     }
 
     private fun showBuildingCoordinates() {
@@ -311,10 +281,13 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
         btnWest = findViewById(R.id.btnWest)
         buttonA = findViewById(R.id.buttonA)
         btnBack = findViewById(R.id.btnBack)
+        btnNightMode = findViewById(R.id.btnNightMode)
+
+        nightOverlay = findViewById(R.id.night_overlay)
     }
 
     private fun initializeManagers() {
-        val onlineServerManager = OnlineServerManager.Companion.getInstance(this).apply {
+        val onlineServerManager = OnlineServerManager.getInstance(this).apply {
             setListener(this@Esime)
         }
 
@@ -323,43 +296,29 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
             onlineServerManager = onlineServerManager
         )
 
-        // 🔴 INICIALIZAR MOVEMENT MANAGER CON COLISIONES
         movementManager = MovementManager(
             mapView = mapView
         ) { position -> updatePlayerPosition(position) }
 
-        // 🔴 CONFIGURAR ÁREAS DE COLISIÓN EN EL MOVEMENT MANAGER
         setupMovementManagerWithCollisions()
-
         mapView.setMapTransitionListener(this)
         mapView.playerManager.localPlayerId = playerName
         updatePlayerPosition(playerPosition)
     }
 
-    // Configurar MovementManager con verificación básica de colisiones
     private fun setupMovementManagerWithCollisions() {
         try {
             Log.d("ESIME_COLLISIONS", "Configurando sistema de colisiones básico")
-            // La verificación de colisiones se manejará en handleMovementWithCollisions
         } catch (e: Exception) {
             Log.e("ESIME_COLLISIONS", "Error configurando colisiones: ${e.message}")
         }
     }
 
     private fun setupButtonListeners() {
-        // 🔴 MODIFICAR LOS LISTENERS PARA VERIFICAR COLISIONES
-        btnNorth.setOnTouchListener { _, event ->
-            handleMovementWithCollisions(event, 0, -1); true
-        }
-        btnSouth.setOnTouchListener { _, event ->
-            handleMovementWithCollisions(event, 0, 1); true
-        }
-        btnEast.setOnTouchListener { _, event ->
-            handleMovementWithCollisions(event, 1, 0); true
-        }
-        btnWest.setOnTouchListener { _, event ->
-            handleMovementWithCollisions(event, -1, 0); true
-        }
+        btnNorth.setOnTouchListener { _, event -> handleMovementWithCollisions(event, 0, -1); true }
+        btnSouth.setOnTouchListener { _, event -> handleMovementWithCollisions(event, 0, 1); true }
+        btnEast.setOnTouchListener { _, event -> handleMovementWithCollisions(event, 1, 0); true }
+        btnWest.setOnTouchListener { _, event -> handleMovementWithCollisions(event, -1, 0); true }
 
         buttonA.setOnClickListener {
             when {
@@ -373,6 +332,14 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
         btnBack.setOnClickListener {
             returnToZacatenco()
         }
+
+        btnNightMode.setOnClickListener {
+            if (esimioGameActive) {
+                stopEsimioGame()
+            } else {
+                showEsimioDifficultyDialog()
+            }
+        }
     }
 
     // 🔴 NUEVO MÉTODO PARA MANEJAR MOVIMIENTO CON VERIFICACIÓN DE COLISIONES
@@ -380,18 +347,14 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
         if (::movementManager.isInitialized) {
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
-                    // Verificar si el movimiento futuro causaría colisión
                     val newX = playerPosition.first + deltaX
                     val newY = playerPosition.second + deltaY
                     val newPosition = Pair(newX, newY)
 
                     if (isPositionBlocked(newPosition)) {
-                        // 🔴 POSICIÓN BLOQUEADA - Mostrar mensaje y no mover
-                        Toast.makeText(this, "🚫 Área bloqueada", Toast.LENGTH_SHORT).show()
+                        //Toast.makeText(this, "🚫 Área bloqueada", Toast.LENGTH_SHORT).show()
                         return
                     }
-
-                    // 🔴 MOVIMIENTO PERMITIDO - Proceder normalmente
                     movementManager.handleMovement(event, deltaX, deltaY)
                 }
                 else -> {
@@ -404,8 +367,6 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
     // 🔴 VERIFICAR SI UNA POSICIÓN ESTÁ BLOQUEADA
     private fun isPositionBlocked(position: Pair<Int, Int>): Boolean {
         val (x, y) = position
-
-        // Verificar todas las áreas de colisión
         return collisionAreas.any { rect ->
             x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom
         }
@@ -414,10 +375,9 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
     private fun updatePlayerPosition(position: Pair<Int, Int>) {
         runOnUiThread {
             try {
-                // 🔴 VERIFICAR COLISIÓN ANTES DE ACTUALIZAR
                 if (isPositionBlocked(position)) {
                     Log.d("ESIME_COLLISIONS", "🚫 Colisión detectada en: $position")
-                    Toast.makeText(this, "Movimiento bloqueado", Toast.LENGTH_SHORT).show()
+                    // Toast.makeText(this, "Movimiento bloqueado", Toast.LENGTH_SHORT).show()
                     return@runOnUiThread
                 }
 
@@ -426,14 +386,20 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
                 mapView.invalidate()
 
                 if (::serverConnectionManager.isInitialized) {
-                    serverConnectionManager.sendUpdateMessage(playerName, position, MapMatrixProvider.Companion.MAP_ESIME)
+                    serverConnectionManager.sendUpdateMessage(
+                        playerName,
+                        position,
+                        MapMatrixProvider.MAP_ESIME
+                    )
+                }
+
+                // Actualizar posición del jugador para esimios
+                if (esimioGameActive && ::esimioController.isInitialized) {
+                    esimioController.updatePlayerPosition(playerName, position)
                 }
 
                 checkPositionForMapChange(position)
                 checkPositionForBuildingInteraction(position)
-
-                // 🔴 NUEVO: Mostrar coordenadas actuales para debug
-                showCurrentPositionDebug(position)
 
             } catch (e: Exception) {
                 Log.e("Esime", "Error en updatePlayerPosition: ${e.message}")
@@ -441,31 +407,8 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
         }
     }
 
-    // 🔴 NUEVO: Mostrar posición actual y edificios cercanos
-    private fun showCurrentPositionDebug(position: Pair<Int, Int>) {
-        val (x, y) = position
-
-        // Verificar si está en área bloqueada
-        if (isPositionBlocked(position)) {
-            Log.d("ESIME_POSITION", "🚫 POSICIÓN BLOQUEADA: ($x, $y)")
-        }
-
-        // Encontrar edificio más cercano
-        val closestBuilding = buildingLocations.minByOrNull { (_, buildingPos) ->
-            Math.abs(buildingPos.first - x) + Math.abs(buildingPos.second - y)
-        }
-
-        closestBuilding?.let { (buildingNum, buildingPos) ->
-            val distance = Math.abs(buildingPos.first - x) + Math.abs(buildingPos.second - y)
-            if (distance <= 5) {
-                Log.d("ESIME_POSITION", "📍 Posición actual: ($x, $y) - Cerca del Edificio $buildingNum (distancia: $distance)")
-            }
-        }
-    }
-
     private fun checkPositionForMapChange(position: Pair<Int, Int>) {
         canChangeMap = (position.first == 5 && position.second == 35)
-
         if (canChangeMap) {
             runOnUiThread {
                 Toast.makeText(this, "Presiona A para salir de ESIME", Toast.LENGTH_SHORT).show()
@@ -494,20 +437,16 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
 
     private fun detectBuildingAtPosition(position: Pair<Int, Int>): Int? {
         val (x, y) = position
-
-        // Usar las ubicaciones definidas en buildingLocations
         buildingLocations.forEach { (buildingNumber, buildingPos) ->
             if (x in (buildingPos.first - 2)..(buildingPos.first + 2) &&
                 y in (buildingPos.second - 2)..(buildingPos.second + 2)) {
                 return buildingNumber
             }
         }
-
         return null
     }
 
     private fun enterBuilding3() {
-        // TODO: Implementar navegación al Edificio 3 cuando esté disponible
         Toast.makeText(this, "Acceso al Edificio 3 - En desarrollo", Toast.LENGTH_LONG).show()
         Log.d("Esime", "Intento de acceso al Edificio 3 desde posición: $playerPosition")
     }
@@ -518,12 +457,8 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
 
     override fun onMapTransitionRequested(targetMap: String, initialPosition: Pair<Int, Int>) {
         when (targetMap) {
-            MapMatrixProvider.Companion.MAP_ZACATENCO -> {
-                returnToZacatenco()
-            }
-            else -> {
-                Log.d("Esime", "Mapa destino no reconocido: $targetMap")
-            }
+            MapMatrixProvider.MAP_ZACATENCO -> returnToZacatenco()
+            else -> Log.d("Esime", "Mapa destino no reconocido: $targetMap")
         }
     }
 
@@ -560,6 +495,40 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
                             mapView.invalidate()
                         }
                     }
+                    "esimio_position" -> {
+                        val esimioId = jsonObject.optString("id", "esimio")
+                        val x = jsonObject.getInt("x")
+                        val y = jsonObject.getInt("y")
+                        val esimioPosition = Pair(x, y)
+
+                        if (::esimioController.isInitialized) {
+                            esimioController.setEsimioPosition(esimioId, esimioPosition)
+                        }
+
+                        mapView.updateSpecialEntity(esimioId, esimioPosition, MapMatrixProvider.MAP_ESIME)
+                        mapView.invalidate()
+                    }
+                    "esimio_game_command" -> {
+                        when (jsonObject.optString("command")) {
+                            "start" -> {
+                                if (!esimioGameActive) {
+                                    val gameDifficulty = jsonObject.optInt("difficulty", 1)
+                                    startEsimioGame(gameDifficulty)
+                                }
+                            }
+                            "stop" -> {
+                                if (esimioGameActive) {
+                                    stopEsimioGame()
+                                }
+                            }
+                            "caught" -> {
+                                val caughtPlayer = jsonObject.optString("player")
+                                if (caughtPlayer == playerName && esimioGameActive) {
+                                    onEsimioCaughtPlayer()
+                                }
+                            }
+                        }
+                    }
                 }
                 mapView.invalidate()
             } catch (e: Exception) {
@@ -585,6 +554,9 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
 
     override fun onDestroy() {
         super.onDestroy()
+        if (esimioGameActive && ::esimioController.isInitialized) {
+            esimioController.stopGame()
+        }
         if (::mapView.isInitialized) {
             mapView.playerManager.cleanup()
         }
@@ -592,5 +564,163 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
 
     companion object {
         private const val TAG = "Esime"
+    }
+
+    // ========== MÉTODOS PARA ESIMIOS ==========
+
+
+    private fun showEsimioDifficultyDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("⚠️ Modo Nocturno en ESIME")
+            .setMessage("Los esimios rondan por el campus de noche.\n" +
+                    "¡Si te atrapan, te enviarán de regreso a Zacatenco!\n\n" +
+                    "¿Quieres activar el modo nocturno?")
+            .setPositiveButton("¡Iniciar!") { dialog, _ ->
+                dialog.dismiss()
+                showDifficultySelectionDialog()
+            }
+            .setNegativeButton("Cancelar") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
+    }
+
+    private fun showDifficultySelectionDialog() {
+        val options = arrayOf("Fácil (3 esimios)", "Medio (5 esimios)", "Difícil (8 esimios)")
+        var selectedDifficulty = 1
+
+        AlertDialog.Builder(this)
+            .setTitle("Selecciona la dificultad")
+            .setSingleChoiceItems(options, 0) { _, which ->
+                selectedDifficulty = which + 1
+            }
+            .setPositiveButton("Comenzar") { dialog, _ ->
+                dialog.dismiss()
+                startEsimioGame(selectedDifficulty)
+            }
+            .setNegativeButton("Atrás") { dialog, _ ->
+                dialog.dismiss()
+                showEsimioDifficultyDialog() // Vuelve al diálogo anterior
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    private fun startEsimioGame(difficulty: Int) {
+        esimioGameActive = true
+        nightMode = true
+
+        // Inicializar controlador de esimios
+        esimioController = EsimioController(
+            onEsimioPositionChanged = { esimioId, position ->
+                runOnUiThread {
+                    mapView.updateSpecialEntity(
+                        esimioId,
+                        position,
+                        MapMatrixProvider.MAP_ESIME
+                    )
+                    mapView.invalidate()
+                }
+            },
+            onPlayerCaught = {
+                onEsimioCaughtPlayer()
+            }
+        )
+
+        esimioController.startGame(difficulty)
+
+        runOnUiThread {
+            nightOverlay.visibility = View.VISIBLE
+            btnNightMode.text = "☀️"
+            btnNightMode.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#FFA500"))
+            Toast.makeText(this,
+                "🌙 MODO NOCTURNO ACTIVADO\n¡Cuidado con los esimios!",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+
+        sendEsimioGameUpdate("start", difficulty = difficulty)
+    }
+
+    private fun stopEsimioGame() {
+        esimioGameActive = false
+        nightMode = false
+
+        if (::esimioController.isInitialized) {
+            esimioController.stopGame()
+        }
+
+        runOnUiThread {
+            nightOverlay.visibility = View.GONE
+            btnNightMode.text = "🌙"
+            btnNightMode.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#424242"))
+            clearEsimioEntities()
+            mapView.invalidate()
+            Toast.makeText(this, "Modo nocturno desactivado", Toast.LENGTH_SHORT).show()
+        }
+
+        sendEsimioGameUpdate("stop")
+    }
+
+    private fun clearEsimioEntities() {
+        for (i in 0 until 10) {
+            mapView.removeSpecialEntity("esimio_$i")
+        }
+    }
+
+    private fun onEsimioCaughtPlayer() {
+        if (esimioGameActive) {
+            stopEsimioGame()
+
+            runOnUiThread {
+                AlertDialog.Builder(this)
+                    .setTitle("😱 ¡FUISTE ATRAPADO!")
+                    .setMessage("Un esimio te atrapó en ESIME.\n\n" +
+                            "Serás enviado de regreso a Zacatenco.")
+                    .setPositiveButton("Entendido") { dialog, _ ->
+                        dialog.dismiss()
+                        returnToZacatencoAfterCaught()
+                    }
+                    .setCancelable(false)
+                    .show()
+            }
+        }
+    }
+
+    private fun returnToZacatencoAfterCaught() {
+        if (::mapView.isInitialized) {
+            mapView.playerManager.cleanup()
+        }
+
+        val intent = Intent(this, Zacatenco::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", isServer)
+            putExtra("INITIAL_POSITION", Pair(8, 18)) // Posición de spawn en Zacatenco
+            putExtra("PREVIOUS_POSITION", playerPosition)
+            putExtra("WAS_CAUGHT_BY_ESIMIO", true) // Opcional: para tracking
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+
+        startActivity(intent)
+        finish()
+    }
+
+    private fun sendEsimioGameUpdate(action: String, difficulty: Int = 1) {
+        try {
+            val message = JSONObject().apply {
+                put("type", "esimio_game_update")
+                put("action", action)
+                put("player", playerName)
+                put("map", MapMatrixProvider.MAP_ESIME)
+
+                if (action == "start") {
+                    put("difficulty", difficulty)
+                }
+            }
+
+            serverConnectionManager.onlineServerManager.queueMessage(message.toString())
+        } catch (e: Exception) {
+            Log.e("Esime", "Error enviando actualización: ${e.message}")
+        }
     }
 }
