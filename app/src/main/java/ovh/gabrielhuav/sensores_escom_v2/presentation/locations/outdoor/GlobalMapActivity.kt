@@ -56,9 +56,27 @@ class GlobalMapActivity : AppCompatActivity() {
     private var previousPosition: Pair<Int, Int>? = null
     private lateinit var entryPoint: GeoPoint
 
-    // --- Configuración de Movimiento (CAMINANDO - Muy Lento) ---
+    // --- Configuración de Movimiento (CAMINANDO - ~2 km/h) ---
+    /**
+     * WALK_MIN_STEP: Mínimo incremento de movimiento por tick.
+     * Unidad: grados de latitud/longitud (~0.000001 grados).
+     * Aproximadamente equivale a ~0.11 metros por paso (en el ecuador).
+     * Ajustado para simular movimiento humano lento (~2 km/h).
+     */
     private val WALK_MIN_STEP = 0.000001
+    /**
+     * WALK_MAX_STEP: Máximo incremento de movimiento por tick.
+     * Unidad: grados de latitud/longitud (~0.000015 grados).
+     * Aproximadamente equivale a ~1.67 metros por paso (en el ecuador).
+     * Limita la velocidad máxima de caminata.
+     */
     private val WALK_MAX_STEP = 0.000015
+    /**
+     * WALK_ACCEL: Incremento de velocidad por tick (aceleración).
+     * Unidad: grados de latitud/longitud por tick (~0.0000005 grados).
+     * Aproximadamente equivale a ~0.055 metros por tick.
+     * Permite aceleración gradual al caminar.
+     */
     private val WALK_ACCEL = 0.0000005
 
     // --- Estado del Jugador ---
