@@ -446,6 +446,7 @@ class Zacatenco : AppCompatActivity(),
                         "cidetec" -> startCidetecActivity()
                         "cic" -> viewCIC()
                         "ford" -> startFordActivity()
+                        "esia" -> startESIAActivity()
                         "esime" -> startEsimeActivity()
                         "osm_map" -> startOSMMapActivity()
                         "encb" -> startENCBActivity()
