@@ -191,7 +191,7 @@ class GlobalMapActivity : AppCompatActivity() {
     // ---------------------------------------------------------
 
     private fun spawnCoins(center: GeoPoint) {
-        val random = Random()
+        val random = kotlin.random.Random
         for (i in 0 until 10) {
             val latOffset = (random.nextDouble() - 0.5) * 0.001
             val lonOffset = (random.nextDouble() - 0.5) * 0.001
