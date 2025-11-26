@@ -14,11 +14,15 @@ import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.Polyline
 import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.base.GameplayActivity
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.ServerConnectionManager
 import java.util.UUID
+import org.osmdroid.bonuspack.routing.OSRMRoadManager
+import org.osmdroid.bonuspack.routing.RoadManager
+import org.osmdroid.bonuspack.routing.Road
 
 class GlobalMapActivity : AppCompatActivity() {
 
@@ -27,6 +31,8 @@ class GlobalMapActivity : AppCompatActivity() {
     private lateinit var returnMarker: Marker
     private lateinit var currentLocation: GeoPoint
     private lateinit var serverConnectionManager: ServerConnectionManager
+    private lateinit var roadManager: RoadManager
+
 
     private lateinit var playerId: String
     private var isServer: Boolean = false
@@ -35,6 +41,9 @@ class GlobalMapActivity : AppCompatActivity() {
 
     private val MOVEMENT_STEP = 0.0001
     private val RETURN_DISTANCE_THRESHOLD = 10.0 // Meters
+
+    private var isTracking = false
+    private var track = mutableListOf<GeoPoint>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,6 +78,9 @@ class GlobalMapActivity : AppCompatActivity() {
 
         // osmdroid configuration
         Configuration.getInstance().load(this, getSharedPreferences("osmdroid", MODE_PRIVATE))
+        Configuration.getInstance().userAgentValue = "Sensores_ESCOM_V2"
+
+        roadManager = OSRMRoadManager(this, Configuration.getInstance().userAgentValue)
 
         mapView = findViewById(R.id.map)
         mapView.setTileSource(TileSourceFactory.MAPNIK)
@@ -129,28 +141,135 @@ class GlobalMapActivity : AppCompatActivity() {
     }
 
     private fun setupMovementButtons() {
-        findViewById<Button>(R.id.button_north).setOnClickListener { movePlayer(0.0, MOVEMENT_STEP) }
-        findViewById<Button>(R.id.button_south).setOnClickListener { movePlayer(0.0, -MOVEMENT_STEP) }
-        findViewById<Button>(R.id.button_east).setOnClickListener { movePlayer(MOVEMENT_STEP, 0.0) }
-        findViewById<Button>(R.id.button_west).setOnClickListener { movePlayer(-MOVEMENT_STEP, 0.0) }
-    }
-
-    private fun setupInteractionButton() {
-        findViewById<Button>(R.id.button_a).setOnClickListener {
-            handleInteraction()
-        }
-    }
-
-    private fun handleInteraction() {
-        // Check if the player is at the entry point to go back
-        if (currentLocation.distanceToAsDouble(entryPoint) < RETURN_DISTANCE_THRESHOLD) {
-            if (previousPosition != null) {
-                returnToGameplayActivity()
+        findViewById<Button>(R.id.button_north).setOnClickListener {
+            if (isTracking) {
+                moveOnRoad(0.0)
             } else {
-                Toast.makeText(this, "No previous map to return to.", Toast.LENGTH_SHORT).show()
+                movePlayer(0.0, MOVEMENT_STEP)
+            }
+        }
+        findViewById<Button>(R.id.button_south).setOnClickListener {
+            if (isTracking) {
+                moveOnRoad(180.0)
+            } else {
+                movePlayer(0.0, -MOVEMENT_STEP)
+            }
+        }
+        findViewById<Button>(R.id.button_east).setOnClickListener {
+            if (isTracking) {
+                moveOnRoad(90.0)
+            } else {
+                movePlayer(MOVEMENT_STEP, 0.0)
+            }
+        }
+        findViewById<Button>(R.id.button_west).setOnClickListener {
+            if (isTracking) {
+                moveOnRoad(270.0)
+            } else {
+                movePlayer(-MOVEMENT_STEP, 0.0)
             }
         }
     }
+
+    private fun moveOnRoad(bearing: Double) {
+        val distance = 20.0 // meters
+        val destination = currentLocation.destinationPoint(distance, bearing)
+        val waypoints = arrayListOf(currentLocation, destination)
+
+        Thread {
+            val road = roadManager.getRoad(waypoints)
+            runOnUiThread {
+                if (road.mStatus == Road.STATUS_OK && road.mRouteHigh.size > 1) {
+                    // Move to the next point on the road
+                    currentLocation = road.mRouteHigh[1]
+                    playerMarker.position = currentLocation
+                    mapView.controller.animateTo(currentLocation)
+
+                    // Update the road overlay
+                    roadOverlay?.let { mapView.overlays.remove(it) }
+                    roadOverlay = RoadManager.buildRoadOverlay(road)
+                    mapView.overlays.add(roadOverlay)
+                    mapView.invalidate()
+
+                    val x = (currentLocation.longitude * 1e6).toInt()
+                    val y = (currentLocation.latitude * 1e6).toInt()
+
+                    if (::serverConnectionManager.isInitialized && serverConnectionManager.isConnected()) {
+                        serverConnectionManager.sendUpdateMessage(
+                            playerId,
+                            Pair(x, y),
+                            "global"
+                        )
+                    }
+                    checkReturnPossibility()
+                } else {
+                    Toast.makeText(this, "Cannot move in that direction.", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }.start()
+    }
+
+
+    private var roadOverlay: Polyline? = null
+
+    private fun setupInteractionButton() {
+        findViewById<Button>(R.id.button_a).setOnClickListener {
+            if (!isTracking) {
+                enableTrackingMode()
+            } else {
+                disableTrackingMode()
+            }
+        }
+    }
+
+    private fun enableTrackingMode() {
+        isTracking = true
+        Toast.makeText(this, "Enabling tracking mode...", Toast.LENGTH_SHORT).show()
+        snapToNearestRoad()
+    }
+
+    private fun disableTrackingMode() {
+        isTracking = false
+        track.clear()
+        roadOverlay?.let { mapView.overlays.remove(it) }
+        mapView.invalidate()
+        Toast.makeText(this, "Tracking mode disabled", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun snapToNearestRoad() {
+        val waypoints = ArrayList<GeoPoint>()
+        waypoints.add(currentLocation)
+        // A point very close to the current location to find the nearest road
+        val nearbyPoint = currentLocation.destinationPoint(1.0, 0.0)
+        waypoints.add(nearbyPoint)
+
+        Thread {
+            val road = roadManager.getRoad(waypoints)
+            runOnUiThread {
+                if (road.mStatus == Road.STATUS_OK && road.mRouteHigh.isNotEmpty()) {
+                    track.clear()
+                    track.addAll(road.mRouteHigh)
+                    
+                    // Snap to the first point of the road
+                    currentLocation = track[0].clone()
+                    playerMarker.position = currentLocation
+                    mapView.controller.animateTo(currentLocation)
+                    
+                    roadOverlay?.let { mapView.overlays.remove(it) }
+                    roadOverlay = RoadManager.buildRoadOverlay(road)
+                    mapView.overlays.add(roadOverlay)
+                    mapView.invalidate()
+                    
+                    Toast.makeText(this, "Tracking mode enabled", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this, "Could not find a nearby road.", Toast.LENGTH_LONG).show()
+                    isTracking = false
+                }
+            }
+        }.start()
+    }
+
+
 
     private fun handleJoinMessage(jsonObject: JSONObject) {
         val newPlayerId = jsonObject.getString("id")
