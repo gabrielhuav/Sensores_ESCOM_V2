@@ -340,8 +340,10 @@ class GlobalMapActivity : AppCompatActivity() {
         currentSpeed = dynamicMinStep
 
         // 3. Restaurar icono del jugador
-        initPlayerMarker() // Esto resetea el icono a "Pasajero"
+        val walkIcon = ContextCompat.getDrawable(this, R.drawable.pasajero)
+        playerMarker.icon = walkIcon
         playerMarker.title = "Tú (A pie)"
+        mapView.invalidate()
     }
 
     // ---------------------------------------------------------
