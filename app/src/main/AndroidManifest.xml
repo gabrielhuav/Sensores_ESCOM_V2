@@ -173,6 +173,18 @@
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:exported="false"
             android:screenOrientation="sensorLandscape" />
+
+        <activity
+            android:name=".presentation.locations.buildings.esia.BibliotecaESIA"
+            android:exported="false"
+            android:screenOrientation="sensor" />
+        <activity
+            android:name=".presentation.locations.buildings.esia.EdificioESIA"
+            android:label="Edificio ESIA" />
+        <activity
+            android:name=".presentation.locations.buildings.esia.SalonESIA"
+            android:exported="false"
+            android:screenOrientation="landscape"/>
     </application>
 
 </manifest>
