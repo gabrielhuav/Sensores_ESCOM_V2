@@ -60,6 +60,8 @@ class MapMatrixProvider {
         const val MAP_ANDENES_METRO_POLITECNICO = "andenes_metro_politecnico"
         const val MAP_RED_METRO = "red_metro"
         const val MAP_PALAPAS_IA = "escom_palapas_ia"
+
+        const val MAP_CANCHA_IA = "escom_cancha_ia"
         const val MAP_ESIME = "esime_zacatenco"
         const val MAP_PALAPAS_ISC = "escom_palapas_isc"
         const val MAP_EDIFICIO_GOBIERNO = "escom_edificio_gobierno"
@@ -136,6 +138,7 @@ class MapMatrixProvider {
                 lowerMap.contains("ia_alto") || lowerMap.contains("edificio_ia_alto") -> MAP_EDIFICIO_IA_ALTO
                 lowerMap.contains("cable") || lowerMap.contains("cablebus") -> MAP_CABLEBUS
                 lowerMap.contains("palapas_ia") -> MAP_PALAPAS_IA
+                lowerMap.contains("cancha") || lowerMap.contains("cancha_ia") -> MAP_CANCHA_IA
 
                 lowerMap.contains("gobierno") || lowerMap.contains("edificio_gobierno") -> MAP_EDIFICIO_GOBIERNO
                 lowerMap.contains("biblioteca") -> MAP_BIBLIOTECA
@@ -289,6 +292,7 @@ class MapMatrixProvider {
                 MAP_EDIFICIO_IA_MEDIO-> createEdificioIAMedioMatrix()
                 MAP_EDIFICIO_IA_ALTO -> createEdificioIAAltoMatrix()
                 MAP_PALAPAS_IA -> createPalapasIAMapMatrix()
+                MAP_CANCHA_IA -> createCanchaIAMatrix()
                 MAP_PALAPAS_ISC -> createPalapasISCMatrix()
                 MAP_EDIFICIO_GOBIERNO -> createEdificioGobiernoMatrix()
                 MAP_BIBLIOTECA -> createBibliotecaMatrix()
@@ -362,7 +366,7 @@ class MapMatrixProvider {
             }
             // Añadir punto interactivo para el nuevo mapa de Estacionamiento
             matrix[5][25] = INTERACTIVE // Entrada al Estacionamiento de ESCOM
-
+            matrix[28][33] = INTERACTIVE
             return matrix
         }
 
@@ -3088,6 +3092,23 @@ class MapMatrixProvider {
             if (mapId == MAP_MAIN && x == 31 && y == 10) {
                 return MAP_PALAPAS_IA
             }
+            if (mapId == MAP_MAIN && x == 33 && y == 28) {
+                return MAP_CANCHA_IA
+            }
+            //Retorno al mapa principal desde cancha de IA
+            if (mapId == MAP_CANCHA_IA) {
+                // Rango ampliado: detectamos si está en las primeras 3 o últimas 3 filas/columnas
+                val isLeftExit = x <= 3
+                val isRightExit = x >= 36
+                val isTopExit = y <= 3
+                val isBottomExit = y >= 36
+
+                if (isLeftExit || isRightExit || isTopExit || isBottomExit) {
+                    // Imprimir log para asegurar que entra aquí
+                    Log.d("MapTransition", "Saliendo de CanchaIA por borde: $x, $y")
+                    return MAP_MAIN
+                }
+            }
             // Transición DESDE el mapa principal HACIA las palapas ISC
             if (mapId == MAP_MAIN && x == MAIN_TO_PALAPAS_ISC_POSITION.first && y == MAIN_TO_PALAPAS_ISC_POSITION.second) {
                 return MAP_PALAPAS_ISC
@@ -3202,6 +3223,41 @@ class MapMatrixProvider {
                 MAP_ESIA -> Pair(25, 35) // Posición inicial en ESIA (cerca de la entrada)
                 else -> Pair(MAP_WIDTH / 2, MAP_HEIGHT / 2)
             }
+        }
+        /**
+         * Matriz para la Cancha de IA
+         */
+        private fun createCanchaIAMatrix(): Array<Array<Int>> {
+            // 1. Mapa
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // 2. BORDES EXTERIORES
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = WALL
+                    }
+                }
+            }
+
+            // 3. PARED VERTICAL DIVISORIA (Cancha y Pasillo Gris)
+
+            for (i in 4 until 37) {
+                // Esta pared va desde la fila 5 hasta la 35.
+                // Esto significa que las filas 1-4 (Naranja Arriba) están abiertas a la derecha.
+                // Y las filas 36-39 (Naranja Abajo) están abiertas a la derecha.
+
+                val espalapa = (i >= 17 && i <= 21)
+
+                if (!espalapa) {
+                    matrix[i][34] = WALL
+                }
+            }
+
+            //Basketball Game
+            matrix[14][13] = INTERACTIVE
+
+            return matrix
         }
     }
 }
