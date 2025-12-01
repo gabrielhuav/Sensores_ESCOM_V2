@@ -7,11 +7,11 @@
         <option name="testRunner" value="CHOOSE_PER_TEST" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="gradleHome" value="C:\Program Files\gradle-8.11.1" />
-        <option name="gradleJvm" value="#JAVA_HOME" />
+        <option name="gradleJvm" value="jbr-21" />
         <option name="modules">
           <set>
-            <option value="/mnt/ssd1tb/Documents/Sensores_ESCOM_V2" />
-            <option value="/mnt/ssd1tb/Documents/Sensores_ESCOM_V2/app" />
+            <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/app" />
           </set>
         </option>
       </GradleProjectSettings>
