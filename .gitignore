@@ -12,5 +12,6 @@
 /captures
 .externalNativeBuild
 .cxx
+.idea
 local.properties
 Online-Server/node_modules/
