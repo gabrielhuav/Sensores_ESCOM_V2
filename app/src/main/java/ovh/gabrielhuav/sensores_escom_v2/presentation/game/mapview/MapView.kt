@@ -60,6 +60,17 @@ class MapView @JvmOverloads constructor(
         fun onMapTransitionRequested(targetMap: String, initialPosition: Pair<Int, Int>)
     }
 
+    // Interfaz para dibujado personalizado
+    interface CustomDrawCallback {
+        fun onCustomDraw(canvas: Canvas, cellWidth: Float, cellHeight: Float)
+    }
+
+    private var customDrawCallback: CustomDrawCallback? = null
+
+    fun setCustomDrawCallback(callback: CustomDrawCallback?) {
+        customDrawCallback = callback
+    }
+
     init {
         isClickable = true
         isFocusable = true
@@ -485,6 +496,25 @@ class MapView @JvmOverloads constructor(
         mapState.setMapMatrix(mapMatrix)
         renderer.draw(canvas, mapState, playerManager)
         
+        // Draw custom elements (like desk indicators)
+        customDrawCallback?.let { callback ->
+            val bitmapWidth = mapState.backgroundBitmap?.width?.toFloat() ?: return@let
+            val bitmapHeight = mapState.backgroundBitmap?.height?.toFloat() ?: return@let
+            val cellWidth = bitmapWidth / MapMatrixProvider.MAP_WIDTH
+            val cellHeight = bitmapHeight / MapMatrixProvider.MAP_HEIGHT
+
+            // Guardar estado del canvas
+            canvas.save()
+            canvas.translate(mapState.offsetX, mapState.offsetY)
+            canvas.scale(mapState.scaleFactor, mapState.scaleFactor)
+
+            // Llamar al callback personalizado
+            callback.onCustomDraw(canvas, cellWidth, cellHeight)
+
+            // Restaurar estado del canvas
+            canvas.restore()
+        }
+
         // Draw fog of war if enabled
         if (fogOfWarEnabled && fogOfWarRenderer != null) {
             playerManager.getLocalPlayerPosition()?.let { playerPos ->
