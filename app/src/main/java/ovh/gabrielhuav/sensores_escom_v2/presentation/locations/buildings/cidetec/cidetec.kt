@@ -1,7 +1,6 @@
 package ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.cidetec
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.Zacatenco
 
-
 import android.Manifest
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
@@ -29,6 +28,7 @@ import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.MovementMa
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.ServerConnectionManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.cidetec.labrv
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.transportation.Cablebus
 import kotlin.collections.iterator
 
@@ -52,7 +52,7 @@ class Cidetec : AppCompatActivity(),
     data class GameState(
         var isServer: Boolean = false,
         var isConnected: Boolean = false,
-        var playerPosition: Pair<Int, Int> = Pair(10, 12),
+        var playerPosition: Pair<Int, Int> = Pair(3, 18),
         var remotePlayerPositions: Map<String, PlayerInfo> = emptyMap(),
         var remotePlayerName: String? = null
     ) {
@@ -74,7 +74,7 @@ class Cidetec : AppCompatActivity(),
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_lindavista)
+        setContentView(R.layout.activity_cidetec)
 
         try {
             // Primero inicializamos el mapView
@@ -120,7 +120,7 @@ class Cidetec : AppCompatActivity(),
         if (savedInstanceState == null) {
             // Inicializar el estado del juego desde el Intent
             gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
-            gameState.playerPosition = (intent.getParcelableExtra("INITIAL_POSITION") ?: Pair(11, 22)) as Pair<Int, Int>
+            gameState.playerPosition = (intent.getParcelableExtra("INITIAL_POSITION") ?: Pair(3, 18)) as Pair<Int, Int>
         } else {
             restoreState(savedInstanceState)
         }
@@ -276,11 +276,20 @@ class Cidetec : AppCompatActivity(),
     private fun checkPositionForMapChange(position: Pair<Int, Int>) {
 
         when {
-            position.first == 11 && position.second == 22 -> {
+            position.first == 3 && position.second == 18 -> {
                 canChangeMap = true
                 targetDestination = "zacatenco"
                 runOnUiThread {
                     Toast.makeText(this, "Presiona A para regresar a Zacatenco", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+
+            position.first == 25 && position.second == 25 -> {
+                canChangeMap = true
+                targetDestination = "labrv"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para entrar a Laboratorio RV", Toast.LENGTH_SHORT)
                         .show()
                 }
             }
@@ -314,6 +323,7 @@ class Cidetec : AppCompatActivity(),
                 if (canChangeMap) {
                     when (targetDestination) {
                         "zacatenco" -> returnToZacatencoActivity()
+                        "labrv" -> startlabrvActivity()
                     else -> showToast("No hay interacción disponible en esta posición")
                     }
                 } else {
@@ -325,7 +335,7 @@ class Cidetec : AppCompatActivity(),
     private fun returnToZacatencoActivity() {
         // Obtener la posición previa del intent
         val previousPosition = intent.getSerializableExtra("PREVIOUS_POSITION") as? Pair<Int, Int>
-            ?: Pair(34, 17) // Posición por defecto si no hay previa
+            ?: Pair(8, 18) // Posición por defecto si no hay previa
 
         val intent = Intent(this, Zacatenco::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
@@ -336,6 +346,18 @@ class Cidetec : AppCompatActivity(),
 
         // Limpiar datos antes de cambiar de activity
         mapView.playerManager.cleanup()
+        startActivity(intent)
+        finish()
+    }
+
+    private fun startlabrvActivity() {
+        val intent = Intent(this, labrv::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(7, 30))
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
         startActivity(intent)
         finish()
     }

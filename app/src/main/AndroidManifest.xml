@@ -53,6 +53,9 @@
             android:name=".presentation.locations.buildings.cidetec.Cidetec"
             android:exported="false" />
         <activity
+            android:name=".presentation.locations.buildings.cidetec.labrv"
+            android:exported="false" />
+        <activity
             android:name=".presentation.components.BuildingNumber2"
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
