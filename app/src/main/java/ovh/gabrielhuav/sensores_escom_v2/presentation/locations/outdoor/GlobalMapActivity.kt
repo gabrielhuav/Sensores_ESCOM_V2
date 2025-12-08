@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.Vibrator
+import android.util.Log
 import android.view.MotionEvent
 import android.widget.Button
 import android.widget.TextView
@@ -20,6 +21,7 @@ import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.Polyline
 import org.osmdroid.views.overlay.compass.CompassOverlay
 import org.osmdroid.views.overlay.compass.InternalCompassOrientationProvider
 import org.osmdroid.views.overlay.gestures.RotationGestureOverlay
@@ -29,6 +31,9 @@ import ovh.gabrielhuav.sensores_escom_v2.presentation.common.base.GameplayActivi
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.ServerConnectionManager
 import java.util.Random
 import java.util.UUID
+import org.osmdroid.bonuspack.routing.OSRMRoadManager
+import org.osmdroid.bonuspack.routing.RoadManager
+import org.osmdroid.bonuspack.routing.Road
 import kotlin.math.min
 
 class GlobalMapActivity : AppCompatActivity() {
@@ -38,6 +43,7 @@ class GlobalMapActivity : AppCompatActivity() {
     private lateinit var returnMarker: Marker
     private lateinit var currentLocation: GeoPoint
     private lateinit var serverConnectionManager: ServerConnectionManager
+    private lateinit var roadManager: RoadManager
 
     // --- UI ---
     private lateinit var tvScore: TextView
@@ -57,32 +63,20 @@ class GlobalMapActivity : AppCompatActivity() {
     private lateinit var entryPoint: GeoPoint
 
     // --- Configuración de Movimiento (CAMINANDO - ~2 km/h) ---
-    /**
-     * WALK_MIN_STEP: Mínimo incremento de movimiento por tick.
-     * Unidad: grados de latitud/longitud (~0.000001 grados).
-     * Aproximadamente equivale a ~0.11 metros por paso (en el ecuador).
-     * Ajustado para simular movimiento humano lento (~2 km/h).
-     */
     private val WALK_MIN_STEP = 0.000001
-    /**
-     * WALK_MAX_STEP: Máximo incremento de movimiento por tick.
-     * Unidad: grados de latitud/longitud (~0.000015 grados).
-     * Aproximadamente equivale a ~1.67 metros por paso (en el ecuador).
-     * Limita la velocidad máxima de caminata.
-     */
     private val WALK_MAX_STEP = 0.000015
-    /**
-     * WALK_ACCEL: Incremento de velocidad por tick (aceleración).
-     * Unidad: grados de latitud/longitud por tick (~0.0000005 grados).
-     * Aproximadamente equivale a ~0.055 metros por tick.
-     * Permite aceleración gradual al caminar.
-     */
     private val WALK_ACCEL = 0.0000005
+
+    // --- Configuración de Movimiento en Carretera (más rápido) ---
+    private val ROAD_MIN_STEP = 0.000005   // 5x más rápido al inicio
+    private val ROAD_MAX_STEP = 0.00008    // ~5x más rápido al máximo
+    private val ROAD_ACCEL = 0.000002      // Aceleración más rápida
 
     // --- Estado del Jugador ---
     private var currentVehicle: VehicleType? = null // Null = Caminando
+    private var isOnRoad = false  // True = Attached to road (your feature!)
 
-    // Variables dinámicas de movimiento (cambian según si caminas o vuelas)
+    // Variables dinámicas de movimiento
     private var dynamicMinStep = WALK_MIN_STEP
     private var dynamicMaxStep = WALK_MAX_STEP
     private var dynamicAccel = WALK_ACCEL
@@ -90,7 +84,8 @@ class GlobalMapActivity : AppCompatActivity() {
     // Loop de movimiento
     private val MOVEMENT_INTERVAL = 50L
     private val RETURN_DISTANCE_THRESHOLD = 15.0
-    private val INTERACTION_DISTANCE = 10.0 // Distancia para agarrar vehículos
+    private val INTERACTION_DISTANCE = 10.0
+    private val ROAD_SNAP_DISTANCE = 30.0  // Distance to detect nearby road for snapping
 
     private val movementHandler = Handler(Looper.getMainLooper())
     private var movementRunnable: Runnable? = null
@@ -99,6 +94,11 @@ class GlobalMapActivity : AppCompatActivity() {
     private var directionLat = 0.0
     private var directionLon = 0.0
 
+    // --- Road tracking variables ---
+    private var roadOverlay: Polyline? = null
+    private var isTracking = false
+    private var track = mutableListOf<GeoPoint>()
+
     // --- DEFINICIÓN DE VEHÍCULOS ---
     enum class VehicleType(
         val typeName: String,
@@ -106,35 +106,34 @@ class GlobalMapActivity : AppCompatActivity() {
         val maxStep: Double,
         val acceleration: Double,
         val iconColor: Int,
-        val systemIcon: Int // Usamos iconos del sistema para evitar errores de compilación
+        val systemIcon: Int
     ) {
         DRONE(
             "Dron de Vigilancia",
-            0.000005, // 5x más rápido al inicio que caminar
-            0.00005,  // Velocidad media
-            0.000002, // Aceleración rápida (muy ágil)
+            0.000005,
+            0.00005,
+            0.000002,
             Color.CYAN,
-            android.R.drawable.ic_menu_view // Icono tipo "ojo"
+            android.R.drawable.ic_menu_view
         ),
         JET(
             "Avión Supersónico",
-            0.00001,  // Inicio rápido
-            0.00015,  // 10x velocidad máx de caminar
-            0.000001, // Aceleración lenta (tarda en tomar velocidad)
+            0.00001,
+            0.00015,
+            0.000001,
             Color.BLUE,
-            android.R.drawable.ic_menu_send // Icono tipo "avión de papel"
+            android.R.drawable.ic_menu_send
         ),
         UFO(
             "OVNI Experimental",
-            0.00002,  // Inicio muy rápido
-            0.00020,  // Velocidad absurda
-            0.000010, // Aceleración instantánea
+            0.00002,
+            0.00020,
+            0.000010,
             Color.MAGENTA,
-            android.R.drawable.ic_menu_compass // Icono redondo
+            android.R.drawable.ic_menu_compass
         )
     }
 
-    // Clase auxiliar para vincular el marcador con su tipo
     data class VehicleMarker(val marker: Marker, val type: VehicleType)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -162,6 +161,9 @@ class GlobalMapActivity : AppCompatActivity() {
         currentLocation = startPoint.clone()
 
         Configuration.getInstance().load(this, getSharedPreferences("osmdroid", MODE_PRIVATE))
+        Configuration.getInstance().userAgentValue = "Sensores_ESCOM_V2"
+
+        roadManager = OSRMRoadManager(this, Configuration.getInstance().userAgentValue)
 
         mapView = findViewById(R.id.map)
         mapView.setTileSource(TileSourceFactory.MAPNIK)
@@ -180,7 +182,7 @@ class GlobalMapActivity : AppCompatActivity() {
         mapController.setCenter(startPoint)
 
         initReturnPointMarker()
-        initPlayerMarker() // Se inicia con icono de caminata
+        initPlayerMarker()
 
         // --- GENERACIÓN DEL MUNDO ---
         spawnCoins(startPoint)
@@ -229,16 +231,13 @@ class GlobalMapActivity : AppCompatActivity() {
     }
 
     private fun spawnVehicles(center: GeoPoint) {
-        // Generamos 1 de cada tipo cerca del inicio
         val types = VehicleType.values()
         val random = Random()
 
         for (type in types) {
-            // Un poco más lejos que las monedas
             val latOffset = (random.nextDouble() - 0.5) * 0.002
             val lonOffset = (random.nextDouble() - 0.5) * 0.002
             val vPos = GeoPoint(center.latitude + latOffset, center.longitude + lonOffset)
-
             createVehicleMarkerOnMap(vPos, type)
         }
         mapView.invalidate()
@@ -252,7 +251,6 @@ class GlobalMapActivity : AppCompatActivity() {
         vMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
 
         val icon = ContextCompat.getDrawable(this, type.systemIcon)
-        // Coloreamos el icono según el tipo de vehículo
         icon?.setColorFilter(type.iconColor, PorterDuff.Mode.SRC_ATOP)
         vMarker.icon = icon
 
@@ -261,7 +259,7 @@ class GlobalMapActivity : AppCompatActivity() {
     }
 
     // ---------------------------------------------------------
-    // LÓGICA DE INTERACCIÓN (BOTÓN A)
+    // LÓGICA DE INTERACCIÓN (BOTÓN A) - MERGED WITH ROAD TRACKING
     // ---------------------------------------------------------
 
     private fun setupInteractionButton() {
@@ -281,67 +279,247 @@ class GlobalMapActivity : AppCompatActivity() {
             }
         }
 
-        // 2. ¿Ya estamos en un vehículo? -> BAJARSE
-        if (currentVehicle != null) {
-            dismountVehicle()
+        // 2. ¿Ya estamos en modo carretera? -> SALIR de la carretera
+        if (isOnRoad) {
+            exitRoadMode()
             vibrator.vibrate(100)
-            Toast.makeText(this, "Te has bajado del vehículo.", Toast.LENGTH_SHORT).show()
+            val message = if (currentVehicle != null) {
+                "Vehículo salió de la carretera. Vuelo libre."
+            } else {
+                "Saliste de la carretera. Movimiento libre."
+            }
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
             return
         }
 
-        // 3. ¿Estamos cerca de un vehículo para subirnos? -> SUBIRSE
+        // 3. ¿Ya estamos en un vehículo? -> Intentar ENTRAR a carretera o BAJARSE
+        if (currentVehicle != null) {
+            // Si hay carretera cerca, intentar adjuntarse a ella
+            // Si no hay carretera cerca, bajarse del vehículo
+            tryEnterRoadModeOrDismount(vibrator)
+            return
+        }
+
+        // 4. ¿Estamos cerca de un vehículo para subirnos? -> SUBIRSE
         val nearbyVehicle = vehicleMarkers.find {
             currentLocation.distanceToAsDouble(it.marker.position) < INTERACTION_DISTANCE
         }
 
         if (nearbyVehicle != null) {
             mountVehicle(nearbyVehicle)
-            vibrator.vibrate(300) // Vibración más larga para "arrancar motor"
+            vibrator.vibrate(300)
             Toast.makeText(this, "Pilotando: ${nearbyVehicle.type.typeName}", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(this, "No hay nada con qué interactuar aquí.", Toast.LENGTH_SHORT).show()
+            return
         }
+
+        // 5. ¿No hay vehículo cerca? -> Intentar ENTRAR a modo carretera (caminando)
+        tryEnterRoadMode(vibrator)
     }
 
-    private fun mountVehicle(vMarker: VehicleMarker) {
-        // 1. Guardar estado
-        currentVehicle = vMarker.type
+    // ---------------------------------------------------------
+    // ROAD TRACKING MODE (YOUR FEATURE!)
+    // ---------------------------------------------------------
 
-        // 2. Actualizar físicas de movimiento
+    private fun tryEnterRoadMode(vibrator: Vibrator) {
+        Toast.makeText(this, "Buscando carretera cercana...", Toast.LENGTH_SHORT).show()
+
+        // Try to snap to the nearest road
+        val waypoints = ArrayList<GeoPoint>()
+        waypoints.add(currentLocation)
+        val nearbyPoint = currentLocation.destinationPoint(1.0, 0.0)
+        waypoints.add(nearbyPoint)
+
+        Thread {
+            val road = roadManager.getRoad(waypoints)
+            runOnUiThread {
+                if (road.mStatus == Road.STATUS_OK && road.mRouteHigh.isNotEmpty()) {
+                    // Found a road! Check if close enough
+                    val roadPoint = road.mRouteHigh[0]
+                    val distanceToRoad = currentLocation.distanceToAsDouble(roadPoint)
+
+                    if (distanceToRoad < ROAD_SNAP_DISTANCE) {
+                        enterRoadMode(road, vibrator)
+                    } else {
+                        Toast.makeText(this, "No hay carretera cerca. Acércate más.", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Toast.makeText(this, "No se encontró carretera.", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }.start()
+    }
+
+    private fun tryEnterRoadModeOrDismount(vibrator: Vibrator) {
+        val vehicleName = currentVehicle?.typeName ?: "Vehículo"
+        Toast.makeText(this, "Buscando carretera para $vehicleName...", Toast.LENGTH_SHORT).show()
+
+        // Try to snap to the nearest road
+        val waypoints = ArrayList<GeoPoint>()
+        waypoints.add(currentLocation)
+        val nearbyPoint = currentLocation.destinationPoint(1.0, 0.0)
+        waypoints.add(nearbyPoint)
+
+        Thread {
+            val road = roadManager.getRoad(waypoints)
+            runOnUiThread {
+                if (road.mStatus == Road.STATUS_OK && road.mRouteHigh.isNotEmpty()) {
+                    // Found a road! Check if close enough
+                    val roadPoint = road.mRouteHigh[0]
+                    val distanceToRoad = currentLocation.distanceToAsDouble(roadPoint)
+
+                    if (distanceToRoad < ROAD_SNAP_DISTANCE) {
+                        // Attach vehicle to road
+                        enterRoadMode(road, vibrator)
+                    } else {
+                        // No road nearby, dismount vehicle
+                        dismountVehicle()
+                        vibrator.vibrate(100)
+                        Toast.makeText(this, "No hay carretera cerca. Te bajaste del vehículo.", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    // No road found, dismount vehicle
+                    dismountVehicle()
+                    vibrator.vibrate(100)
+                    Toast.makeText(this, "No se encontró carretera. Te bajaste del vehículo.", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }.start()
+    }
+
+    private fun enterRoadMode(road: Road, vibrator: Vibrator) {
+        isOnRoad = true
+        isTracking = true
+
+        // Snap to road
+        track.clear()
+        track.addAll(road.mRouteHigh)
+        currentLocation = track[0].clone()
+        playerMarker.position = currentLocation
+        mapView.controller.animateTo(currentLocation)
+
+        // Show road overlay
+        roadOverlay?.let { mapView.overlays.remove(it) }
+        roadOverlay = RoadManager.buildRoadOverlay(road)
+        roadOverlay?.outlinePaint?.color = Color.rgb(0, 150, 255)  // Blue road
+        roadOverlay?.outlinePaint?.strokeWidth = 8f
+        mapView.overlays.add(roadOverlay)
+
+        // Update movement physics based on whether we're in a vehicle or walking
+        if (currentVehicle != null) {
+            // Use vehicle's speed settings
+            dynamicMinStep = currentVehicle!!.minStep
+            dynamicMaxStep = currentVehicle!!.maxStep
+            dynamicAccel = currentVehicle!!.acceleration
+            currentSpeed = dynamicMinStep
+
+            // Keep vehicle icon but add road indicator color
+            val vehicleIcon = ContextCompat.getDrawable(this, currentVehicle!!.systemIcon)
+            vehicleIcon?.setColorFilter(Color.rgb(0, 150, 255), PorterDuff.Mode.SRC_ATOP) // Blue tint for road mode
+            playerMarker.icon = vehicleIcon
+            playerMarker.title = "Tú (${currentVehicle!!.typeName} en carretera)"
+
+            vibrator.vibrate(200)
+            Toast.makeText(this, "¡${currentVehicle!!.typeName} en carretera! Presiona A para salir.", Toast.LENGTH_SHORT).show()
+        } else {
+            // Walking on road - use road speed settings
+            dynamicMinStep = ROAD_MIN_STEP
+            dynamicMaxStep = ROAD_MAX_STEP
+            dynamicAccel = ROAD_ACCEL
+            currentSpeed = dynamicMinStep
+
+            // Change player icon to indicate road mode
+            val roadIcon = ContextCompat.getDrawable(this, android.R.drawable.ic_menu_myplaces)
+            roadIcon?.setColorFilter(Color.rgb(0, 150, 255), PorterDuff.Mode.SRC_ATOP)
+            playerMarker.icon = roadIcon
+            playerMarker.title = "Tú (En carretera)"
+
+            vibrator.vibrate(200)
+            Toast.makeText(this, "¡En carretera! Movimiento rápido. Presiona A para salir.", Toast.LENGTH_SHORT).show()
+        }
+
+        mapView.invalidate()
+    }
+
+    private fun exitRoadMode() {
+        isOnRoad = false
+        isTracking = false
+        track.clear()
+
+        // Remove road overlay
+        roadOverlay?.let { mapView.overlays.remove(it) }
+        roadOverlay = null
+
+        // Reset movement physics based on whether we're in a vehicle or walking
+        if (currentVehicle != null) {
+            // Stay in vehicle, restore vehicle speed settings
+            dynamicMinStep = currentVehicle!!.minStep
+            dynamicMaxStep = currentVehicle!!.maxStep
+            dynamicAccel = currentVehicle!!.acceleration
+            currentSpeed = dynamicMinStep
+
+            // Restore vehicle icon with original color
+            val vehicleIcon = ContextCompat.getDrawable(this, currentVehicle!!.systemIcon)
+            vehicleIcon?.setColorFilter(currentVehicle!!.iconColor, PorterDuff.Mode.SRC_ATOP)
+            playerMarker.icon = vehicleIcon
+            playerMarker.title = "Tú (${currentVehicle!!.typeName})"
+        } else {
+            // Reset to walking
+            dynamicMinStep = WALK_MIN_STEP
+            dynamicMaxStep = WALK_MAX_STEP
+            dynamicAccel = WALK_ACCEL
+            currentSpeed = dynamicMinStep
+
+            // Reset player icon
+            try {
+                playerMarker.icon = ContextCompat.getDrawable(this, R.drawable.pasajero)
+                playerMarker.icon?.clearColorFilter()
+            } catch (e: Exception) {
+                playerMarker.icon = ContextCompat.getDrawable(this, android.R.drawable.ic_menu_myplaces)
+            }
+            playerMarker.title = "Tú (A pie)"
+        }
+
+        mapView.invalidate()
+    }
+
+    // ---------------------------------------------------------
+    // VEHICLE MOUNTING (FROM MAIN)
+    // ---------------------------------------------------------
+
+    private fun mountVehicle(vMarker: VehicleMarker) {
+        currentVehicle = vMarker.type
         dynamicMinStep = vMarker.type.minStep
         dynamicMaxStep = vMarker.type.maxStep
         dynamicAccel = vMarker.type.acceleration
-        currentSpeed = dynamicMinStep // Reiniciar velocidad actual al mínimo del nuevo vehículo
+        currentSpeed = dynamicMinStep
 
-        // 3. Cambiar apariencia del jugador
         val vehicleIcon = ContextCompat.getDrawable(this, vMarker.type.systemIcon)
         vehicleIcon?.setColorFilter(vMarker.type.iconColor, PorterDuff.Mode.SRC_ATOP)
         playerMarker.icon = vehicleIcon
         playerMarker.title = "Tú (${vMarker.type.typeName})"
 
-        // 4. Eliminar el marcador del vehículo del mapa (porque ahora "eres" tú)
         mapView.overlays.remove(vMarker.marker)
         vehicleMarkers.remove(vMarker)
-
         mapView.invalidate()
     }
 
     private fun dismountVehicle() {
-        // 1. Recrear el vehículo en la posición actual (donde lo dejaste)
         currentVehicle?.let { type ->
             createVehicleMarkerOnMap(currentLocation.clone(), type)
         }
 
-        // 2. Resetear estado a Caminata
         currentVehicle = null
         dynamicMinStep = WALK_MIN_STEP
         dynamicMaxStep = WALK_MAX_STEP
         dynamicAccel = WALK_ACCEL
         currentSpeed = dynamicMinStep
 
-        // 3. Restaurar icono del jugador
-        val walkIcon = ContextCompat.getDrawable(this, R.drawable.pasajero)
-        playerMarker.icon = walkIcon
+        try {
+            playerMarker.icon = ContextCompat.getDrawable(this, R.drawable.pasajero)
+            playerMarker.icon?.clearColorFilter()
+        } catch (e: Exception) {
+            playerMarker.icon = ContextCompat.getDrawable(this, android.R.drawable.ic_menu_myplaces)
+        }
         playerMarker.title = "Tú (A pie)"
         mapView.invalidate()
     }
@@ -368,7 +546,7 @@ class GlobalMapActivity : AppCompatActivity() {
             MotionEvent.ACTION_DOWN -> {
                 directionLon = dirLon
                 directionLat = dirLat
-                currentSpeed = dynamicMinStep // Usar la velocidad mínima del estado actual
+                currentSpeed = dynamicMinStep
                 startMovementLoop()
                 return true
             }
@@ -384,14 +562,17 @@ class GlobalMapActivity : AppCompatActivity() {
         if (movementRunnable == null) {
             movementRunnable = object : Runnable {
                 override fun run() {
-                    val deltaLon = directionLon * currentSpeed
-                    val deltaLat = directionLat * currentSpeed
+                    if (isOnRoad) {
+                        // When on road, move along the road
+                        moveOnRoad()
+                    } else {
+                        // Free movement
+                        val deltaLon = directionLon * currentSpeed
+                        val deltaLat = directionLat * currentSpeed
+                        movePlayer(deltaLon, deltaLat)
+                    }
 
-                    movePlayer(deltaLon, deltaLat)
-
-                    // Aceleración dinámica basada en el vehículo actual
                     currentSpeed = min(currentSpeed + dynamicAccel, dynamicMaxStep)
-
                     movementHandler.postDelayed(this, MOVEMENT_INTERVAL)
                 }
             }
@@ -409,6 +590,47 @@ class GlobalMapActivity : AppCompatActivity() {
         currentSpeed = dynamicMinStep
     }
 
+    private fun moveOnRoad() {
+        // Calculate bearing based on direction buttons
+        val bearing = when {
+            directionLat > 0 -> 0.0    // North
+            directionLat < 0 -> 180.0  // South
+            directionLon > 0 -> 90.0   // East
+            directionLon < 0 -> 270.0  // West
+            else -> return
+        }
+
+        // Calculate distance based on current speed (converted to meters approximately)
+        val distanceMeters = currentSpeed * 111000  // rough conversion from degrees to meters
+
+        val destination = currentLocation.destinationPoint(distanceMeters.coerceAtLeast(5.0), bearing)
+        val waypoints = arrayListOf(currentLocation, destination)
+
+        Thread {
+            val road = roadManager.getRoad(waypoints)
+            runOnUiThread {
+                if (road.mStatus == Road.STATUS_OK && road.mRouteHigh.size > 1) {
+                    // Move to the next point on the road
+                    currentLocation = road.mRouteHigh[1]
+                    playerMarker.position = currentLocation
+                    mapView.controller.setCenter(currentLocation)
+
+                    // Update the road overlay
+                    roadOverlay?.let { mapView.overlays.remove(it) }
+                    roadOverlay = RoadManager.buildRoadOverlay(road)
+                    roadOverlay?.outlinePaint?.color = Color.rgb(0, 150, 255)
+                    roadOverlay?.outlinePaint?.strokeWidth = 8f
+                    mapView.overlays.add(roadOverlay)
+                    mapView.invalidate()
+
+                    checkCoinCollection()
+                    sendPositionUpdate()
+                }
+                // If can't move on road in that direction, just don't move (stay on road)
+            }
+        }.start()
+    }
+
     private fun movePlayer(lonDelta: Double, latDelta: Double) {
         currentLocation.latitude += latDelta
         currentLocation.longitude += lonDelta
@@ -418,9 +640,10 @@ class GlobalMapActivity : AppCompatActivity() {
         mapView.controller.setCenter(currentLocation)
 
         checkCoinCollection()
+        sendPositionUpdate()
+    }
 
-        // Enviar actualización al servidor
-        // Si estamos en un vehículo, podríamos enviar el tipo en el futuro
+    private fun sendPositionUpdate() {
         val x = (currentLocation.longitude * 1e6).toInt()
         val y = (currentLocation.latitude * 1e6).toInt()
 
@@ -431,8 +654,11 @@ class GlobalMapActivity : AppCompatActivity() {
 
     private fun checkCoinCollection() {
         val collectedCoins = mutableListOf<Marker>()
-        // Si vas en vehículo, el radio de recolección es mayor (facilidad de juego)
-        val collectionDistance = if (currentVehicle != null) 10.0 else 5.0
+        val collectionDistance = when {
+            currentVehicle != null -> 10.0
+            isOnRoad -> 8.0  // Slightly larger radius when on road (moving fast)
+            else -> 5.0
+        }
 
         for (coin in coinMarkers) {
             if (currentLocation.distanceToAsDouble(coin.position) < collectionDistance) {
@@ -442,7 +668,7 @@ class GlobalMapActivity : AppCompatActivity() {
 
         if (collectedCoins.isNotEmpty()) {
             val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-            vibrator.vibrate(50) // Vibración corta
+            vibrator.vibrate(50)
 
             for (coin in collectedCoins) {
                 mapView.overlays.remove(coin)
@@ -463,18 +689,16 @@ class GlobalMapActivity : AppCompatActivity() {
     // ---------------------------------------------------------
 
     private fun initPlayerMarker() {
-        // Si ya existe, solo actualizamos icono
         if (::playerMarker.isInitialized) {
             try {
                 playerMarker.icon = ContextCompat.getDrawable(this, R.drawable.pasajero)
-                playerMarker.icon?.clearColorFilter() // Quitar tintes previos
+                playerMarker.icon?.clearColorFilter()
             } catch (e: Exception) {
                 playerMarker.icon = ContextCompat.getDrawable(this, android.R.drawable.ic_menu_myplaces)
             }
             return
         }
 
-        // Si no existe, lo creamos
         playerMarker = Marker(mapView)
         playerMarker.position = currentLocation
         playerMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)

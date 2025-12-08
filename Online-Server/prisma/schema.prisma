@@ -1,0 +1,23 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Attendance {
+  id             Int      @id @default(autoincrement())
+  phoneID        String
+  attendanceTime DateTime @default(now())
+  fullName       String
+  group          String
+  
+  // Index for faster queries by date and group
+  @@index([attendanceTime, group])
+  @@index([phoneID])
+}

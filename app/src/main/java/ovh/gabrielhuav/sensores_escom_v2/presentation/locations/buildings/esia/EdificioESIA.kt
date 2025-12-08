@@ -1,11 +1,10 @@
-package ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor
+package ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.esia
 
 import android.Manifest
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
-import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -23,16 +22,16 @@ import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothWebSocketBridge
 import ovh.gabrielhuav.sensores_escom_v2.data.map.OnlineServer.OnlineServerManager
 import ovh.gabrielhuav.sensores_escom_v2.domain.bluetooth.BluetoothManager
-import ovh.gabrielhuav.sensores_escom_v2.presentation.common.base.GameplayActivity
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.components.UIManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.MovementManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.ServerConnectionManager
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
-import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.esia.BibliotecaESIA
-import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.esia.EdificioESIA
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.ESIA
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.esia.SalonESIA
 
-class ESIA : AppCompatActivity(),
+
+class EdificioESIA : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,
     BluetoothGameManager.ConnectionListener,
     OnlineServerManager.WebSocketListener,
@@ -48,11 +47,12 @@ class ESIA : AppCompatActivity(),
     private lateinit var bluetoothBridge: BluetoothWebSocketBridge
 
     private var gameState = GameState()
+    private var returnToESIAPosition: Pair<Int, Int> = Pair(0, 0) // posición en ESIA para regresar
 
     data class GameState(
         var isServer: Boolean = false,
         var isConnected: Boolean = false,
-        var playerPosition: Pair<Int, Int> = Pair(25, 35), // Posición inicial cerca de la entrada
+        var playerPosition: Pair<Int, Int> = Pair(20, 34), // Posición inicial en el edificio
         var remotePlayerPositions: Map<String, PlayerInfo> = emptyMap(),
         var remotePlayerName: String? = null
     ) {
@@ -75,19 +75,19 @@ class ESIA : AppCompatActivity(),
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        Log.d(TAG, "=== ESIA onCreate INICIADO ===")
+        Log.d(TAG, "=== EdificioESIA onCreate INICIADO ===")
 
         try {
-            Log.d(TAG, "1. Estableciendo layout de ESIA")
-            setContentView(R.layout.activity_esia) // ← AHORA USA EL LAYOUT CORRECTO
-            Log.d(TAG, "✓ Layout de ESIA establecido correctamente")
+            Log.d(TAG, "1. Estableciendo layout de EdificioESIA")
+            setContentView(R.layout.activity_esia)
+            Log.d(TAG, "✓ Layout de EdificioESIA establecido correctamente")
 
-            Log.d(TAG, "2. Creando MapView con imagen de ESIA")
+            Log.d(TAG, "2. Creando MapView con imagen de EdificioESIA")
             mapView = MapView(
                 context = this,
-                mapResourceId = R.drawable.esia_croquis // ← AHORA USA LA IMAGEN DE ESIA
+                mapResourceId = R.drawable.edificio_esia
             )
-            Log.d(TAG, "✓ MapView con imagen de ESIA creado correctamente")
+            Log.d(TAG, "✓ MapView con imagen de EdificioESIA creado correctamente")
 
             Log.d(TAG, "3. Agregando MapView al contenedor")
             findViewById<FrameLayout>(R.id.map_container).addView(mapView)
@@ -97,135 +97,138 @@ class ESIA : AppCompatActivity(),
             initializeComponents(savedInstanceState)
             Log.d(TAG, "✓ initializeComponents completado")
 
-            Log.d(TAG, "5. Configurando mapView.post para ESIA")
+            Log.d(TAG, "5. Configurando mapView.post para EdificioESIA")
             mapView.post {
                 try {
-                    Log.d(TAG, "6. Dentro de mapView.post - configurando mapa ESIA")
-
-                    val normalizedMap = MapMatrixProvider.Companion.normalizeMapName(MapMatrixProvider.Companion.MAP_ESIA)
+                    Log.d(TAG, "6. Dentro de mapView.post - configurando mapa EdificioESIA")
+                    val normalizedMap = MapMatrixProvider.MAP_EDIFICIO_ESIA
                     Log.d(TAG, "✓ Mapa normalizado: $normalizedMap")
 
-                    mapView.setCurrentMap(normalizedMap, R.drawable.esia_croquis) // ← IMAGEN DE ESIA
-                    Log.d(TAG, "✓ Mapa ESIA establecido con imagen correcta")
+                    mapView.setCurrentMap(normalizedMap, R.drawable.edificio_esia)
+                    Log.d(TAG, "✓ Mapa EdificioESIA establecido con imagen correcta")
 
                     // Configurar el playerManager
                     mapView.playerManager.apply {
-                        Log.d(TAG, "7. Configurando playerManager para ESIA")
+                        Log.d(TAG, "7. Configurando playerManager para EdificioESIA")
                         setCurrentMap(normalizedMap)
                         localPlayerId = playerName
                         updateLocalPlayerPosition(gameState.playerPosition)
-                        Log.d(TAG, "✓ PlayerManager de ESIA configurado")
+                        Log.d(TAG, "✓ PlayerManager de EdificioESIA configurado")
                     }
 
-                    Log.d(TAG, "✓ ESIA mapa configurado completamente: $normalizedMap")
+                    // ✅ CONFIGURAR EL MOVEMENT MANAGER TAMBIÉN
+                    if (::movementManager.isInitialized) {
+                        movementManager.setCurrentMap(normalizedMap)
+                        Log.d(TAG, "✓ MovementManager configurado con mapa: $normalizedMap")
+                    }
+
+                    Log.d(TAG, "✓ EdificioESIA mapa configurado completamente: $normalizedMap")
                 } catch (e: Exception) {
-                    Log.e(TAG, "ERROR en mapView.post de ESIA: ${e.message}", e)
+                    Log.e(TAG, "ERROR en mapView.post de EdificioESIA: ${e.message}", e)
                 }
             }
 
-            Log.d(TAG, "=== ESIA onCreate COMPLETADO EXITOSAMENTE ===")
+            Log.d(TAG, "=== EdificioESIA onCreate COMPLETADO EXITOSAMENTE ===")
 
         } catch (e: Exception) {
-            Log.e(TAG, "=== ERROR CRÍTICO EN ONCREATE DE ESIA ===")
+            Log.e(TAG, "=== ERROR CRÍTICO EN ONCREATE DE EDIFICIO ESIA ===")
             Log.e(TAG, "Error: ${e.message}", e)
-            Toast.makeText(this, "Error en ESIA: ${e.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Error en EdificioESIA: ${e.message}", Toast.LENGTH_LONG).show()
             finish()
         }
     }
 
     private fun initializeComponents(savedInstanceState: Bundle?) {
-        Log.d(TAG, "initializeComponents ESIA: INICIO")
+        Log.d(TAG, "initializeComponents EdificioESIA: INICIO")
 
         try {
-            // Obtener datos desde Intent
-            Log.d(TAG, "ESIA: Obteniendo PLAYER_NAME del Intent")
+            // 1. Obtener nombre del jugador
             playerName = intent.getStringExtra("PLAYER_NAME") ?: run {
-                Log.e(TAG, "ESIA: PLAYER_NAME no encontrado en Intent")
                 Toast.makeText(this, "Nombre de jugador no encontrado.", Toast.LENGTH_SHORT).show()
                 finish()
                 return
             }
-            Log.d(TAG, "ESIA: ✓ PLAYER_NAME obtenido: $playerName")
 
+            // 2. Configurar estado inicial o restaurar
             if (savedInstanceState == null) {
-                Log.d(TAG, "ESIA: Inicializando desde Intent")
-                // ✅ VERIFICAR si regresa de biblioteca
-                val returningFromBiblioteca = intent.getBooleanExtra("RETURN_FROM_BIBLIOTECA", false)
+                // Es una actividad nueva
+                gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
 
-                if (returningFromBiblioteca) {
-                    val returnX = intent.getIntExtra("BIBLIOTECA_RETURN_X", 25)
-                    val returnY = intent.getIntExtra("BIBLIOTECA_RETURN_Y", 35)
-                    val returnPosition = Pair(returnX, returnY)
-                    gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
-                    gameState.playerPosition = returnPosition
-                    Log.d(TAG, "ESIA: ✓ Regresando de biblioteca, posición restaurada: $returnPosition")
+                // VERIFICAR SI VENIMOS DEL SALÓN
+                val returnFromSalon = intent.getBooleanExtra("RETURN_FROM_SALON", false)
+
+                if (returnFromSalon) {
+                    // CASO A: Regresamos del salón -> Usar coordenadas guardadas
+                    val salonReturnX = intent.getIntExtra("SALON_RETURN_X", 20)
+                    val salonReturnY = intent.getIntExtra("SALON_RETURN_Y", 34)
+                    gameState.playerPosition = Pair(salonReturnX, salonReturnY)
+                    Log.d(TAG, "EdificioESIA: Regreso detectado. Posición restaurada: ${gameState.playerPosition}")
                 } else {
-                    // ✅ Lógica normal para posición inicial
-                    gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
-                    gameState.playerPosition = (intent.getParcelableExtra("INITIAL_POSITION") ?: Pair(25, 35)) as Pair<Int, Int>
-                    Log.d(TAG, "ESIA: ✓ Estado inicial - isServer: ${gameState.isServer}, position: ${gameState.playerPosition}")
+                    // CASO B: Inicio normal (login) -> Usar entrada principal
+                    gameState.playerPosition = Pair(20, 34)
+                    Log.d(TAG, "EdificioESIA: Inicio normal. Posición default: (20, 34)")
                 }
+
             } else {
-                Log.d(TAG, "ESIA: Restaurando estado guardado")
+                // Restaurando tras rotación, etc.
+                Log.d(TAG, "EdificioESIA: Restaurando estado guardado")
                 restoreState(savedInstanceState)
             }
 
-            Log.d(TAG, "ESIA: Llamando initializeViews()")
+            // 3. Configurar posición de retorno a ESIA (Outdoor)
+            val returnX = intent.getIntExtra("RETURN_X", 0)
+            val returnY = intent.getIntExtra("RETURN_Y", 0)
+            returnToESIAPosition = Pair(returnX, returnY)
+
+            // --- Resto de la inicialización (Views, Managers, etc.) ---
             initializeViews()
-            Log.d(TAG, "ESIA: ✓ initializeViews completado")
-
-            Log.d(TAG, "ESIA: Llamando initializeManagers()")
             initializeManagers()
-            Log.d(TAG, "ESIA: ✓ initializeManagers completado")
-
-            Log.d(TAG, "ESIA: Llamando setupInitialConfiguration()")
             setupInitialConfiguration()
-            Log.d(TAG, "ESIA: ✓ setupInitialConfiguration completado")
 
-            Log.d(TAG, "ESIA: Configurando mapView")
+            // Asegurar que el mapa use la posición que acabamos de definir
             mapView.apply {
                 playerManager.localPlayerId = playerName
                 updateLocalPlayerPosition(gameState.playerPosition)
             }
-            Log.d(TAG, "ESIA: ✓ MapView configurado")
+            Log.d(TAG, "EdificioESIA: ✓ MapView configurado")
 
-            Log.d(TAG, "ESIA: Configurando WebSocket listener")
+            Log.d(TAG, "EdificioESIA: Configurando WebSocket listener")
             serverConnectionManager.onlineServerManager.setListener(this)
-            Log.d(TAG, "ESIA: ✓ WebSocket listener configurado")
+            Log.d(TAG, "EdificioESIA: ✓ WebSocket listener configurado")
 
-            Log.d(TAG, "ESIA initializeComponents: COMPLETADO EXITOSAMENTE")
+            Log.d(TAG, "EdificioESIA initializeComponents: COMPLETADO EXITOSAMENTE")
 
         } catch (e: Exception) {
-            Log.e(TAG, "ERROR en ESIA initializeComponents: ${e.message}", e)
+            Log.e(TAG, "ERROR en EdificioESIA initializeComponents: ${e.message}", e)
             throw e
         }
     }
 
     private fun initializeViews() {
-        Log.d(TAG, "ESIA initializeViews: INICIO")
+        Log.d(TAG, "EdificioESIA initializeViews: INICIO")
         try {
             uiManager = UIManager(findViewById(R.id.main_layout), mapView).apply {
-                Log.d(TAG, "ESIA: Llamando UIManager.initializeViews()")
+                Log.d(TAG, "EdificioESIA: Llamando UIManager.initializeViews()")
                 initializeViews()
             }
-            Log.d(TAG, "ESIA initializeViews: ✓ COMPLETADO")
+            Log.d(TAG, "EdificioESIA initializeViews: ✓ COMPLETADO")
         } catch (e: Exception) {
-            Log.e(TAG, "ERROR en ESIA initializeViews: ${e.message}", e)
+            Log.e(TAG, "ERROR en EdificioESIA initializeViews: ${e.message}", e)
             throw e
         }
     }
 
     private fun initializeManagers() {
-        Log.d(TAG, "ESIA initializeManagers: INICIO")
+        Log.d(TAG, "EdificioESIA initializeManagers: INICIO")
         try {
             bluetoothManager = BluetoothManager.Companion.getInstance(this, uiManager.tvBluetoothStatus).apply {
-                setCallback(this@ESIA)
+                setCallback(this@EdificioESIA)
             }
 
             bluetoothBridge = BluetoothWebSocketBridge.Companion.getInstance()
 
             val onlineServerManager = OnlineServerManager.Companion.getInstance(this).apply {
-                setListener(this@ESIA)
+                setListener(this@EdificioESIA)
             }
 
             serverConnectionManager = ServerConnectionManager(
@@ -233,30 +236,33 @@ class ESIA : AppCompatActivity(),
                 onlineServerManager = onlineServerManager
             )
 
+            // ✅ SIN PARÁMETRO mapName, IGUAL QUE EN BIBLIOTECA
             movementManager = MovementManager(
                 mapView = mapView
             ) { position -> updatePlayerPosition(position) }
+
             movementManager.setPosition(gameState.playerPosition)
+
             mapView.playerManager.localPlayerId = playerName
             mapView.setMapTransitionListener(this)
             updatePlayerPosition(gameState.playerPosition)
 
-            Log.d(TAG, "ESIA initializeManagers: COMPLETADO")
+            Log.d(TAG, "EdificioESIA initializeManagers: COMPLETADO")
         } catch (e: Exception) {
-            Log.e(TAG, "ERROR en ESIA initializeManagers: ${e.message}", e)
+            Log.e(TAG, "ERROR en EdificioESIA initializeManagers: ${e.message}", e)
             throw e
         }
     }
 
     override fun onMapTransitionRequested(targetMap: String, initialPosition: Pair<Int, Int>) {
-        Log.d(TAG, "ESIA onMapTransitionRequested: targetMap=$targetMap")
+        Log.d(TAG, "EdificioESIA onMapTransitionRequested: targetMap=$targetMap")
         when (targetMap) {
-            MapMatrixProvider.Companion.MAP_ZACATENCO -> {
-                Log.d(TAG, "ESIA: Transición a Zacatenco")
-                returnToZacatencoActivity()
+            MapMatrixProvider.Companion.MAP_ESIA -> {
+                Log.d(TAG, "EdificioESIA: Transición a ESIA")
+                returnToESIAActivity()
             }
             else -> {
-                Log.d(TAG, "ESIA: Mapa destino no reconocido: $targetMap")
+                Log.d(TAG, "EdificioESIA: Mapa destino no reconocido: $targetMap")
             }
         }
     }
@@ -266,12 +272,14 @@ class ESIA : AppCompatActivity(),
             isServer = savedInstanceState.getBoolean("IS_SERVER", false)
             isConnected = savedInstanceState.getBoolean("IS_CONNECTED", false)
             playerPosition = savedInstanceState.getSerializable("PLAYER_POSITION") as? Pair<Int, Int>
-                ?: Pair(25, 35)
+                ?: Pair(20, 34)
             @Suppress("UNCHECKED_CAST")
             remotePlayerPositions = (savedInstanceState.getSerializable("REMOTE_PLAYER_POSITIONS")
                     as? HashMap<String, GameState.PlayerInfo>)?.toMap() ?: emptyMap()
             remotePlayerName = savedInstanceState.getString("REMOTE_PLAYER_NAME")
         }
+        returnToESIAPosition = savedInstanceState.getSerializable("RETURN_TO_ESIA_POSITION") as? Pair<Int, Int>
+            ?: Pair(0, 0)
 
         if (gameState.isConnected && ::serverConnectionManager.isInitialized) {
             serverConnectionManager.connectToServer { success ->
@@ -338,29 +346,79 @@ class ESIA : AppCompatActivity(),
 
     private fun checkPositionForMapChange(position: Pair<Int, Int>) {
         when {
-            // Puerta de salida/entrada abajo a la derecha (cerca de biblioteca)
-            position.first == 25 && position.second == 35 -> {
+            // Entrada/salida principal del edificio (ajusta según tu matriz)
+            position.first == 20 && position.second == 34 -> {
                 canChangeMap = true
-                targetDestination = "zacatenco"
+                targetDestination = "esia"
                 runOnUiThread {
-                    Toast.makeText(this, "Presiona A para regresar a Zacatenco", Toast.LENGTH_SHORT)
+                    Toast.makeText(this, "Presiona A para regresar a ESIA", Toast.LENGTH_SHORT)
                         .show()
                 }
             }
-            // Nueva entrada a la biblioteca (ajusta coordenadas según tu mapa)
-            position.first == 6 && position.second == 31 -> {
+            // Aulas del edificio (ajusta según la distribución de tu edificio)
+            // ✅ AGREGAR: Entradas a los salones (fila 28)
+            position.first == 4 && position.second == 28 -> {
                 canChangeMap = true
-                targetDestination = "biblioteca"
+                targetDestination = "salon"
                 runOnUiThread {
-                    Toast.makeText(this, "Presiona A para entrar a la Biblioteca", Toast.LENGTH_SHORT)
+                    Toast.makeText(this, "Presiona A para entrar al salón", Toast.LENGTH_SHORT)
                         .show()
                 }
             }
-            position.first == 19 && position.second == 28 -> {
+            position.first == 9 && position.second == 28 -> {
                 canChangeMap = true
-                targetDestination = "edificio_esia"
+                targetDestination = "salon"
                 runOnUiThread {
-                    Toast.makeText(this, "Presiona A para entrar al Edificio ESIA", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Presiona A para entrar al salón", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+            position.first == 14 && position.second == 28 -> {
+                canChangeMap = true
+                targetDestination = "salon"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para entrar al salón", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+            position.first == 18 && position.second == 28 -> {
+                canChangeMap = true
+                targetDestination = "salon"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para entrar al salón", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+            position.first == 23 && position.second == 28 -> {
+                canChangeMap = true
+                targetDestination = "salon"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para entrar al salón", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+            position.first == 28 && position.second == 28 -> {
+                canChangeMap = true
+                targetDestination = "salon"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para entrar al salón", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+            position.first == 33 && position.second == 28 -> {
+                canChangeMap = true
+                targetDestination = "salon"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para entrar al salón", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+            position.first == 37 && position.second == 28 -> {
+                canChangeMap = true
+                targetDestination = "salon"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para entrar al salón", Toast.LENGTH_SHORT)
+                        .show()
                 }
             }
             else -> {
@@ -378,11 +436,11 @@ class ESIA : AppCompatActivity(),
             }
 
             btnConnectDevice.setOnClickListener {
-                Log.d(TAG, "ESIA: btnConnectDevice click - Regresando a Zacatenco")
-                returnToZacatencoActivity()
+                Log.d(TAG, "EdificioESIA: btnConnectDevice click - Regresando a ESIA")
+                returnToESIAActivity()
             }
 
-
+            setupMovementButtons(movementManager)
 
             btnNorth.setOnTouchListener { _, event -> handleMovement(event, 0, -1); true }
             btnSouth.setOnTouchListener { _, event -> handleMovement(event, 0, 1); true }
@@ -390,44 +448,40 @@ class ESIA : AppCompatActivity(),
             btnWest.setOnTouchListener { _, event -> handleMovement(event, -1, 0); true }
 
             buttonA.setOnClickListener {
-                if (canChangeMap) {
-                    when (targetDestination) {
-                        "zacatenco" -> {
-                            Log.d(TAG, "ESIA: buttonA click - Regresando a Zacatenco")
-                            returnToZacatencoActivity()
-                        }
-                        "biblioteca" -> {
-                            Log.d(TAG, "ESIA: buttonA click - Entrando a Biblioteca")
-                            enterBiblioteca()
-                        }
-                        "edificio_esia" -> {
-                            Log.d(TAG, "ESIA: buttonA click - Entrando a edificio_esia")
-                            enterEdificioESIA()
-                        }
-                        else -> showToast("No hay interacción disponible en esta posición")
+                val currentPosition = gameState.playerPosition
+                when {
+                    canChangeMap && targetDestination == "esia" -> {
+                        Log.d(TAG, "EdificioESIA: buttonA click - Regresando a ESIA")
+                        returnToESIAActivity()
                     }
-                } else {
-                    showToast("No hay interacción disponible en esta posición")
+                    // Interacciones específicas del edificio
+                    canChangeMap && targetDestination == "salon" -> {
+                        Log.d(TAG, "EdificioESIA: buttonA click - Entrando al salón")
+                        enterSalon()
+                    }
+                    else -> {
+                        showToast("No hay interacción disponible en esta posición")
+                    }
                 }
             }
 
-            // AGREGAR ESTOS LISTENERS PARA EVITAR ERRORES
+            // Botones adicionales
             try {
                 findViewById<Button>(R.id.button_back_to_home)?.setOnClickListener {
-                    Log.d(TAG, "ESIA: button_back_to_home click - Regresando a Zacatenco")
-                    returnToZacatencoActivity()
+                    Log.d(TAG, "EdificioESIA: button_back_to_home click - Regresando a ESIA")
+                    returnToESIAActivity()
                 }
 
                 findViewById<Button>(R.id.button_small_1)?.setOnClickListener {
-                    showToast("Botón B1 - ESIA")
+                    showToast("Horario de clases")
                 }
 
                 findViewById<Button>(R.id.button_small_2)?.setOnClickListener {
-                    showToast("Botón B2 - ESIA")
+                    showToast("Lista de profesores")
                 }
 
                 findViewById<Button>(R.id.button_serverOnline)?.setOnClickListener {
-                    showToast("Server Online - ESIA")
+                    showToast("Server Online - EdificioESIA")
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "Algunos botones adicionales no encontrados: ${e.message}")
@@ -435,15 +489,15 @@ class ESIA : AppCompatActivity(),
         }
     }
 
-    private fun returnToZacatencoActivity() {
-        Log.d(TAG, "ESIA: returnToZacatencoActivity INICIO")
+    private fun returnToESIAActivity() {
+        Log.d(TAG, "EdificioESIA: returnToESIAActivity INICIO")
 
-
-        // Zacatenco usará la posición guardada automáticamente
-        val intent = Intent(this, Zacatenco::class.java).apply {
+        val intent = Intent(this, ESIA::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
-            // ✅ NO PONER INITIAL_POSITION para que use la posición guardada
+            putExtra("RETURN_FROM_EDIFICIO", true) // ✅ AGREGAR bandera
+            putExtra("EDIF_RETURN_X", returnToESIAPosition.first)
+            putExtra("EDIF_RETURN_Y", returnToESIAPosition.second)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
 
@@ -451,7 +505,7 @@ class ESIA : AppCompatActivity(),
             mapView.playerManager.cleanup()
         }
 
-        Log.d(TAG, "ESIA: Iniciando actividad Zacatenco (usará posición guardada)")
+        Log.d(TAG, "EdificioESIA: Iniciando actividad ESIA")
         startActivity(intent)
         finish()
     }
@@ -466,12 +520,12 @@ class ESIA : AppCompatActivity(),
                 }
 
                 if (gameState.isConnected && ::serverConnectionManager.isInitialized) {
-                    serverConnectionManager.sendUpdateMessage(playerName, position, "esia")
+                    serverConnectionManager.sendUpdateMessage(playerName, position, MapMatrixProvider.MAP_EDIFICIO_ESIA)
                 }
 
                 checkPositionForMapChange(position)
             } catch (e: Exception) {
-                Log.e(TAG, "Error en ESIA updatePlayerPosition: ${e.message}")
+                Log.e(TAG, "Error en EdificioESIA updatePlayerPosition: ${e.message}")
             }
         }
     }
@@ -481,7 +535,23 @@ class ESIA : AppCompatActivity(),
             movementManager.handleMovement(event, deltaX, deltaY)
         }
     }
+    private fun enterSalon() {
+        val intent = Intent(this, SalonESIA::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("IS_CONNECTED", gameState.isConnected)
+            putExtra("INITIAL_POSITION", Pair(20, 20)) // Posición inicial en el salón
+            putExtra("RETURN_X", gameState.playerPosition.first) // Posición actual para regresar
+            putExtra("RETURN_Y", gameState.playerPosition.second)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
 
+        if (::mapView.isInitialized) {
+            mapView.playerManager.cleanup()
+        }
+        startActivity(intent)
+        finish()
+    }
     private fun updateRemotePlayersOnMap() {
         runOnUiThread {
             if (::mapView.isInitialized) {
@@ -492,47 +562,6 @@ class ESIA : AppCompatActivity(),
                 }
             }
         }
-    }
-
-    private fun enterBiblioteca() {
-        Log.d(TAG, "ESIA: enterBiblioteca INICIO")
-
-        val intent = Intent(this, BibliotecaESIA::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(38, 19)) // Posición inicial en biblioteca
-            putExtra("RETURN_X", gameState.playerPosition.first)
-            putExtra("RETURN_Y", gameState.playerPosition.second)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-
-        if (::mapView.isInitialized) {
-            mapView.playerManager.cleanup()
-        }
-
-        Log.d(TAG, "ESIA: Iniciando actividad Biblioteca")
-        startActivity(intent)
-        finish()
-    }
-    private fun enterEdificioESIA() {
-        Log.d(TAG, "ESIA: enterEdificioESIA INICIO")
-
-        val intent = Intent(this, EdificioESIA::class.java).apply {
-            putExtra("PLAYER_NAME", playerName)
-            putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(20, 6)) // Posición inicial dentro del edificio
-            putExtra("RETURN_X", gameState.playerPosition.first)
-            putExtra("RETURN_Y", gameState.playerPosition.second)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-
-        if (::mapView.isInitialized) {
-            mapView.playerManager.cleanup()
-        }
-
-        Log.d(TAG, "ESIA: Iniciando actividad Edificio ESIA")
-        startActivity(intent)
-        finish()
     }
 
     // Implementaciones de callbacks
@@ -645,6 +674,7 @@ class ESIA : AppCompatActivity(),
             putSerializable("PLAYER_POSITION", gameState.playerPosition)
             putSerializable("REMOTE_PLAYER_POSITIONS", HashMap(gameState.remotePlayerPositions))
             putString("REMOTE_PLAYER_NAME", gameState.remotePlayerName)
+            putSerializable("RETURN_TO_ESIA_POSITION", returnToESIAPosition)
 
             if (::bluetoothManager.isInitialized) {
                 putInt("BLUETOOTH_STATE", bluetoothManager.getConnectionState().ordinal)
@@ -661,6 +691,8 @@ class ESIA : AppCompatActivity(),
             bluetoothManager.reconnect()
         }
         if (::movementManager.isInitialized) {
+            // ✅ CONFIGURAR EL MAPA CORRECTO
+            movementManager.setCurrentMap(MapMatrixProvider.MAP_EDIFICIO_ESIA)
             movementManager.setPosition(gameState.playerPosition)
         }
         updateRemotePlayersOnMap()
@@ -686,6 +718,8 @@ class ESIA : AppCompatActivity(),
             Handler(Looper.getMainLooper()).postDelayed({
                 try {
                     if (::movementManager.isInitialized) {
+                        // ✅ CONFIGURAR EL MAPA CORRECTO
+                        movementManager.setCurrentMap(MapMatrixProvider.MAP_EDIFICIO_ESIA)
                         movementManager.setPosition(gameState.playerPosition)
                     }
                     if (::mapView.isInitialized) {
@@ -706,6 +740,11 @@ class ESIA : AppCompatActivity(),
     }
 
     companion object {
-        private const val TAG = "ESIAActivity"
+        private const val TAG = "EdificioESIAActivity"
     }
+}
+
+private fun MovementManager.setCurrentMap(
+    mapEdificioEsia: String
+) {
 }
