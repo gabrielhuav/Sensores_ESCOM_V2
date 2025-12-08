@@ -124,7 +124,7 @@ class BuildingEdificioIA_Medio : AppCompatActivity(),
         // Inicializar vistas y gestores de lógica
         initializeViews()
         initializeManagers()
-        setupButtonListeners()
+        /* setupButtonListeners() */
 
         // Inicializar el jugador
         mapView.playerManager.localPlayerId = playerName
@@ -204,7 +204,7 @@ class BuildingEdificioIA_Medio : AppCompatActivity(),
         mapView.setMapTransitionListener(this)
     }
 
-    private fun setupButtonListeners() {
+  /*  private fun setupButtonListeners() {
 
         btnNorth.setOnTouchListener { _, event -> handleMovement(event, 0, -1); true }
         btnSouth.setOnTouchListener { _, event -> handleMovement(event, 0, 1); true }
@@ -227,8 +227,8 @@ class BuildingEdificioIA_Medio : AppCompatActivity(),
             }
         }
 
-    }
-    private fun startSalon4102Activity() {
+    } */
+ /*   private fun startSalon4102Activity() {
         val intent = Intent(this, ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.buildingIA.classroom.Salon4102::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
@@ -241,7 +241,7 @@ class BuildingEdificioIA_Medio : AppCompatActivity(),
         mapView.playerManager.cleanup()
         startActivity(intent)
         finish()
-    }
+    } */
     
     private fun startPlantaAltaActivity() {
         val intent = Intent(this, BuildingEdificioIA_Alto::class.java).apply {
