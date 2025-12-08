@@ -1509,43 +1509,141 @@ const cidetecCollisionMatrix = Array(40).fill().map(() => Array(40).fill(0));
 
 // 1. Bordes exteriores (Muro = 1)
 for (let i = 0; i < 40; i++) {
-    cidetecCollisionMatrix[0][i] = 1;      // Pared superior
-    cidetecCollisionMatrix[39][i] = 1;     // Pared inferior
-    cidetecCollisionMatrix[i][0] = 1;      // Pared izquierda
-    cidetecCollisionMatrix[i][39] = 1;     // Pared derecha
+  cidetecCollisionMatrix[0][i] = 1;      // arriba
+  cidetecCollisionMatrix[39][i] = 1;     // abajo
+  cidetecCollisionMatrix[i][0] = 1;      // izquierda
+  cidetecCollisionMatrix[i][39] = 1;     // derecha
+}
+
+// 2. Paredes internas (INACCESSIBLE = 1)  -> usar SIEMPRE matrix[i][j] = matrix[y][x]
+
+// 🔹 Pared 1 (lat izq): (2,20) → (2,38)
+for (let i = 20; i <= 38; i++) { const j = 2;  cidetecCollisionMatrix[i][j] = 1; }
+
+// 🔹 Pared 2 (lat izq): (2,6) → (2,16)
+for (let i = 6;  i <= 16; i++) { const j = 2;  cidetecCollisionMatrix[i][j] = 1; }
+
+// 🔹 Pared 3 (abajo): (11,32) → (37,32)
+for (let j = 11; j <= 37; j++) { const i = 32; cidetecCollisionMatrix[i][j] = 1; }
+
+// 🔹 Pared 4 (lat der): (37,6) → (37,32)
+for (let i = 6;  i <= 32; i++) { const j = 37; cidetecCollisionMatrix[i][j] = 1; }
+
+// 🔹 Pared 5 (arriba): (2,6) → (37,6)
+for (let j = 2;  j <= 37; j++) { const i = 6;  cidetecCollisionMatrix[i][j] = 1; }
+
+// 🔹 Pared 6 (lat der abajo): (11,32) → (11,38)
+for (let i = 32; i <= 38; i++) { const j = 11; cidetecCollisionMatrix[i][j] = 1; }
+
+// 🔹 Pared 7 (interna estaciona): (32,6) → (32,32)
+for (let i = 6;  i <= 32; i++) { const j = 32; cidetecCollisionMatrix[i][j] = 1; }
+
+// 🔹 Pared 8: (12,6) → (12,19)
+for (let i = 6;  i <= 19; i++) { const j = 12; cidetecCollisionMatrix[i][j] = 1; }
+
+// 🔹 Pared 9: (12,26) → (12,31)
+for (let i = 26; i <= 31; i++) { const j = 12; cidetecCollisionMatrix[i][j] = 1; }
+
+// 🔹 Pared 10: (16,25) → (16,31)
+for (let i = 25; i <= 31; i++) { const j = 16; cidetecCollisionMatrix[i][j] = 1; }
+
+// 🔹 Pared 11: (19,25) → (19,31)
+for (let i = 25; i <= 31; i++) { const j = 19; cidetecCollisionMatrix[i][j] = 1; }
+
+// 🔹 Pared 12: (22,25) → (22,31)
+for (let i = 25; i <= 31; i++) { const j = 22; cidetecCollisionMatrix[i][j] = 1; }
+
+// 🔹 Pared 13: (17,6) → (17,14)
+for (let i = 6;  i <= 14; i++) { const j = 17; cidetecCollisionMatrix[i][j] = 1; }
+
+// 🔹 Pared 14: (22,6) → (22,14)
+for (let i = 6;  i <= 14; i++) { const j = 22; cidetecCollisionMatrix[i][j] = 1; }
+
+// 🔹 Pared 15: (24,6) → (24,14)
+for (let i = 6;  i <= 14; i++) { const j = 24; cidetecCollisionMatrix[i][j] = 1; }
+
+// 🔹 Pared 16: (12,20) → (17,20)
+for (let j = 12; j <= 17; j++) { const i = 20; cidetecCollisionMatrix[i][j] = 1; }
+
+// 🔹 Pared 17: (17,14) → (26,14)
+for (let j = 17; j <= 26; j++) { const i = 14; cidetecCollisionMatrix[i][j] = 1; }
+
+// 🔹 Pared 18: (16,25) → (32,25)
+for (let j = 16; j <= 32; j++) { const i = 25; cidetecCollisionMatrix[i][j] = 1; }
+
+// 🔹 Pared 19: (26,14) → (26,25)
+for (let i = 14; i <= 25; i++) { const j = 26; cidetecCollisionMatrix[i][j] = 1; }
+
+// 🔹 Pared 20: (18,14) → (18,20)
+for (let i = 14; i <= 20; i++) { const j = 18; cidetecCollisionMatrix[i][j] = 1; }
+
+// 🔹 Pared 21: (12,16) → (18,16)
+for (let j = 12; j <= 18; j++) { const i = 16; cidetecCollisionMatrix[i][j] = 1; }
+
+// 🔹 Pared 22 (según tu código Kotlin): y=15, x=26..32
+for (let j = 26; j <= 32; j++) { const i = 15; cidetecCollisionMatrix[i][j] = 1; }
+
+// 3. Puntos interactivos (2)
+cidetecCollisionMatrix[18][3]  = 2; // (x=3,  y=18)
+cidetecCollisionMatrix[25][25] = 2; // (x=25, y=25)
+
+
+// =================================================================
+// Matriz de colisión para LabRV-CIDETEC (40x40)
+// =================================================================
+const labRVCollisionMatrix = Array(40).fill().map(() => Array(40).fill(0));
+
+// 1. Bordes exteriores (Muro = 1)
+for (let i = 0; i < 40; i++) {
+  labRVCollisionMatrix[0][i] = 1;
+  labRVCollisionMatrix[39][i] = 1;
+  labRVCollisionMatrix[i][0] = 1;
+  labRVCollisionMatrix[i][39] = 1;
 }
 
 // 2. Paredes internas (INACCESSIBLE = 1)
 
+// Marco exterior del lab
+for (let i = 6;  i <= 32; i++) { const j = 2;  labRVCollisionMatrix[i][j] = 1; } // (2,6)→(2,32)
+for (let i = 6;  i <= 32; i++) { const j = 37; labRVCollisionMatrix[i][j] = 1; } // (37,6)→(37,32)
+for (let j = 2;  j <= 37; j++) { const i = 6;  labRVCollisionMatrix[i][j] = 1; } // (2,6)→(37,6)
+for (let j = 9;  j <= 37; j++) { const i = 32; labRVCollisionMatrix[i][j] = 1; } // (9,32)→(37,32)
+for (let j = 2;  j <= 4;  j++) { const i = 32; labRVCollisionMatrix[i][j] = 1; } // (2,32)→(4,32)
 
-// 🔹 (10,21) → (10,37)
-for (let i = 21; i <= 37; i++) {
-    cidetecCollisionMatrix[i][10] = 1;
-}
+// Obstáculo 1 (rectángulo hueco)
+for (let i = 17; i <= 24; i++) { const j = 8;  labRVCollisionMatrix[i][j] = 1; } // izq
+for (let i = 17; i <= 24; i++) { const j = 18; labRVCollisionMatrix[i][j] = 1; } // der
+for (let j = 8;  j <= 18; j++) { const i = 17; labRVCollisionMatrix[i][j] = 1; } // arriba
+for (let j = 8;  j <= 18; j++) { const i = 24; labRVCollisionMatrix[i][j] = 1; } // abajo
 
-// 🔹 (10,3) → (10,18)
-for (let i = 3; i <= 18; i++) {
-    cidetecCollisionMatrix[i][10] = 1;
-}
+// Obstáculo 2 (rectángulo hueco)
+for (let i = 16; i <= 25; i++) { const j = 23; labRVCollisionMatrix[i][j] = 1; } // izq
+for (let i = 16; i <= 25; i++) { const j = 26; labRVCollisionMatrix[i][j] = 1; } // der
+for (let j = 23; j <= 26; j++) { const i = 16; labRVCollisionMatrix[i][j] = 1; } // arriba
+for (let j = 23; j <= 26; j++) { const i = 25; labRVCollisionMatrix[i][j] = 1; } // abajo
 
-// 🔹 (10,37) → (30,37)
-for (let j = 10; j <= 30; j++) {
-    cidetecCollisionMatrix[37][j] = 1;
-}
+// Mesa 1
+for (let i = 6;  i <= 11; i++) { const j = 6;  labRVCollisionMatrix[i][j] = 1; } // izq
+for (let i = 6;  i <= 11; i++) { const j = 13; labRVCollisionMatrix[i][j] = 1; } // der
+for (let j = 6;  j <= 13; j++) { const i = 11; labRVCollisionMatrix[i][j] = 1; } // abajo
 
-// 🔹 (30,37) → (30,3)
-for (let i = 3; i <= 37; i++) {
-    cidetecCollisionMatrix[i][30] = 1;
-}
+// Mesa 2
+for (let i = 6;  i <= 11; i++) { const j = 16; labRVCollisionMatrix[i][j] = 1; } // izq
+for (let i = 6;  i <= 11; i++) { const j = 24; labRVCollisionMatrix[i][j] = 1; } // der
+for (let j = 16; j <= 24; j++) { const i = 11; labRVCollisionMatrix[i][j] = 1; } // abajo
 
-// 🔹 (10,3) → (30,3)
-for (let j = 10; j <= 30; j++) {
-    cidetecCollisionMatrix[3][j] = 1;
-}
+// Obstáculo 3
+for (let i = 10; i <= 18; i++) { const j = 33; labRVCollisionMatrix[i][j] = 1; } // izq
+for (let j = 33; j <= 37; j++) { const i = 10; labRVCollisionMatrix[i][j] = 1; } // arriba
+for (let j = 33; j <= 37; j++) { const i = 18; labRVCollisionMatrix[i][j] = 1; } // abajo
 
-// 3. Punto de salida (Interactivo = 2)
-// Coordenadas: (x:20, y:9)
-cidetecCollisionMatrix[22][11] = 2;
+// Obstáculo 4
+for (let i = 21; i <= 28; i++) { const j = 33; labRVCollisionMatrix[i][j] = 1; } // izq
+for (let j = 33; j <= 37; j++) { const i = 21; labRVCollisionMatrix[i][j] = 1; } // arriba
+for (let j = 33; j <= 37; j++) { const i = 28; labRVCollisionMatrix[i][j] = 1; } // abajo
+
+// 3. Punto interactivo (2)
+labRVCollisionMatrix[30][7] = 2; // (x=7, y=30)
 
 
 // Exportar las matrices
@@ -1561,7 +1659,8 @@ module.exports = {
     esimeCollisionMatrix,
     esiaCollisionMatrix,
     plazaVistaNorteCollisionMatrix,
-    cidetecCollisionMatrix
+    cidetecCollisionMatrix,
+    labRVCollisionMatrix
 };
 
 // --- Funciones convertidas desde Kotlin -> JavaScript ---
