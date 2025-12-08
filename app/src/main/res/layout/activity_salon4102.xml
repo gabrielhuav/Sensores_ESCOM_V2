@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".presentation.locations.buildings.buildingIA.classroom.Salon4102">
+
+    <Button
+        android:id="@+id/button_back_to_home"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Salir"
+        android:textColor="@android:color/white"
+        android:contentDescription="Back to EdificioIA"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_margin="16dp"/>
+
+    <TextView
+        android:id="@+id/tvBluetoothStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="Salón 4102"
+        android:textSize="16sp"
+        android:layout_marginBottom="16dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"/>
+
+    <FrameLayout
+        android:id="@+id/map_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintTop_toBottomOf="@id/tvBluetoothStatus"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+    </FrameLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- Movement Controls (Bottom Left) -->
+        <GridLayout
+            android:id="@+id/movement_buttons"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:rowCount="3"
+            android:columnCount="3"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_margin="16dp"
+            android:background="@android:color/transparent"
+            android:layout_gravity="center">
+
+            <Space
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_row="0"
+                android:layout_column="0"/>
+
+            <Button
+                android:id="@+id/button_north"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:text="N"
+                android:textColor="@android:color/white"
+                android:contentDescription="Move North"
+                android:layout_row="0"
+                android:layout_column="1"/>
+
+            <Space
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_row="0"
+                android:layout_column="2"/>
+
+            <Button
+                android:id="@+id/button_west"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:text="W"
+                android:textColor="@android:color/white"
+                android:contentDescription="Move West"
+                android:layout_row="1"
+                android:layout_column="0"/>
+
+            <Space
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_row="1"
+                android:layout_column="1"/>
+
+            <Button
+                android:id="@+id/button_east"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:text="E"
+                android:textColor="@android:color/white"
+                android:contentDescription="Move East"
+                android:layout_row="1"
+                android:layout_column="2"/>
+
+            <Space
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_row="2"
+                android:layout_column="0"/>
+
+            <Button
+                android:id="@+id/button_south"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:text="S"
+                android:textColor="@android:color/white"
+                android:contentDescription="Move South"
+                android:layout_row="2"
+                android:layout_column="1"/>
+
+            <Space
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_row="2"
+                android:layout_column="2"/>
+        </GridLayout>
+
+        <!-- Action Button A (Bottom Right) - Para sentarse/levantarse -->
+        <Button
+            android:id="@+id/button_a"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:text="A"
+            android:textColor="@android:color/white"
+            android:backgroundTint="@android:color/holo_orange_dark"
+            android:contentDescription="Sit or Stand"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_margin="16dp"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
