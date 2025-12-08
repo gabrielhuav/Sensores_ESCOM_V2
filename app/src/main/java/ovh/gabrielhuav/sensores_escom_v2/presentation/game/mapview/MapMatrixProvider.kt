@@ -58,7 +58,11 @@ class MapMatrixProvider {
         const val MAP_CABLEBUS = "cablebus"
         const val MAP_SALIDAMETRO = "escom_salidametro"
         const val MAP_METRO_POLITECNICO = "metro_politecnico"
+        const val MAP_ANDENES_METRO_POLITECNICO = "andenes_metro_politecnico"
+        const val MAP_RED_METRO = "red_metro"
         const val MAP_PALAPAS_IA = "escom_palapas_ia"
+
+        const val MAP_CANCHA_IA = "escom_cancha_ia"
         const val MAP_ESIME = "esime_zacatenco"
         const val MAP_PALAPAS_ISC = "escom_palapas_isc"
         const val MAP_EDIFICIO_GOBIERNO = "escom_edificio_gobierno"
@@ -70,6 +74,9 @@ class MapMatrixProvider {
         const val MAP_ESIA = "escom_esia"
         const val MAP_CIDETEC = "escom_cidetec"
         const val MAP_PLAZA_VISTA_NORTE = "plazaVistaNorte"
+        const val MAP_BIBLIOTECA_ESIA = "biblioteca_esia"
+        const val MAP_EDIFICIO_ESIA = "edificio_esia"
+        const val MAP_SALON_ESIA="salon_esia"
 
         fun normalizeMapName(mapName: String?): String {
             if (mapName.isNullOrBlank()) return MAP_MAIN
@@ -136,6 +143,7 @@ class MapMatrixProvider {
                 lowerMap.contains("4102") || lowerMap.contains("salon4102") -> MAP_SALON4102
                 lowerMap.contains("cable") || lowerMap.contains("cablebus") -> MAP_CABLEBUS
                 lowerMap.contains("palapas_ia") -> MAP_PALAPAS_IA
+                lowerMap.contains("cancha") || lowerMap.contains("cancha_ia") -> MAP_CANCHA_IA
 
                 lowerMap.contains("gobierno") || lowerMap.contains("edificio_gobierno") -> MAP_EDIFICIO_GOBIERNO
                 lowerMap.contains("biblioteca") -> MAP_BIBLIOTECA
@@ -149,6 +157,9 @@ class MapMatrixProvider {
                 lowerMap.contains("encb") -> MAP_ENCB
                 lowerMap.contains("plaza_torres") -> MAP_PLAZA_TORRES
                 lowerMap.contains("plaza_torres_n1") -> MAP_PLAZA_TORRES_N1
+                lowerMap.contains("biblioteca_esia") || lowerMap.contains("biblioteca") && lowerMap.contains("esia") -> MAP_BIBLIOTECA_ESIA
+                lowerMap.contains("edificio_esia") || (lowerMap.contains("edificio") && lowerMap.contains("esia")) -> MAP_EDIFICIO_ESIA
+
                 // Si no coincide con ninguno de los anteriores, devolver el original
                 else -> mapName
             }
@@ -282,11 +293,14 @@ class MapMatrixProvider {
                 MAP_LINDAVISTA -> createLindavistaMatrix()
                 MAP_SALIDAMETRO -> createSalidaMetroMatrix() // salida metro
                 MAP_METRO_POLITECNICO -> createMetroPolitecnicoMatrix()
+                MAP_ANDENES_METRO_POLITECNICO -> createAndenesMetroPolitecnicoMatrix()
+                MAP_RED_METRO -> createRedMetroMatrix()
                 MAP_CABLEBUS -> createCablebusMatix()
                 MAP_EDIFICIO_IA_BAJO-> createEdificioIABajoMatrix()
                 MAP_EDIFICIO_IA_MEDIO-> createEdificioIAMedioMatrix()
                 MAP_EDIFICIO_IA_ALTO -> createEdificioIAAltoMatrix()
                 MAP_PALAPAS_IA -> createPalapasIAMapMatrix()
+                MAP_CANCHA_IA -> createCanchaIAMatrix()
                 MAP_PALAPAS_ISC -> createPalapasISCMatrix()
                 MAP_EDIFICIO_GOBIERNO -> createEdificioGobiernoMatrix()
                 MAP_BIBLIOTECA -> createBibliotecaMatrix()
@@ -298,6 +312,10 @@ class MapMatrixProvider {
                 MAP_PLAZA_VISTA_NORTE -> createPlazaVistaNorteMatrix()
                 MAP_LAB_POSGRADO -> createLabPosgradoMatrix()
                 MAP_CIDETEC -> createCidetecMatrix()
+                MAP_BIBLIOTECA_ESIA -> createBibliotecaESIAMatrix()
+                MAP_EDIFICIO_ESIA -> createEdificioESIAMatrix()
+                MAP_SALON_ESIA -> getSalonESIAMatrix()
+
                 else -> createDefaultMatrix() // Por defecto, un mapa básico
             }
         }
@@ -360,7 +378,7 @@ class MapMatrixProvider {
             }
             // Añadir punto interactivo para el nuevo mapa de Estacionamiento
             matrix[5][25] = INTERACTIVE // Entrada al Estacionamiento de ESCOM
-
+            matrix[28][33] = INTERACTIVE
             return matrix
         }
 
@@ -1422,7 +1440,7 @@ class MapMatrixProvider {
                     }
                 }
             }
-
+            matrix[5][37] = INTERACTIVE
             matrix[5][35] = INTERACTIVE
             matrix[22][17] = INTERACTIVE
             matrix[27][31] = INTERACTIVE
@@ -1482,17 +1500,17 @@ class MapMatrixProvider {
                     matrix[i][j] = PARED
             }
 
-            for (i in 0 until 18){
+            for (i in 0 until 15){
                 for(j in 0 until 13)
                     matrix[i][j] = PARED
             }
 
-            for (i in 0 until 18){
+            for (i in 0 until 15){
                 for(j in 24 until MAP_WIDTH)
                     matrix[i][j] = PARED
             }
 
-            for (i in 22 until MAP_HEIGHT){
+            for (i in 25 until MAP_HEIGHT){
                 for(j in 0 until 12)
                     matrix[i][j] = PARED
             }
@@ -1508,10 +1526,56 @@ class MapMatrixProvider {
             for(j in 21 until MAP_WIDTH)
                 matrix[altura][j] = PARED
 
-            for (i in 22 until 27){
+            for (i in 25 until 27){
                 for(j in 24 until MAP_WIDTH)
                     matrix[i][j] = PARED
             }
+            //Contorno Paredes
+            for (i in 15 until 18)
+                matrix[i][11] = PARED
+            for (i in 22 until 25)
+                matrix[i][11] = PARED
+            for (i in 15 until 18)
+                matrix[i][25] = PARED
+            for (i in 22 until 25)
+                matrix[i][25] = PARED
+            //Escaleras arriba izquierda
+            matrix[17][10] = PARED
+            matrix[17][9] = PARED
+            matrix[17][8] = PARED
+            matrix[17][7] = PARED
+            matrix[17][5] = PARED
+            matrix[17][4] = PARED
+            matrix[17][3] = PARED
+            matrix[17][2] = PARED
+            matrix[17][1] = PARED
+            //Escaleras abajo
+            matrix[22][10] = PARED
+            matrix[22][9] = PARED
+            matrix[22][8] = PARED
+            matrix[22][7] = PARED
+            matrix[22][5] = PARED
+            matrix[22][4] = PARED
+            matrix[22][3] = PARED
+            matrix[22][2] = PARED
+            matrix[22][1] = PARED
+            //Escaleras arriba derecha
+            matrix[17][26] = PARED
+            matrix[17][27] = PARED
+            matrix[17][28] = PARED
+            matrix[17][30] = PARED
+            matrix[17][31] = PARED
+            matrix[17][32] = PARED
+            matrix[17][33] = PARED
+            //Escaleras abajo
+            matrix[22][26] = PARED
+            matrix[22][27] = PARED
+            matrix[22][28] = PARED
+            matrix[22][30] = PARED
+            matrix[22][31] = PARED
+            matrix[22][32] = PARED
+            matrix[22][33] = PARED
+
 
             for (i in 3 until 8){
                 for(j in 20 until 26)
@@ -1544,9 +1608,6 @@ class MapMatrixProvider {
             ancho = 13
             for(i in 27 until 30)
                 matrix[i][ancho] = PARED
-
-
-
 
 
             //Taquilla arriba
@@ -1587,6 +1648,253 @@ class MapMatrixProvider {
 
             matrix[27][33] = PARED
             matrix[28][33] = PARED
+
+            return matrix
+        }
+
+
+        private fun createAndenesMetroPolitecnicoMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Constantes
+            val PARED = WALL
+            val BANCA = INACCESSIBLE
+
+
+            // Bordes exteriores
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = PARED
+                    }
+                }
+            }
+
+            matrix[10][20] = INTERACTIVE
+            matrix[26][20] = INTERACTIVE
+            // Pared al 60% de la altura desde arriba (equivale a 30% desde abajo)
+            val alturaPared = (MAP_HEIGHT * 0.6).toInt() // 28 en un mapa 40x40
+            for (j in 0 until MAP_WIDTH) {
+                matrix[alturaPared][j] = PARED
+            }
+            // Pared al 40% de la altura desde arriba (equivale a 30% desde abajo)
+            val alturaPared1 = (MAP_HEIGHT * 0.33).toInt() // 28 en un mapa 40x40
+            for (j in 0 until MAP_WIDTH) {
+                matrix[alturaPared1][j] = PARED
+            }
+
+            val ancho = 6
+            for(i in 4 until 36)
+                matrix[ancho][i] = PARED
+
+            val ancho1 = 32
+            for(i in 4 until 36)
+                matrix[ancho1][i] = PARED
+
+            return matrix
+        }
+
+
+        private fun createRedMetroMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // Constantes
+            val PARED = WALL
+            val BANCA = INACCESSIBLE
+
+
+            // Bordes exteriores
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = PARED
+                    }
+                }
+            }
+            val ancho2 = 3
+            for(i in 1 until 39)
+                matrix[ancho2][i] = PARED
+            val ancho = 2
+            for(i in 1 until 39)
+                matrix[ancho][i] = PARED
+            val ancho1 = 1
+            for(i in 1 until 39)
+                matrix[ancho1][i] = PARED
+            //Línea 5
+            matrix[9][14] = INTERACTIVE
+            matrix[11][15] = INTERACTIVE
+            matrix[13][15] = INTERACTIVE
+            matrix[14][16] = INTERACTIVE
+            matrix[15][17] = INTERACTIVE
+            matrix[16][19] = INTERACTIVE
+            matrix[16][20] = INTERACTIVE
+            matrix[17][22] = INTERACTIVE
+            matrix[16][24] = INTERACTIVE
+            matrix[18][25] = INTERACTIVE
+            matrix[19][25] = INTERACTIVE
+            matrix[21][25] = INTERACTIVE
+            matrix[22][28] = INTERACTIVE
+            //Línea 6
+            matrix[9][5] = INTERACTIVE
+            matrix[10][6] = INTERACTIVE
+            matrix[11][7] = INTERACTIVE
+            matrix[11][9] = INTERACTIVE
+            matrix[11][11] = INTERACTIVE
+            matrix[11][13] = INTERACTIVE
+            matrix[11][16] = INTERACTIVE
+            matrix[12][18] = INTERACTIVE
+            matrix[12][20] = INTERACTIVE
+            matrix[12][22] = INTERACTIVE
+            //Línea 4
+            matrix[13][21] = INTERACTIVE
+            matrix[14][20] = INTERACTIVE
+            matrix[17][20] = INTERACTIVE
+            matrix[18][19] = INTERACTIVE
+            matrix[20][19] = INTERACTIVE
+            matrix[21][19] = INTERACTIVE
+            matrix[22][18] = INTERACTIVE
+            matrix[23][19] = INTERACTIVE
+            //Línea 7 naranja
+            matrix[11][5] = INTERACTIVE
+            matrix[12][6] = INTERACTIVE
+            matrix[14][6] = INTERACTIVE
+            matrix[15][6] = INTERACTIVE
+            matrix[17][6] = INTERACTIVE
+            matrix[19][6] = INTERACTIVE
+            matrix[20][6] = INTERACTIVE
+            matrix[22][6] = INTERACTIVE
+            matrix[23][7] = INTERACTIVE
+            matrix[25][7] = INTERACTIVE
+            matrix[26][7] = INTERACTIVE
+            matrix[28][6] = INTERACTIVE
+            matrix[29][6] = INTERACTIVE
+            //Línea 12
+            matrix[28][8] = INTERACTIVE
+            matrix[28][9] = INTERACTIVE
+            matrix[28][11] = INTERACTIVE
+            matrix[29][12] = INTERACTIVE
+            matrix[30][13] = INTERACTIVE
+            matrix[30][15] = INTERACTIVE
+            matrix[30][19] = INTERACTIVE
+            matrix[30][22] = INTERACTIVE
+            matrix[32][21] = INTERACTIVE
+            matrix[33][21] = INTERACTIVE
+            matrix[35][22] = INTERACTIVE
+            matrix[35][24] = INTERACTIVE
+            matrix[35][25] = INTERACTIVE
+            matrix[36][27] = INTERACTIVE
+            matrix[36][29] = INTERACTIVE
+            matrix[36][30] = INTERACTIVE
+            matrix[37][32] = INTERACTIVE
+            matrix[37][33] = INTERACTIVE
+            matrix[38][34] = INTERACTIVE
+            //Línea A
+            matrix[23][28] = INTERACTIVE
+            matrix[24][30] = INTERACTIVE
+            matrix[25][32] = INTERACTIVE
+            matrix[27][33] = INTERACTIVE
+            matrix[28][33] = INTERACTIVE
+            matrix[30][34] = INTERACTIVE
+            matrix[31][34] = INTERACTIVE
+            matrix[32][35] = INTERACTIVE
+            matrix[33][36] = INTERACTIVE
+            //Línea 3
+            matrix[10][19] = INTERACTIVE
+            matrix[13][17] = INTERACTIVE
+            matrix[16][14] = INTERACTIVE
+            matrix[17][14] = INTERACTIVE
+            matrix[18][14] = INTERACTIVE
+            matrix[19][14] = INTERACTIVE
+            matrix[20][14] = INTERACTIVE
+            matrix[21][13] = INTERACTIVE
+            matrix[22][13] = INTERACTIVE
+            matrix[23][13] = INTERACTIVE
+            matrix[25][12] = INTERACTIVE
+            matrix[26][12] = INTERACTIVE
+            matrix[27][12] = INTERACTIVE
+            matrix[30][10] = INTERACTIVE
+            matrix[31][9] = INTERACTIVE
+            matrix[32][8] = INTERACTIVE
+            matrix[33][9] = INTERACTIVE
+            matrix[35][9] = INTERACTIVE
+            //Línea B
+            matrix[4][36] = INTERACTIVE
+            matrix[5][35] = INTERACTIVE
+            matrix[6][34] = INTERACTIVE
+            matrix[8][34] = INTERACTIVE
+            matrix[9][33] = INTERACTIVE
+            matrix[11][32] = INTERACTIVE
+            matrix[12][31] = INTERACTIVE
+            matrix[14][31] = INTERACTIVE
+            matrix[15][30] = INTERACTIVE
+            matrix[16][28] = INTERACTIVE
+            matrix[17][26] = INTERACTIVE
+            matrix[18][23] = INTERACTIVE
+            matrix[19][22] = INTERACTIVE
+            matrix[20][20] = INTERACTIVE
+            matrix[18][18] = INTERACTIVE
+            matrix[18][17] = INTERACTIVE
+            matrix[17][15] = INTERACTIVE
+            matrix[17][13] = INTERACTIVE
+            //Línea 9
+            matrix[23][26] = INTERACTIVE
+            matrix[23][25] = INTERACTIVE
+            matrix[23][22] = INTERACTIVE
+            matrix[23][20] = INTERACTIVE
+            matrix[23][16] = INTERACTIVE
+            matrix[23][14] = INTERACTIVE
+            matrix[23][10] = INTERACTIVE
+            matrix[23][8] = INTERACTIVE
+            //Línea 2
+            matrix[15][2] = INTERACTIVE
+            matrix[15][4] = INTERACTIVE
+            matrix[16][8] = INTERACTIVE
+            matrix[16][9] = INTERACTIVE
+            matrix[17][10] = INTERACTIVE
+            matrix[18][11] = INTERACTIVE
+            matrix[18][12] = INTERACTIVE
+            matrix[18][13] = INTERACTIVE
+            matrix[18][15] = INTERACTIVE
+            matrix[19][16] = INTERACTIVE
+            matrix[19][17] = INTERACTIVE
+            matrix[20][17] = INTERACTIVE
+            matrix[22][16] = INTERACTIVE
+            matrix[24][16] = INTERACTIVE
+            matrix[25][16] = INTERACTIVE
+            matrix[26][16] = INTERACTIVE
+            matrix[27][15] = INTERACTIVE
+            matrix[28][15] = INTERACTIVE
+            matrix[31][14] = INTERACTIVE
+            matrix[32][15] = INTERACTIVE
+            //Línea 8
+            matrix[19][15] = INTERACTIVE
+            matrix[20][15] = INTERACTIVE
+            matrix[21][15] = INTERACTIVE
+            matrix[22][15] = INTERACTIVE
+            matrix[23][18] = INTERACTIVE
+            matrix[24][20] = INTERACTIVE
+            matrix[26][20] = INTERACTIVE
+            matrix[27][21] = INTERACTIVE
+            matrix[28][21] = INTERACTIVE
+            matrix[29][21] = INTERACTIVE
+            matrix[30][24] = INTERACTIVE
+            matrix[31][25] = INTERACTIVE
+            matrix[31][27] = INTERACTIVE
+            matrix[32][29] = INTERACTIVE
+            //Línea 1
+            matrix[22][26] = INTERACTIVE
+            matrix[22][24] = INTERACTIVE
+            matrix[21][23] = INTERACTIVE
+            matrix[21][22] = INTERACTIVE
+            matrix[20][21] = INTERACTIVE
+            matrix[20][18] = INTERACTIVE
+            matrix[20][16] = INTERACTIVE
+            matrix[20][13] = INTERACTIVE
+            matrix[21][11] = INTERACTIVE
+            matrix[21][10] = INTERACTIVE
+            matrix[21][8] = INTERACTIVE
+            matrix[22][8] = INTERACTIVE
+            matrix[24][4] = INTERACTIVE
 
             return matrix
         }
@@ -2447,153 +2755,336 @@ class MapMatrixProvider {
                 }
             }
 
-            // Bloquear la zona superior derecha (figura roja grande)
-            for (i in 3 until 12) {
-                for (j in 20 until 37) {
-                    val diagonal = (i - 3) + (j - 20)
-                    if (diagonal > 6) {
-                        matrix[i][j] = WALL
+            // Wall de (3,10) a (5,10) y (3,11) a (4,11)
+            for (j in 3..5) matrix[10][j] = WALL
+            for (j in 3..4) matrix[11][j] = WALL
+
+            // ✅ QUITAR walls específicos - forzar PATH en (6,8) a (11,8) y (6,9) a (11,9)
+            for (j in 6..11) {
+                matrix[8][j] = PATH  // Fila Y=8 del X=6 al X=11
+                matrix[9][j] = PATH  // Fila Y=9 del X=6 al X=11
+            }
+
+            // Zonas bloqueadas principales - optimizadas
+            val blockedZones = arrayOf(
+                // formato: arrayOf(startI, endI, startJ, endJ)
+                arrayOf(3, 12, 20, 37), // Zona superior derecha
+                arrayOf(3, 8, 15, 37),  // Extensión superior derecha
+                arrayOf(15, 25, 28, 37), // Zona media derecha
+                arrayOf(18, 22, 25, 28), // Extensión zona verde
+                arrayOf(8, 15, 25, 37),  // Área verde específica
+                arrayOf(12, 15, 20, 25), // Áreas adicionales 12-14
+                arrayOf(15, 16, 21, 28), // Línea Y=15
+                arrayOf(16, 17, 22, 28), // Línea Y=16
+                arrayOf(17, 18, 23, 28), // Línea Y=17
+                arrayOf(8, 9, 16, 22),   // Línea Y=8 (pero se sobrescribe después)
+                arrayOf(9, 10, 17, 21),  // Línea Y=9 (pero se sobrescribe después)
+                arrayOf(10, 11, 18, 20), // Línea Y=10
+                arrayOf(3, 10, 3, 12),   // Figura negra superior izquierda
+                arrayOf(3, 7, 12, 20),   // Figura negra superior derecha
+                arrayOf(3, 8, 8, 30)     // Rectángulo superior final
+            )
+
+            // Aplicar todas las zonas bloqueadas
+            blockedZones.forEach { zone ->
+                for (i in zone[0] until zone[1]) {
+                    for (j in zone[2] until zone[3]) {
+                        // Aplicar condiciones especiales para ciertas zonas
+                        when {
+                            zone[0] == 3 && zone[2] == 20 -> { // Zona diagonal superior
+                                val diagonal = (i - 3) + (j - 20)
+                                if (diagonal > 6) matrix[i][j] = WALL
+                            }
+                            zone[0] == 25 && zone[2] == 30 -> { // Zona diagonal inferior
+                                val diagonal = (37 - i) + (j - 30)
+                                if (diagonal > 8) matrix[i][j] = WALL
+                            }
+                            else -> matrix[i][j] = WALL
+                        }
                     }
                 }
             }
 
-            // Bloquear más zona superior derecha (extensión de la figura roja)
-            for (i in 3 until 8) {
-                for (j in 15 until 37) {
+            // Puntos específicos bloqueados
+            val specificPoints = arrayOf(
+                arrayOf(25, 29), arrayOf(22, 27), arrayOf(18, 24), arrayOf(11, 19)
+            )
+            specificPoints.forEach { point ->
+                matrix[point[0]][point[1]] = WALL
+            }
+
+            // Zona diagonal inferior derecha
+            for (i in 25 until 37) {
+                for (j in 30 until 37) {
+                    val diagonal = (37 - i) + (j - 30)
+                    if (diagonal > 8) matrix[i][j] = WALL
+                }
+            }
+
+            // ✅ ASEGURAR que las zonas liberadas sigan siendo PATH (después de aplicar todas las zonas)
+            for (j in 6..11) {
+                matrix[8][j] = PATH  // Fuerza PATH en Y=8 del X=6 al X=11
+                matrix[9][j] = PATH  // Fuerza PATH en Y=9 del X=6 al X=11
+            }
+
+            for ( i in 6..23){
+                matrix[28][i]= WALL
+            }
+            for ( i in 9..20){
+                for (j in 31..33){
+                    if (i == 14 ){
+                        matrix[j][i] = PATH
+                    }else{
+                        matrix[j][i] = WALL
+                    }
+                }
+            }
+
+            for ( i in 7..22){
+                if(i in 14  .. 15){
+                    matrix[25][i]= PATH
+                }
+                matrix[25][i]= WALL
+            }
+
+            for ( i in 9..11){
+                for (j in 20..23){
+                    matrix[j][i] = WALL
+                }
+            }
+
+            for ( i in 13..15){
+                for (j in 21..22){
+                    matrix[j][i] = WALL
+                }
+            }
+
+            for (i in 25..26){
+                matrix[28][i]= WALL
+            }
+
+            for (j in 30..31){
+                matrix[j][24]= WALL
+            }
+
+            for (j in 30..32){
+                matrix[j][5]= WALL
+            }
+
+            // Puntos interactivos
+            matrix[35][25] = INTERACTIVE // Salida a Zacatenco
+            matrix[31][6] = INTERACTIVE  // Entrada a biblioteca
+            matrix[28][19] = INTERACTIVE  // Entrada a edificio
+
+            return matrix
+        }
+        private fun createBibliotecaESIAMatrix(): Array<Array<Int>> {
+            // Crear matriz de 40x40 con TODO como PATH (valor 2)
+            val matrix = Array(40) { Array(40) { 2 } }
+
+            // ✅ NO BLOQUEAR NADA - Solo bordes mínimos
+            // Borde superior
+            for (j in 0..39) {
+                matrix[0][j] = 1  // WALL
+            }
+            // Borde inferior
+            for (j in 0..39) {
+                matrix[39][j] = WALL // WALL
+            }
+            // Borde izquierdo
+            for (i in 1..38) {
+                matrix[i][0] = 1  // WALL
+            }
+            // Borde derecho
+            for (i in 1..38) {
+                matrix[i][39] = WALL  // WALL
+            }
+
+            for (i in 3..5) {
+                for (j in 3 until 11) {
                     matrix[i][j] = WALL
                 }
             }
 
-            // Bloquear la zona media derecha (figura verde compleja)
-            for (i in 15 until 25) {
-                for (j in 28 until 37) {
-                    matrix[i][j] = WALL
-                }
-            }
-
-            // Extensión adicional de la zona verde (parte más irregular)
-            for (i in 18 until 22) {
-                for (j in 25 until 28) {
-                    matrix[i][j] = WALL
-                }
-            }
-
-            // Bloquear el área verde específica que encerraste (zona superior derecha)
-            for (i in 8 until 15) {
-                for (j in 25 until 37) {
-                    matrix[i][j] = WALL
-                }
-            }
-
-            // Bloquear área adicional (20,12) a (24,12)
-            for (i in 12 until 13) {
-                for (j in 20 until 25) {
-                    matrix[i][j] = WALL
-                }
-            }
-
-            // Bloquear área adicional (20,13) a (24,13)
-            for (i in 13 until 14) {
-                for (j in 20 until 25) {
-                    matrix[i][j] = WALL
-                }
-            }
-
-            // Bloquear área adicional (20,14) a (24,14)
-            for (i in 14 until 15) {
-                for (j in 20 until 25) {
+            for (i in 9..11) {
+                for (j in 3 until 11) {
                     matrix[i][j] = WALL
                 }
             }
 
             // Bloquear área adicional (21,15) a (27,15)
-            for (i in 15 until 16) {
-                for (j in 21 until 28) {
+            for (i in 17.. 19) {
+                for (j in 3 until 11) {
                     matrix[i][j] = WALL
                 }
             }
 
             // Bloquear área adicional (22,16) a (27,16)
-            for (i in 16 until 17) {
-                for (j in 22 until 28) {
+            for (i in 25 .. 26) {
+                for (j in 3 until 11) {
                     matrix[i][j] = WALL
                 }
             }
 
             // Bloquear área adicional (23,17) a (27,17)
-            for (i in 17 until 18) {
-                for (j in 23 until 28) {
+            for (i in 32.. 34) {
+                for (j in 3 until 11) {
                     matrix[i][j] = WALL
                 }
             }
 
-            // NUEVO: Bloquear puntos específicos adicionales
-            // Punto (29, 25)
-            matrix[25][29] = WALL
-
-            // Punto (27, 22)
-            matrix[22][27] = WALL
-
-            // Punto (24, 18)
-            matrix[18][24] = WALL
-
-            // NUEVO: Bloquear área (16,8) a (21,8)
-            for (i in 8 until 9) {
-                for (j in 16 until 22) {
+            for (i in 27..34) {
+                for (j in 18 ..19) {
                     matrix[i][j] = WALL
                 }
             }
 
             // NUEVO: Bloquear área (17,9) a (20,9)
-            for (i in 9 until 10) {
-                for (j in 17 until 21) {
+            for (i in 15.. 22) {
+                for (j in 16 until 21) {
                     matrix[i][j] = WALL
                 }
             }
 
-            // NUEVO: Bloquear área (18,10) a (19,10)
-            for (i in 10 until 11) {
-                for (j in 18 until 20) {
+            for (i in 4..11) {
+                for (j in 17 ..19) {
                     matrix[i][j] = WALL
                 }
             }
-
-            // NUEVO: Bloquear punto (19,11)
-            matrix[11][19] = WALL
-
-            // Bloquear la zona inferior derecha (triángulo inferior)
-            for (i in 25 until 37) {
-                for (j in 30 until 37) {
-                    val diagonal = (37 - i) + (j - 30)
-                    if (diagonal > 8) {
-                        matrix[i][j] = WALL
-                    }
-                }
-            }
-
-            // Bloquear figura negra superior izquierda
-            for (i in 3 until 10) {
-                for (j in 3 until 12) {
+            for (i in 3..5) {
+                for (j in 27 ..34) {
                     matrix[i][j] = WALL
                 }
             }
-
-            // Bloquear figura negra superior derecha (zona más específica)
-            for (i in 3 until 7) {
-                for (j in 12 until 20) {
+            for (i in 32..34) {
+                for (j in 26 ..33) {
                     matrix[i][j] = WALL
                 }
             }
+            for (j in 26..27){
+                matrix[28][j] = WALL
+            }
+            for (j in 33..34){
+                matrix[28][j] = WALL
+            }
+            for (j in 25..26){
+                matrix[24][j] = WALL
+            }
+            for (j in 32..33){
+                matrix[24][j] = WALL
+            }
 
-            // Bloquear el rectángulo superior final
-            for (i in 3 until 8) {
-                for (j in 8 until 30) {
-                    matrix[i][j] = WALL
+            for (j in 33..34){
+                matrix[13][j] = WALL
+            }
+            for (j in 26..27){
+                matrix[13][j] = WALL
+            }
+            for (j in 26..27){
+                matrix[9][j] = WALL
+            }
+            for (j in 33..34){
+                matrix[9][j] = WALL
+            }
+
+            // Punto de entrada/salida
+            matrix[19][38] = 0  // INTERACTIVE
+
+            // ✅ LOGS para verificar
+            Log.d("BibliotecaMatrix", "Posición [5][9] = ${matrix[5][9]} (debería ser 2)")
+            Log.d("BibliotecaMatrix", "Posición [8][9] = ${matrix[8][9]} (debería ser 2)")
+            Log.d("BibliotecaMatrix", "Posición [15][15] = ${matrix[15][15]} (debería ser 2)")
+
+            return matrix
+        }
+        private fun createEdificioESIAMatrix(): Array<Array<Int>> {
+            // Usa las constantes ya definidas en tu proyecto (PATH, INTERACTIVE, MAP_HEIGHT, MAP_WIDTH)
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            for (i in 0..39) {
+                for (j in 1 until 7) {
+                    matrix[j][i] = WALL
                 }
             }
 
-            // Punto de salida hacia Zacatenco (puerta principal en la parte inferior)
-            matrix[35][25] = INTERACTIVE
+            for (i in 38.. 39) {
+                for (j in 7 until 27) {
+                    matrix[j][i] = WALL
+                }
+            }
+
+            for (j in 7 until 27) {
+                matrix[j][0] = WALL
+            }
+
+
+            // Entrada del edificio en (19,28) -> matrix[y][x]
+            matrix[34][20] = INTERACTIVE
+            matrix[28][4] = INTERACTIVE
+            matrix[28][9] = INTERACTIVE
+            matrix[28][14] = INTERACTIVE
+            matrix[28][18] = INTERACTIVE
+            matrix[28][23] = INTERACTIVE
+            matrix[28][28] = INTERACTIVE
+            matrix[28][33] = INTERACTIVE
+            matrix[28][37] = INTERACTIVE
+
+            // DEBUG logs para confirmar que la función se ejecuta y el tile está correcto
+            Log.d("MapMatrixProvider", "createEdificioESIAMatrix: MAP_HEIGHT=$MAP_HEIGHT MAP_WIDTH=$MAP_WIDTH")
+            Log.d("MapMatrixProvider", "createEdificioESIAMatrix: matrix[28][19]=${matrix[28][19]} (INTERACTIVE=$INTERACTIVE, PATH=$PATH)")
+
+            return matrix
+        }
+        // En MapMatrixProvider.kt, agregar este método:
+
+        private fun getSalonESIAMatrix(): Array<Array<Int>> {
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { WALL } }
+
+            // Dimensiones del aula
+            val roomWidth = 40
+            val roomHeight = 40
+            val startX = 0
+            val startY = 0
+
+            // Interior del salón (espacio abierto)
+            for (i in startY until startY + roomHeight) {
+                for (j in startX until startX + roomWidth) {
+                    matrix[i][j] = PATH
+                }
+            }
+
+            // Puerta de salida hacia el edificio ESIA (lado izquierdo)
+            matrix[startY + roomHeight/2][1] = INTERACTIVE
+
+            // Pizarrón (pared frontal)
+            for (j in startX + 2 until startX + roomWidth - 2) {
+                matrix[startY + 1][j] = INACCESSIBLE
+            }
+            // Centro del pizarrón es interactivo
+            matrix[startY + 1][startX + roomWidth/2] = INTERACTIVE
+
+            // Escritorio del profesor
+            for (j in startX + 10 until startX + 20) {
+                for (i in startY + 3 until startY + 6) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            for (i in 4..32 step 4) {
+                matrix[15][i] = INACCESSIBLE
+            }
+            for (i in 4..32 step 4) {
+                matrix[20][i] = INACCESSIBLE
+            }
+            for (i in 4..32 step 4) {
+                matrix[25][i] = INACCESSIBLE
+            }
+            for (i in 4..32 step 4) {
+                matrix[29][i] = INACCESSIBLE
+            }
+            for (i in 4..32 step 4) {
+                matrix[34][i] = INACCESSIBLE
+            }
 
             return matrix
         }
@@ -2796,6 +3287,23 @@ class MapMatrixProvider {
             if (mapId == MAP_MAIN && x == 31 && y == 10) {
                 return MAP_PALAPAS_IA
             }
+            if (mapId == MAP_MAIN && x == 33 && y == 28) {
+                return MAP_CANCHA_IA
+            }
+            //Retorno al mapa principal desde cancha de IA
+            if (mapId == MAP_CANCHA_IA) {
+                // Rango ampliado: detectamos si está en las primeras 3 o últimas 3 filas/columnas
+                val isLeftExit = x <= 3
+                val isRightExit = x >= 36
+                val isTopExit = y <= 3
+                val isBottomExit = y >= 36
+
+                if (isLeftExit || isRightExit || isTopExit || isBottomExit) {
+                    // Imprimir log para asegurar que entra aquí
+                    Log.d("MapTransition", "Saliendo de CanchaIA por borde: $x, $y")
+                    return MAP_MAIN
+                }
+            }
             // Transición DESDE el mapa principal HACIA las palapas ISC
             if (mapId == MAP_MAIN && x == MAIN_TO_PALAPAS_ISC_POSITION.first && y == MAIN_TO_PALAPAS_ISC_POSITION.second) {
                 return MAP_PALAPAS_ISC
@@ -2859,6 +3367,15 @@ class MapMatrixProvider {
                 return MAP_PLAZA_TORRES
             }
 
+            if (mapId == MAP_ESIA && x == 10 && y == 15) { // Ajusta las coordenadas según tu mapa
+                return MAP_BIBLIOTECA_ESIA
+            }
+
+            // Transición DESDE Biblioteca ESIA hacia ESIA
+            if (mapId == MAP_BIBLIOTECA_ESIA && x == 15 && y == 25) {
+                return MAP_ESIA
+            }
+
             return null
         }
 
@@ -2909,8 +3426,44 @@ class MapMatrixProvider {
                 MAP_PLAZA_TORRES -> Pair(18, 18) //Entrada ESCOM
                 MAP_PLAZA_TORRES_N1 -> Pair(20, 16) //Entrada cinepolis plaza torres
                 MAP_ESIA -> Pair(25, 35) // Posición inicial en ESIA (cerca de la entrada)
+                MAP_BIBLIOTECA_ESIA -> Pair(15, 25)
                 else -> Pair(MAP_WIDTH / 2, MAP_HEIGHT / 2)
             }
+        }
+        /**
+         * Matriz para la Cancha de IA
+         */
+        private fun createCanchaIAMatrix(): Array<Array<Int>> {
+            // 1. Mapa
+            val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
+
+            // 2. BORDES EXTERIORES
+            for (i in 0 until MAP_HEIGHT) {
+                for (j in 0 until MAP_WIDTH) {
+                    if (i == 0 || i == MAP_HEIGHT - 1 || j == 0 || j == MAP_WIDTH - 1) {
+                        matrix[i][j] = WALL
+                    }
+                }
+            }
+
+            // 3. PARED VERTICAL DIVISORIA (Cancha y Pasillo Gris)
+
+            for (i in 4 until 37) {
+                // Esta pared va desde la fila 5 hasta la 35.
+                // Esto significa que las filas 1-4 (Naranja Arriba) están abiertas a la derecha.
+                // Y las filas 36-39 (Naranja Abajo) están abiertas a la derecha.
+
+                val espalapa = (i >= 17 && i <= 21)
+
+                if (!espalapa) {
+                    matrix[i][34] = WALL
+                }
+            }
+
+            //Basketball Game
+            matrix[14][13] = INTERACTIVE
+
+            return matrix
         }
     }
 }

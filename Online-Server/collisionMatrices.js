@@ -1083,6 +1083,7 @@ plazaVistaNorteCollisionMatrix[6][1] = 0;
 // =================================================================
 // Matriz de colisión para Metro Politécnico (40x40)
 // =================================================================
+
 const MAP_WIDTH = 40;
 const MAP_HEIGHT = 40;
 
@@ -1091,9 +1092,13 @@ const PATH = 2;
 const INTERACTIVE = 0;
 const INACCESSIBLE = 3;
 
-const metroPolitecnicoCollisionMatrix = Array(MAP_HEIGHT).fill().map(() => Array(MAP_WIDTH).fill(PATH));
+// Crear matriz base
+const metroPolitecnicoCollisionMatrix = Array(MAP_HEIGHT)
+    .fill()
+    .map(() => Array(MAP_WIDTH).fill(PATH));
 
-//Bordes exteriores
+
+// BORDES EXTERIORES
 for (let i = 0; i < MAP_HEIGHT; i++) {
     for (let j = 0; j < MAP_WIDTH; j++) {
         if (i === 0 || i === MAP_HEIGHT - 1 || j === 0 || j === MAP_WIDTH - 1) {
@@ -1102,85 +1107,75 @@ for (let i = 0; i < MAP_HEIGHT; i++) {
     }
 }
 
-// Paredes superiores e inferiores
-for (let i = 1; i <= 2; i++) {
-    for (let j = 0; j < MAP_WIDTH; j++) {
-        metroPolitecnicoCollisionMatrix[i][j] = WALL;
-    }
-}
-for (let i = 37; i <= 38; i++) {
-    for (let j = 0; j < MAP_WIDTH; j++) {
-        metroPolitecnicoCollisionMatrix[i][j] = WALL;
-    }
-}
 
-// Paredes laterales
-for (let i = 0; i < MAP_HEIGHT; i++) {
-    for (let j = 34; j < MAP_WIDTH; j++) {
-        metroPolitecnicoCollisionMatrix[i][j] = WALL;
-    }
-}
-for (let i = 0; i < 18; i++) {
-    for (let j = 0; j < 13; j++) {
-        metroPolitecnicoCollisionMatrix[i][j] = WALL;
-    }
-}
-for (let i = 0; i < 18; i++) {
-    for (let j = 24; j < MAP_WIDTH; j++) {
-        metroPolitecnicoCollisionMatrix[i][j] = WALL;
-    }
-}
-for (let i = 22; i < MAP_HEIGHT; i++) {
-    for (let j = 0; j < 12; j++) {
-        metroPolitecnicoCollisionMatrix[i][j] = WALL;
-    }
-}
-for (let i = 31; i < MAP_HEIGHT; i++) {
-    for (let j = 19; j < MAP_WIDTH; j++) {
-        metroPolitecnicoCollisionMatrix[i][j] = WALL;
-    }
-}
+// PARED ARRIBA Y ABAJO
+for (let i = 1; i <= 2; i++)
+    for (let j = 0; j < MAP_WIDTH; j++) metroPolitecnicoCollisionMatrix[i][j] = WALL;
 
-// Paredes internas
-let altura = 30;
-for (let j = 20; j < MAP_WIDTH; j++) metroPolitecnicoCollisionMatrix[altura][j] = WALL;
-altura = 29;
-for (let j = 21; j < MAP_WIDTH; j++) metroPolitecnicoCollisionMatrix[altura][j] = WALL;
+for (let i = 37; i <= 38; i++)
+    for (let j = 0; j < MAP_WIDTH; j++) metroPolitecnicoCollisionMatrix[i][j] = WALL;
 
-for (let i = 22; i < 27; i++) {
-    for (let j = 24; j < MAP_WIDTH; j++) {
+
+// PAREDES LATERALES
+// derecha
+for (let i = 0; i < MAP_HEIGHT; i++)
+    for (let j = 34; j < MAP_WIDTH; j++) metroPolitecnicoCollisionMatrix[i][j] = WALL;
+
+// izquierda superior
+for (let i = 0; i < 18; i++)
+    for (let j = 0; j < 13; j++) metroPolitecnicoCollisionMatrix[i][j] = WALL;
+
+// derecha superior
+for (let i = 0; i < 18; i++)
+    for (let j = 24; j < MAP_WIDTH; j++) metroPolitecnicoCollisionMatrix[i][j] = WALL;
+
+// izquierda inferior
+for (let i = 22; i < MAP_HEIGHT; i++)
+    for (let j = 0; j < 12; j++) metroPolitecnicoCollisionMatrix[i][j] = WALL;
+
+// derecha inferior
+for (let i = 31; i < MAP_HEIGHT; i++)
+    for (let j = 19; j < MAP_WIDTH; j++) metroPolitecnicoCollisionMatrix[i][j] = WALL;
+
+
+// PAREDES INTERNAS HORIZONTALES GRANDES
+for (let j = 20; j < MAP_WIDTH; j++) metroPolitecnicoCollisionMatrix[30][j] = WALL;
+for (let j = 21; j < MAP_WIDTH; j++) metroPolitecnicoCollisionMatrix[29][j] = WALL;
+
+// bloque inferior derecha
+for (let i = 22; i < 27; i++)
+    for (let j = 24; j < MAP_WIDTH; j++)
         metroPolitecnicoCollisionMatrix[i][j] = WALL;
-    }
-}
-for (let i = 3; i < 8; i++) {
-    for (let j = 20; j < 26; j++) {
+
+// bloque superior derecha
+for (let i = 3; i < 8; i++)
+    for (let j = 20; j < 26; j++)
         metroPolitecnicoCollisionMatrix[i][j] = WALL;
-    }
-}
-altura = 8;
-for (let j = 20; j < MAP_WIDTH; j++) metroPolitecnicoCollisionMatrix[altura][j] = WALL;
-altura = 9;
-for (let j = 21; j < MAP_WIDTH; j++) metroPolitecnicoCollisionMatrix[altura][j] = WALL;
-for (let i = 10; i < 13; i++) {
-    for (let j = 22; j < 26; j++) metroPolitecnicoCollisionMatrix[i][j] = WALL;
-}
 
-let ancho = 13;
-for (let i = 8; i < 14; i++) metroPolitecnicoCollisionMatrix[i][ancho] = WALL;
-ancho = 14;
-for (let i = 9; i < 13; i++) metroPolitecnicoCollisionMatrix[i][ancho] = WALL;
 
-ancho = 12;
-for (let i = 26; i < 31; i++) metroPolitecnicoCollisionMatrix[i][ancho] = WALL;
-ancho = 13;
-for (let i = 27; i < 30; i++) metroPolitecnicoCollisionMatrix[i][ancho] = WALL;
+for (let j = 20; j < MAP_WIDTH; j++) metroPolitecnicoCollisionMatrix[8][j] = WALL;
+for (let j = 21; j < MAP_WIDTH; j++) metroPolitecnicoCollisionMatrix[9][j] = WALL;
 
+// bloque central
+for (let i = 10; i < 13; i++)
+    for (let j = 22; j < 26; j++)
+        metroPolitecnicoCollisionMatrix[i][j] = WALL;
+
+// COLUMNAS / MUROS VERTICALES
+for (let i = 8; i < 14; i++) metroPolitecnicoCollisionMatrix[i][13] = WALL;
+for (let i = 9; i < 13; i++) metroPolitecnicoCollisionMatrix[i][14] = WALL;
+
+for (let i = 26; i < 31; i++) metroPolitecnicoCollisionMatrix[i][12] = WALL;
+for (let i = 27; i < 30; i++) metroPolitecnicoCollisionMatrix[i][13] = WALL;
+
+
+//CUADRO PARED INTERNO EXTRA
 metroPolitecnicoCollisionMatrix[27][33] = WALL;
 metroPolitecnicoCollisionMatrix[28][33] = WALL;
 metroPolitecnicoCollisionMatrix[27][32] = WALL;
 metroPolitecnicoCollisionMatrix[28][32] = WALL;
 
-// Puntos interactivos
+// PUNTOS INTERACTIVOS
 // Taquilla arriba
 metroPolitecnicoCollisionMatrix[11][21] = INTERACTIVE;
 metroPolitecnicoCollisionMatrix[12][21] = INTERACTIVE;
@@ -1201,7 +1196,7 @@ metroPolitecnicoCollisionMatrix[21][26] = INTERACTIVE;
 metroPolitecnicoCollisionMatrix[27][31] = INTERACTIVE;
 metroPolitecnicoCollisionMatrix[28][31] = INTERACTIVE;
 
-// Máquinas abajo
+// Máquinas
 metroPolitecnicoCollisionMatrix[27][14] = INTERACTIVE;
 metroPolitecnicoCollisionMatrix[28][14] = INTERACTIVE;
 
@@ -1221,16 +1216,238 @@ metroPolitecnicoCollisionMatrix[19][1] = INTERACTIVE;
 // Mapa del Metro
 metroPolitecnicoCollisionMatrix[24][12] = INTERACTIVE;
 
-// Completar celdas vacías con PATH (Espacio caminable)
+
+// Rellenar celdas Vacias
 for (let i = 0; i < MAP_HEIGHT; i++) {
     for (let j = 0; j < MAP_WIDTH; j++) {
-        if (metroPolitecnicoCollisionMatrix[i][j] !== WALL &&
+        if (
+            metroPolitecnicoCollisionMatrix[i][j] !== WALL &&
             metroPolitecnicoCollisionMatrix[i][j] !== INTERACTIVE &&
-            metroPolitecnicoCollisionMatrix[i][j] !== INACCESSIBLE) {
+            metroPolitecnicoCollisionMatrix[i][j] !== INACCESSIBLE
+        ) {
             metroPolitecnicoCollisionMatrix[i][j] = PATH;
         }
     }
 }
+
+// =================================================================
+// Matriz de colisión para Red Metro (40x40)
+// =================================================================
+
+// Crear matriz base
+const redMetroCollisionMatrix = Array(MAP_HEIGHT)
+    .fill()
+    .map(() => Array(MAP_WIDTH).fill(PATH));
+
+
+// BORDES EXTERIORES
+for (let i = 0; i < MAP_HEIGHT; i++) {
+    for (let j = 0; j < MAP_WIDTH; j++) {
+        if (i === 0 || i === MAP_HEIGHT - 1 || j === 0 || j === MAP_WIDTH - 1) {
+            redMetroCollisionMatrix[i][j] = WALL;
+        }
+    }
+}
+
+// PAREDES HORIZONTALES SUPERIORES
+for (let j = 1; j <= 38; j++) redMetroCollisionMatrix[3][j] = WALL;
+for (let j = 1; j <= 38; j++) redMetroCollisionMatrix[2][j] = WALL;
+for (let j = 1; j <= 38; j++) redMetroCollisionMatrix[1][j] = WALL;
+
+
+// ---------------------------------------------------------------
+// LÍNEA 5
+// ---------------------------------------------------------------
+[
+    [9,14], [11,15], [13,15], [14,16], [15,17], [16,19], [16,20],
+    [17,22], [16,24], [18,25], [19,25], [21,25], [22,28]
+].forEach(([i,j]) => redMetroCollisionMatrix[i][j] = INTERACTIVE);
+
+
+// ---------------------------------------------------------------
+// LÍNEA 6
+// ---------------------------------------------------------------
+[
+    [9,5], [10,6], [11,7], [11,9], [11,11], [11,13], [11,16],
+    [12,18], [12,20], [12,22]
+].forEach(([i,j]) => redMetroCollisionMatrix[i][j] = INTERACTIVE);
+
+
+// ---------------------------------------------------------------
+// LÍNEA 4
+// ---------------------------------------------------------------
+[
+    [13,21], [14,20], [17,20], [18,19], [20,19], [21,19],
+    [22,18], [23,19]
+].forEach(([i,j]) => redMetroCollisionMatrix[i][j] = INTERACTIVE);
+
+
+// ---------------------------------------------------------------
+// LÍNEA 7 – naranja
+// ---------------------------------------------------------------
+[
+    [11,5], [12,6], [14,6], [15,6], [17,6], [19,6], [20,6],
+    [22,6], [23,7], [25,7], [26,7], [28,6], [29,6]
+].forEach(([i,j]) => redMetroCollisionMatrix[i][j] = INTERACTIVE);
+
+
+// ---------------------------------------------------------------
+// LÍNEA 12
+// ---------------------------------------------------------------
+[
+    [28,8], [28,9], [28,11], [29,12], [30,13], [30,15], [30,19],
+    [30,22], [32,21], [33,21], [35,22], [35,24], [35,25],
+    [36,27], [36,29], [36,30], [37,32], [37,33], [38,34]
+].forEach(([i,j]) => redMetroCollisionMatrix[i][j] = INTERACTIVE);
+
+
+// ---------------------------------------------------------------
+// LÍNEA A
+// ---------------------------------------------------------------
+[
+    [23,28], [24,30], [25,32], [27,33], [28,33], [30,34],
+    [31,34], [32,35], [33,36]
+].forEach(([i,j]) => redMetroCollisionMatrix[i][j] = INTERACTIVE);
+
+
+// ---------------------------------------------------------------
+// LÍNEA 3
+// ---------------------------------------------------------------
+[
+    [10,19], [13,17], [16,14], [17,14], [18,14], [19,14], [20,14],
+    [21,13], [22,13], [23,13], [25,12], [26,12], [27,12],
+    [30,10], [31,9], [32,8], [33,9], [35,9]
+].forEach(([i,j]) => redMetroCollisionMatrix[i][j] = INTERACTIVE);
+
+
+// ---------------------------------------------------------------
+// LÍNEA B
+// ---------------------------------------------------------------
+[
+    [4,36], [5,35], [6,34], [8,34], [9,33], [11,32], [12,31],
+    [14,31], [15,30], [16,28], [17,26], [18,23], [19,22],
+    [20,20], [18,18], [18,17], [17,15], [17,13]
+].forEach(([i,j]) => redMetroCollisionMatrix[i][j] = INTERACTIVE);
+
+
+// ---------------------------------------------------------------
+// LÍNEA 9
+// ---------------------------------------------------------------
+[
+    [23,26], [23,25], [23,22], [23,20], [23,16], [23,14],
+    [23,10], [23,8]
+].forEach(([i,j]) => redMetroCollisionMatrix[i][j] = INTERACTIVE);
+
+
+// ---------------------------------------------------------------
+// LÍNEA 2
+// ---------------------------------------------------------------
+[
+    [15,2], [15,4], [16,8], [16,9], [17,10], [18,11], [18,12],
+    [18,13], [18,15], [19,16], [19,17], [20,17], [22,16],
+    [24,16], [25,16], [26,16], [27,15], [28,15], [31,14], [32,15]
+].forEach(([i,j]) => redMetroCollisionMatrix[i][j] = INTERACTIVE);
+
+
+// ---------------------------------------------------------------
+// LÍNEA 8
+// ---------------------------------------------------------------
+[
+    [19,15], [20,15], [21,15], [22,15], [23,18], [24,20],
+    [26,20], [27,21], [28,21], [29,21], [30,24], [31,25],
+    [31,27], [32,29]
+].forEach(([i,j]) => redMetroCollisionMatrix[i][j] = INTERACTIVE);
+
+
+// ---------------------------------------------------------------
+// LÍNEA 1
+// ---------------------------------------------------------------
+[
+    [22,26], [22,24], [21,23], [21,22], [20,21], [20,18],
+    [20,16], [20,13], [21,11], [21,10], [21,8], [22,8],
+    [24,4]
+].forEach(([i,j]) => redMetroCollisionMatrix[i][j] = INTERACTIVE);
+
+
+// ---------------------------------------------------------------
+// RELLENAR VACÍOS COMO PATH
+// ---------------------------------------------------------------
+for (let i = 0; i < MAP_HEIGHT; i++) {
+    for (let j = 0; j < MAP_WIDTH; j++) {
+        if (
+            redMetroCollisionMatrix[i][j] !== WALL &&
+            redMetroCollisionMatrix[i][j] !== INTERACTIVE &&
+            redMetroCollisionMatrix[i][j] !== INACCESSIBLE
+        ) {
+            redMetroCollisionMatrix[i][j] = PATH;
+        }
+    }
+}
+
+// =================================================================
+// Matriz de colisión para Andenes Metro Politécnico (40x40)
+// =================================================================
+
+
+// Crear matriz base
+const andenesMetroPolitecnicoCollisionMatrix = Array(MAP_HEIGHT)
+    .fill()
+    .map(() => Array(MAP_WIDTH).fill(PATH));
+
+
+// 1) BORDES EXTERIORES
+for (let i = 0; i < MAP_HEIGHT; i++) {
+    for (let j = 0; j < MAP_WIDTH; j++) {
+        if (i === 0 || i === MAP_HEIGHT - 1 || j === 0 || j === MAP_WIDTH - 1) {
+            andenesMetroPolitecnicoCollisionMatrix[i][j] = WALL;
+        }
+    }
+}
+
+
+// 2) PUNTOS INTERACTIVOS (igual que en Kotlin)
+andenesMetroPolitecnicoCollisionMatrix[10][20] = INTERACTIVE;
+andenesMetroPolitecnicoCollisionMatrix[26][20] = INTERACTIVE;
+
+
+// 3) PAREDES HORIZONTALES POR PORCENTAJE
+
+// Pared al 60% de altura
+const alturaPared = Math.floor(MAP_HEIGHT * 0.6);
+for (let j = 0; j < MAP_WIDTH; j++) {
+    andenesMetroPolitecnicoCollisionMatrix[alturaPared][j] = WALL;
+}
+
+// Pared al 33% de altura
+const alturaPared1 = Math.floor(MAP_HEIGHT * 0.33);
+for (let j = 0; j < MAP_WIDTH; j++) {
+    andenesMetroPolitecnicoCollisionMatrix[alturaPared1][j] = WALL;
+}
+
+
+// 4) PAREDES VERTICALES 
+const ancho = 6;
+for (let i = 4; i < 36; i++)
+    andenesMetroPolitecnicoCollisionMatrix[ancho][i] = WALL;
+
+const ancho1 = 32;
+for (let i = 4; i < 36; i++)
+    andenesMetroPolitecnicoCollisionMatrix[ancho1][i] = WALL;
+
+
+// 5) RELLENAR CELDAS VACÍAS COMO PATH
+for (let i = 0; i < MAP_HEIGHT; i++) {
+    for (let j = 0; j < MAP_WIDTH; j++) {
+        if (
+            andenesMetroPolitecnicoCollisionMatrix[i][j] !== WALL &&
+            andenesMetroPolitecnicoCollisionMatrix[i][j] !== INTERACTIVE &&
+            andenesMetroPolitecnicoCollisionMatrix[i][j] !== INACCESSIBLE
+        ) {
+            andenesMetroPolitecnicoCollisionMatrix[i][j] = PATH;
+        }
+    }
+}
+
 
 /*LAB POSGRADO*/
 // Inicializa la matriz con el valor de PATH (2)
@@ -1339,6 +1556,8 @@ module.exports = {
     encbCollisionMatrix,
     labPosgradoMatrix,
     metroPolitecnicoCollisionMatrix,
+    redMetroCollisionMatrix,
+    andenesMetroPolitecnicoCollisionMatrix,
     esimeCollisionMatrix,
     esiaCollisionMatrix,
     plazaVistaNorteCollisionMatrix,

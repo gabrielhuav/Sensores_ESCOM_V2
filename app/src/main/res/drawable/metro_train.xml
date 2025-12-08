@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="150dp"
+    android:height="80dp"
+    android:viewportWidth="150"
+    android:viewportHeight="80">
+
+    <!-- Cuerpo del tren -->
+    <path
+        android:fillColor="#F65207"
+        android:pathData="M10,20 L140,20 L140,60 L10,60 Z" />
+
+    <!-- Ventanas -->
+    <path
+        android:fillColor="#66CCFF"
+        android:pathData="M15,25 L45,25 L45,40 L15,40 Z" />
+    <path
+        android:fillColor="#66CCFF"
+        android:pathData="M50,25 L80,25 L80,40 L50,40 Z" />
+    <path
+        android:fillColor="#66CCFF"
+        android:pathData="M85,25 L115,25 L115,40 L85,40 Z" />
+
+    <!-- Línea inferior -->
+    <path
+        android:fillColor="#666666"
+        android:pathData="M10,55 L140,55 L140,60 L10,60 Z" />
+
+</vector>
