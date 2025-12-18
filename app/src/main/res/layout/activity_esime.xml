@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     tools:context=".presentation.locations.outdoor.Esime">
 
-    <!-- Contenedor del mapa (PRIMERO para que esté atrás) -->
+    <!-- Contenedor del mapa -->
     <FrameLayout
         android:id="@+id/map_container"
         android:layout_width="0dp"
@@ -16,7 +16,20 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-    <!-- Botón de regreso (DESPUÉS para que esté visible) -->
+    <!-- OVERLAY NOCTURNO - Agregar esto -->
+    <View
+        android:id="@+id/night_overlay"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="#80000000"
+        android:visibility="gone"
+        android:elevation="5dp"
+        app:layout_constraintTop_toTopOf="@id/map_container"
+        app:layout_constraintBottom_toBottomOf="@id/map_container"
+        app:layout_constraintStart_toStartOf="@id/map_container"
+        app:layout_constraintEnd_toEndOf="@id/map_container"/>
+
+    <!-- Botón de regreso -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnBack"
         android:layout_width="60dp"
@@ -34,12 +47,30 @@
         android:layout_marginStart="16dp"
         android:contentDescription="Back to Home"/>
 
-    <!-- Layout para los controles (DESPUÉS para que estén visibles) -->
+    <!-- NUEVO: Botón de Modo Nocturno -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnNightMode"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:text="🌙"
+        android:textSize="24sp"
+        android:textColor="@android:color/white"
+        android:backgroundTint="#424242"
+        app:cornerRadius="30dp"
+        android:elevation="16dp"
+        android:translationZ="16dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:contentDescription="Night Mode"/>
+
+    <!-- Layout para los controles -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <!-- GridLayout para controles de movimiento (esquina inferior izquierda) -->
+        <!-- GridLayout para controles de movimiento -->
         <GridLayout
             android:id="@+id/movement_buttons"
             android:layout_width="wrap_content"
@@ -124,7 +155,7 @@
                 android:layout_column="2"/>
         </GridLayout>
 
-        <!-- Botón A (esquina inferior derecha) -->
+        <!-- Botón A -->
         <Button
             android:id="@+id/buttonA"
             android:layout_width="56dp"
@@ -138,7 +169,9 @@
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_margin="16dp"/>
 
-        <!-- Botones adicionales en la parte inferior central -->
+
+
+        <!-- Botones adicionales -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

@@ -62,7 +62,7 @@ function isDeskOccupied(mapName, x, y) {
 function sitPlayer(playerId, playerName, mapName, x, y) {
     initializeSeats(mapName);
     const deskKey = getDeskKey(x, y);
-    
+
     // Verificar si el pupitre ya está ocupado
     if (isDeskOccupied(mapName, x, y)) {
         const occupant = seatedPlayers[mapName][deskKey];
@@ -71,25 +71,25 @@ function sitPlayer(playerId, playerName, mapName, x, y) {
         }
         return { success: false, message: `Pupitre ocupado por ${occupant.playerName}` };
     }
-    
+
     // Verificar si el jugador ya está sentado en otro lugar del mismo mapa
     for (const [key, seat] of Object.entries(seatedPlayers[mapName])) {
         if (seat.playerId === playerId) {
             return { success: false, message: "Ya estás sentado en otro pupitre. Debes levantarte primero." };
         }
     }
-    
+
     // Sentar al jugador
     seatedPlayers[mapName][deskKey] = {
         playerId,
         playerName,
         timestamp: Date.now()
     };
-    
+
     console.log(`✅ ${playerName} se sentó en pupitre (${x}, ${y}) del mapa ${mapName}`);
-    
-    return { 
-        success: true, 
+
+    return {
+        success: true,
         message: `Te sentaste en el pupitre (${x}, ${y})`,
         deskPosition: { x, y }
     };
@@ -98,9 +98,9 @@ function sitPlayer(playerId, playerName, mapName, x, y) {
 // Levantar a un jugador de su pupitre
 function standPlayer(playerId, mapName) {
     initializeSeats(mapName);
-    
+
     let foundDesk = null;
-    
+
     // Buscar en qué pupitre está sentado el jugador
     for (const [deskKey, seat] of Object.entries(seatedPlayers[mapName])) {
         if (seat.playerId === playerId) {
@@ -108,21 +108,21 @@ function standPlayer(playerId, mapName) {
             break;
         }
     }
-    
+
     if (!foundDesk) {
         return { success: false, message: "No estás sentado en ningún pupitre" };
     }
-    
+
     const [x, y] = foundDesk.split(',').map(Number);
     const playerName = seatedPlayers[mapName][foundDesk].playerName;
-    
+
     // Liberar el pupitre
     delete seatedPlayers[mapName][foundDesk];
-    
+
     console.log(`🚶 ${playerName} se levantó del pupitre (${x}, ${y}) del mapa ${mapName}`);
-    
-    return { 
-        success: true, 
+
+    return {
+        success: true,
         message: `Te levantaste del pupitre (${x}, ${y})`,
         deskPosition: { x, y }
     };
@@ -131,7 +131,7 @@ function standPlayer(playerId, mapName) {
 // Liberar todos los asientos de un jugador al desconectarse
 function releasePlayerSeats(playerId) {
     let releasedSeats = [];
-    
+
     for (const mapName in seatedPlayers) {
         for (const [deskKey, seat] of Object.entries(seatedPlayers[mapName])) {
             if (seat.playerId === playerId) {
@@ -142,7 +142,7 @@ function releasePlayerSeats(playerId) {
             }
         }
     }
-    
+
     return releasedSeats;
 }
 
@@ -150,7 +150,7 @@ function releasePlayerSeats(playerId) {
 function getOccupiedSeats(mapName) {
     initializeSeats(mapName);
     const seats = [];
-    
+
     for (const [deskKey, seat] of Object.entries(seatedPlayers[mapName])) {
         const [x, y] = deskKey.split(',').map(Number);
         seats.push({
@@ -161,7 +161,7 @@ function getOccupiedSeats(mapName) {
             timestamp: seat.timestamp
         });
     }
-    
+
     return seats;
 }
 
@@ -238,79 +238,102 @@ wss.on("connection", (ws) => {
             const trimmedId = data.id?.trim();
             if (!trimmedId) return;
 
-            switch (data.type) {
-                case "join":
-                    if (!players[trimmedId]) {
-                        players[trimmedId] = {
-                            x: 1,
-                            y: 1,
-                            currentMap: "main",
-                            color: generateRandomColor(),
-                            type: "local"
-                        };
-                        console.log(`Player joined: ${trimmedId}`);
-                        // Informar al nuevo jugador sobre los jugadores existentes
-                        ws.send(JSON.stringify({
-                            type: "positions",
-                            players: players
-                        }));
-                    }
-                    break;
+        switch (data.type) {
+            case "join":
+                if (!players[trimmedId]) {
+                    players[trimmedId] = {
+                        x: 1,
+                        y: 1,
+                        currentMap: "main",
+                        color: generateRandomColor(),
+                        type: "local"
+                    };
+                    console.log(`Player joined: ${trimmedId}`);
+                    // Informar al nuevo jugador sobre los jugadores existentes
+                    ws.send(JSON.stringify({
+                        type: "positions",
+                        players: players
+                    }));
+                }
+                break;
 
-                case "update":
-                    if (shouldUpdate(trimmedId)) {
-                        const positions = processPosition(data);
-                        const currentMap = data.map || "main";
+            case "update":
+                if (shouldUpdate(trimmedId)) {
+                    const positions = processPosition(data);
+                    const currentMap = data.map || "main";
 
-                        if (positions) {
-                            let hasChanges = false;
+                    if (positions) {
+                        let hasChanges = false;
 
-                            // Actualizar posición local
-                            if (positions.local) {
-                                const previousPosition = players[trimmedId];
-                                if (hasPositionChangedSignificantly(previousPosition, positions.local)) {
-                                    players[trimmedId] = {
-                                        x: positions.local.x,
-                                        y: positions.local.y,
-                                        currentMap: currentMap,
-                                        color: players[trimmedId]?.color || generateRandomColor(),
-                                        type: "local"
-                                    };
-                                    hasChanges = true;
-                                }
-                            }
-
-                            // Actualizar posición remota si existe
-                            if (positions.remote) {
-                                const remoteId = `${trimmedId}_remote`;
-                                const previousRemotePosition = players[remoteId];
-                                if (hasPositionChangedSignificantly(previousRemotePosition, positions.remote)) {
-                                    players[remoteId] = {
-                                        x: positions.remote.x,
-                                        y: positions.remote.y,
-                                        currentMap: currentMap,
-                                        color: "#FF0000",
-                                        type: "remote"
-                                    };
-                                    hasChanges = true;
-                                }
-                            }
-
-                            if (hasChanges) {
-                                // Enviar actualización a todos los clientes
-                                const updateMessage = {
-                                    type: "update",
-                                    id: trimmedId,
-                                    x: positions.local.x,  // Enviar directamente x e y
+                        // Actualizar posición local
+                        if (positions.local) {
+                            const previousPosition = players[trimmedId];
+                            if (hasPositionChangedSignificantly(previousPosition, positions.local)) {
+                                players[trimmedId] = {
+                                    x: positions.local.x,
                                     y: positions.local.y,
-                                    map: currentMap
+                                    currentMap: currentMap,
+                                    color: players[trimmedId]?.color || generateRandomColor(),
+                                    type: "local"
                                 };
-                                broadcast(updateMessage);
+                                hasChanges = true;
                             }
                         }
-                    }
-                    break;
 
+                        // Actualizar posición remota si existe
+                        if (positions.remote) {
+                            const remoteId = `${trimmedId}_remote`;
+                            const previousRemotePosition = players[remoteId];
+                            if (hasPositionChangedSignificantly(previousRemotePosition, positions.remote)) {
+                                players[remoteId] = {
+                                    x: positions.remote.x,
+                                    y: positions.remote.y,
+                                    currentMap: currentMap,
+                                    color: "#FF0000",
+                                    type: "remote"
+                                };
+                                hasChanges = true;
+                            }
+                        }
+
+                        if (hasChanges) {
+                            // Enviar actualización a todos los clientes
+                            const updateMessage = {
+                                type: "update",
+                                id: trimmedId,
+                                x: positions.local.x,  // Enviar directamente x e y
+                                y: positions.local.y,
+                                map: currentMap
+                            };
+                            broadcast(updateMessage);
+                        }
+                    }
+                }
+                break;
+
+            case "leave":
+                if (players[trimmedId]) {
+                    console.log(`Player left: ${trimmedId}`);
+                    delete players[trimmedId];
+                    delete players[`${trimmedId}_remote`];
+                    delete lastUpdateTime[trimmedId];
+                    broadcast({
+                        type: "disconnect",
+                        id: trimmedId
+                    });
+                }
+                break;
+
+            case "zombie_game_update":
+            case "zombie_game_food":
+                processZombieGameMessages(data);
+                break;
+
+            // ⬇️ AÑADE ESTE NUEVO CASE AQUÍ ⬇️
+            case "esimio_game_update":
+                processEsimioGameMessages(data);
+                break;
+        }
                 case "leave":
                     if (players[trimmedId]) {
                         console.log(`Player left: ${trimmedId}`);
@@ -323,7 +346,7 @@ wss.on("connection", (ws) => {
                         });
                     }
                     break;
-                
+
                 // Casos de asientos (sentarse/levantarse)
                 case "sit":
                     const sitResult = sitPlayer(
@@ -333,7 +356,7 @@ wss.on("connection", (ws) => {
                         data.x,
                         data.y
                     );
-                    
+
                     // Enviar respuesta al jugador que intentó sentarse
                     ws.send(JSON.stringify({
                         type: "sit_response",
@@ -341,7 +364,7 @@ wss.on("connection", (ws) => {
                         message: sitResult.message,
                         deskPosition: sitResult.deskPosition
                     }));
-                    
+
                     // Si fue exitoso, notificar a todos los jugadores
                     if (sitResult.success) {
                         broadcast({
@@ -354,10 +377,10 @@ wss.on("connection", (ws) => {
                         });
                     }
                     break;
-                
+
                 case "stand":
                     const standResult = standPlayer(trimmedId, data.map || "main");
-                    
+
                     // Enviar respuesta al jugador que intentó levantarse
                     ws.send(JSON.stringify({
                         type: "stand_response",
@@ -365,7 +388,7 @@ wss.on("connection", (ws) => {
                         message: standResult.message,
                         deskPosition: standResult.deskPosition
                     }));
-                    
+
                     // Si fue exitoso, notificar a todos los jugadores
                     if (standResult.success) {
                         broadcast({
@@ -377,7 +400,7 @@ wss.on("connection", (ws) => {
                         });
                     }
                     break;
-                
+
                 case "get_occupied_seats":
                     const occupiedSeats = getOccupiedSeats(data.map || "main");
                     ws.send(JSON.stringify({
@@ -386,7 +409,7 @@ wss.on("connection", (ws) => {
                         seats: occupiedSeats
                     }));
                     break;
-                
+
                 case "zombie_game_update":
                 case "zombie_game_food":
                     processZombieGameMessages(data);
@@ -405,7 +428,7 @@ wss.on("connection", (ws) => {
             if (players[playerId].ws === ws) {
                 // Liberar asientos del jugador
                 const releasedSeats = releasePlayerSeats(playerId);
-                
+
                 // Notificar a todos sobre los asientos liberados
                 releasedSeats.forEach(seat => {
                     broadcast({
@@ -416,7 +439,7 @@ wss.on("connection", (ws) => {
                         y: seat.y
                     });
                 });
-                
+
                 delete players[playerId];
                 delete players[`${playerId}_remote`];
                 delete lastUpdateTime[playerId];
@@ -839,22 +862,22 @@ function getMexicoDateTime() {
 // Helper function to get start and end of day in Mexico City timezone
 function getMexicoDayBounds() {
     const mexicoNow = getMexicoDateTime();
-    
+
     // Start of day in Mexico (00:00:00)
     const startOfDay = new Date(mexicoNow);
     startOfDay.setHours(0, 0, 0, 0);
-    
+
     // End of day in Mexico (23:59:59)
     const endOfDay = new Date(mexicoNow);
     endOfDay.setHours(23, 59, 59, 999);
-    
+
     return { startOfDay, endOfDay };
 }
 
 // Helper function to check if attendance already exists for today
 async function hasAttendedToday(phoneID) {
     const { startOfDay, endOfDay } = getMexicoDayBounds();
-    
+
     const existingAttendance = await prisma.attendance.findFirst({
         where: {
             phoneID: phoneID,
@@ -864,7 +887,7 @@ async function hasAttendedToday(phoneID) {
             }
         }
     });
-    
+
     return existingAttendance !== null;
 }
 
@@ -872,7 +895,7 @@ async function hasAttendedToday(phoneID) {
 app.post("/attendance", async (req, res) => {
     try {
         const { phoneID, fullName, group } = req.body;
-        
+
         // Validate required fields
         if (!phoneID || !fullName || !group) {
             return res.status(400).json({
@@ -880,20 +903,20 @@ app.post("/attendance", async (req, res) => {
                 error: "Missing required fields: phoneID, fullName, and group are required"
             });
         }
-        
+
         // Check if user already attended today
         const alreadyAttended = await hasAttendedToday(phoneID);
-        
+
         if (alreadyAttended) {
             return res.status(409).json({
                 success: false,
                 error: "Attendance already registered for this phoneID today"
             });
         }
-        
+
         // Get current time in Mexico City timezone
         const mexicoTime = getMexicoDateTime();
-        
+
         // Create attendance record with Mexico time
         const attendance = await prisma.attendance.create({
             data: {
@@ -903,13 +926,13 @@ app.post("/attendance", async (req, res) => {
                 attendanceTime: mexicoTime
             }
         });
-        
+
         res.status(201).json({
             success: true,
             message: "Attendance registered successfully",
             data: attendance
         });
-        
+
     } catch (error) {
         console.error("Error registering attendance:", error);
         res.status(500).json({
@@ -924,7 +947,7 @@ app.post("/attendance", async (req, res) => {
 app.get("/attendance/:date/:group", async (req, res) => {
     try {
         const { date, group } = req.params;
-        
+
         // Validate date format
         const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
         if (!dateRegex.test(date)) {
@@ -933,7 +956,7 @@ app.get("/attendance/:date/:group", async (req, res) => {
                 error: "Invalid date format. Use YYYY-MM-DD"
             });
         }
-        
+
         // Parse date in Mexico City timezone
         // Add 'T00:00:00' to ensure proper parsing
         const targetDate = new Date(date + 'T00:00:00');
@@ -943,14 +966,14 @@ app.get("/attendance/:date/:group", async (req, res) => {
                 error: "Invalid date"
             });
         }
-        
+
         // Set start and end of day in Mexico timezone
         const startOfDay = new Date(targetDate);
         startOfDay.setHours(0, 0, 0, 0);
-        
+
         const endOfDay = new Date(targetDate);
         endOfDay.setHours(23, 59, 59, 999);
-        
+
         // Query attendance records
         const attendanceRecords = await prisma.attendance.findMany({
             where: {
@@ -970,11 +993,11 @@ app.get("/attendance/:date/:group", async (req, res) => {
                 group: true
             }
         });
-        
+
         // Format dates to Mexico timezone for response
         const formattedRecords = attendanceRecords.map(record => ({
             ...record,
-            attendanceTime: new Date(record.attendanceTime).toLocaleString('es-MX', { 
+            attendanceTime: new Date(record.attendanceTime).toLocaleString('es-MX', {
                 timeZone: 'America/Mexico_City',
                 year: 'numeric',
                 month: '2-digit',
@@ -985,7 +1008,7 @@ app.get("/attendance/:date/:group", async (req, res) => {
                 hour12: false
             })
         }));
-        
+
         res.json({
             success: true,
             date: date,
@@ -993,7 +1016,7 @@ app.get("/attendance/:date/:group", async (req, res) => {
             count: formattedRecords.length,
             attendees: formattedRecords
         });
-        
+
     } catch (error) {
         console.error("Error fetching attendance:", error);
         res.status(500).json({
@@ -1016,7 +1039,7 @@ app.get("/seats/:map", (req, res) => {
     try {
         const { map } = req.params;
         const occupiedSeats = getOccupiedSeats(map);
-        
+
         res.json({
             success: true,
             map: map,
@@ -1036,16 +1059,16 @@ app.get("/seats/:map", (req, res) => {
 app.post("/seats/sit", (req, res) => {
     try {
         const { playerId, playerName, map, x, y } = req.body;
-        
+
         if (!playerId || !map || x === undefined || y === undefined) {
             return res.status(400).json({
                 success: false,
                 error: "Missing required fields: playerId, map, x, y"
             });
         }
-        
+
         const result = sitPlayer(playerId, playerName || playerId, map, x, y);
-        
+
         if (result.success) {
             // Notificar a todos los clientes WebSocket
             broadcast({
@@ -1056,7 +1079,7 @@ app.post("/seats/sit", (req, res) => {
                 x: x,
                 y: y
             });
-            
+
             res.json(result);
         } else {
             res.status(409).json(result);
@@ -1074,16 +1097,16 @@ app.post("/seats/sit", (req, res) => {
 app.post("/seats/stand", (req, res) => {
     try {
         const { playerId, map } = req.body;
-        
+
         if (!playerId || !map) {
             return res.status(400).json({
                 success: false,
                 error: "Missing required fields: playerId, map"
             });
         }
-        
+
         const result = standPlayer(playerId, map);
-        
+
         if (result.success) {
             // Notificar a todos los clientes WebSocket
             broadcast({
@@ -1093,7 +1116,7 @@ app.post("/seats/stand", (req, res) => {
                 x: result.deskPosition.x,
                 y: result.deskPosition.y
             });
-            
+
             res.json(result);
         } else {
             res.status(404).json(result);
@@ -1111,9 +1134,9 @@ app.post("/seats/stand", (req, res) => {
 app.delete("/seats/:map/:playerId", (req, res) => {
     try {
         const { map, playerId } = req.params;
-        
+
         const result = standPlayer(playerId, map);
-        
+
         if (result.success) {
             broadcast({
                 type: "player_stood",
@@ -1123,7 +1146,7 @@ app.delete("/seats/:map/:playerId", (req, res) => {
                 y: result.deskPosition.y
             });
         }
-        
+
         res.json({
             success: true,
             message: "Player seats released",
@@ -1172,6 +1195,323 @@ app.get("/admin/zombie/list", (req, res) => {
         zombies: zombieGame.zombies,
         zombieCount: zombieGame.zombies.length
     });
+});
+
+
+// Estado del juego de esimios
+const esimioGame = {
+    esimios: [],
+    isActive: false,
+    difficulty: 1,
+    currentMap: "esime",
+    lastUpdateTimes: {},
+    updateIntervals: {
+        1: 1500,  // Fácil: 1.5 segundos
+        2: 1000,  // Medio: 1 segundo
+        3: 600    // Difícil: 0.6 segundos
+    },
+    esimioCount: {
+        1: 3,  // Fácil: 3 esimios
+        2: 5,  // Medio: 5 esimios
+        3: 8   // Difícil: 8 esimios
+    }
+};
+
+let esimioUpdateInterval = null;
+
+// Función para iniciar el juego de esimios
+function startEsimioGame(difficulty = 1, mapName = "esime") {
+    esimioGame.isActive = true;
+    esimioGame.difficulty = difficulty;
+    esimioGame.currentMap = mapName;
+
+    const esimioCount = esimioGame.esimioCount[difficulty] || 3;
+    esimioGame.esimios = [];
+
+    // Posiciones de spawn para esimios
+    const spawnPositions = [
+        { x: 20, y: 10 },
+        { x: 20, y: 20 },
+        { x: 20, y: 30 },
+        { x: 25, y: 15 },
+        { x: 25, y: 25 },
+        { x: 19, y: 12 },
+        { x: 19, y: 22 },
+        { x: 19, y: 32 }
+    ];
+
+    const findValidPosition = (attempt = 0) => {
+        if (attempt > 100) {
+            return spawnPositions[0];
+        }
+        const x = Math.floor(Math.random() * 20) + 18;
+        const y = Math.floor(Math.random() * 30) + 5;
+
+        if (isValidEsimioMove(x, y)) {
+            return { x, y };
+        }
+        return findValidPosition(attempt + 1);
+    };
+
+    for (let i = 0; i < esimioCount; i++) {
+        const position = findValidPosition();
+        esimioGame.esimios.push({
+            id: `esimio_${i}`,
+            position: position,
+            target: null
+        });
+
+        broadcast({
+            type: "esimio_position",
+            id: `esimio_${i}`,
+            x: position.x,
+            y: position.y,
+            map: esimioGame.currentMap
+        });
+    }
+
+    broadcast({
+        type: "esimio_game_command",
+        command: "start",
+        difficulty: difficulty,
+        map: mapName
+    });
+
+    startEsimioUpdates();
+    console.log(`Juego de esimios iniciado con dificultad ${difficulty}`);
+}
+
+function stopEsimioGame() {
+    esimioGame.isActive = false;
+    clearInterval(esimioUpdateInterval);
+    esimioUpdateInterval = null;
+
+    broadcast({
+        type: "esimio_game_command",
+        command: "stop"
+    });
+
+    console.log("Juego de esimios detenido");
+}
+
+function startEsimioUpdates() {
+    if (esimioUpdateInterval) {
+        clearInterval(esimioUpdateInterval);
+    }
+
+    const updateInterval = esimioGame.updateIntervals[esimioGame.difficulty] || 1500;
+
+    esimioUpdateInterval = setInterval(() => {
+        if (esimioGame.isActive) {
+            updateEsimioPositions();
+        } else {
+            clearInterval(esimioUpdateInterval);
+            esimioUpdateInterval = null;
+        }
+    }, updateInterval);
+}
+
+function updateEsimioPositions() {
+    if (!esimioGame.isActive) return;
+
+    const playersInMap = Object.entries(players).filter(([id, data]) => {
+        return data.currentMap === esimioGame.currentMap || data.currentMap === "esime";
+    });
+
+    if (playersInMap.length === 0) {
+        esimioGame.esimios.forEach(esimio => {
+            moveEsimioRandomly(esimio);
+            broadcast({
+                type: "esimio_position",
+                id: esimio.id,
+                x: esimio.position.x,
+                y: esimio.position.y,
+                map: esimioGame.currentMap
+            });
+        });
+        return;
+    }
+
+    esimioGame.esimios.forEach(esimio => {
+        let nearestPlayer = null;
+        let shortestDistance = Infinity;
+
+        playersInMap.forEach(([playerId, playerData]) => {
+            const distance = calculateDistance(
+                esimio.position.x, esimio.position.y,
+                playerData.x, playerData.y
+            );
+
+            if (distance < shortestDistance) {
+                shortestDistance = distance;
+                nearestPlayer = { id: playerId, data: playerData };
+            }
+        });
+
+        if (nearestPlayer) {
+            esimio.target = nearestPlayer.id;
+            moveEsimioTowardsPlayer(esimio, nearestPlayer.data);
+
+            if (isEsimioCaught(esimio, nearestPlayer.data)) {
+                broadcast({
+                    type: "esimio_game_command",
+                    command: "caught",
+                    player: nearestPlayer.id
+                });
+                console.log(`Esimio ${esimio.id} atrapó al jugador ${nearestPlayer.id}`);
+            }
+        } else {
+            moveEsimioRandomly(esimio);
+        }
+
+        broadcast({
+            type: "esimio_position",
+            id: esimio.id,
+            x: esimio.position.x,
+            y: esimio.position.y,
+            map: esimioGame.currentMap
+        });
+    });
+}
+
+function isValidEsimioMove(x, y) {
+    if (x < 0 || x >= 40 || y < 0 || y >= 40) return false;
+
+    const blockedAreas = [
+        { xMin: 7, xMax: 14, yMin: 28, yMax: 29 },
+        { xMin: 16, xMax: 17, yMin: 28, yMax: 29 },
+        { xMin: 7, xMax: 14, yMin: 31, yMax: 32 },
+        { xMin: 7, xMax: 14, yMin: 22, yMax: 23 },
+        { xMin: 16, xMax: 17, yMin: 22, yMax: 23 },
+        { xMin: 7, xMax: 14, yMin: 25, yMax: 26 },
+        { xMin: 7, xMax: 14, yMin: 15, yMax: 16 },
+        { xMin: 16, xMax: 17, yMin: 15, yMax: 16 },
+        { xMin: 7, xMax: 14, yMin: 18, yMax: 19 },
+        { xMin: 7, xMax: 14, yMin: 9, yMax: 10 },
+        { xMin: 16, xMax: 17, yMin: 9, yMax: 10 },
+        { xMin: 7, xMax: 14, yMin: 12, yMax: 13 },
+        { xMin: 7, xMax: 14, yMin: 3, yMax: 4 },
+        { xMin: 16, xMax: 17, yMin: 3, yMax: 4 },
+        { xMin: 7, xMax: 14, yMin: 6, yMax: 7 },
+        { xMin: 7, xMax: 38, yMin: 34, yMax: 38 },
+        { xMin: 32, xMax: 38, yMin: 29, yMax: 38 },
+        { xMin: 24, xMax: 29, yMin: 6, yMax: 18 },
+        { xMin: 7, xMax: 38, yMin: 1, yMax: 4 }
+    ];
+
+    return !blockedAreas.some(area =>
+        x >= area.xMin && x <= area.xMax && y >= area.yMin && y <= area.yMax
+    );
+}
+
+function moveEsimioTowardsPlayer(esimio, playerData) {
+    const currentX = esimio.position.x;
+    const currentY = esimio.position.y;
+    const dx = playerData.x - currentX;
+    const dy = playerData.y - currentY;
+
+    const possibleMoves = [];
+
+    if (dx !== 0) {
+        const newX = currentX + (dx > 0 ? 1 : -1);
+        if (isValidEsimioMove(newX, currentY)) {
+            possibleMoves.push({ x: newX, y: currentY });
+        }
+    }
+    if (dy !== 0) {
+        const newY = currentY + (dy > 0 ? 1 : -1);
+        if (isValidEsimioMove(currentX, newY)) {
+            possibleMoves.push({ x: currentX, y: newY });
+        }
+    }
+
+    if (possibleMoves.length === 0) {
+        const allMoves = [
+            { x: currentX + 1, y: currentY },
+            { x: currentX - 1, y: currentY },
+            { x: currentX, y: currentY + 1 },
+            { x: currentX, y: currentY - 1 }
+        ];
+        possibleMoves.push(...allMoves.filter(move => isValidEsimioMove(move.x, move.y)));
+    }
+
+    if (possibleMoves.length > 0) {
+        if (esimioGame.difficulty >= 2) {
+            possibleMoves.sort((a, b) => {
+                const distA = calculateDistance(a.x, a.y, playerData.x, playerData.y);
+                const distB = calculateDistance(b.x, b.y, playerData.x, playerData.y);
+                return distA - distB;
+            });
+            esimio.position = possibleMoves[0];
+        } else {
+            esimio.position = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+        }
+    }
+}
+
+function moveEsimioRandomly(esimio) {
+    const currentX = esimio.position.x;
+    const currentY = esimio.position.y;
+
+    const possibleMoves = [
+        { x: currentX, y: currentY - 1 },
+        { x: currentX + 1, y: currentY },
+        { x: currentX, y: currentY + 1 },
+        { x: currentX - 1, y: currentY }
+    ].filter(move => isValidEsimioMove(move.x, move.y));
+
+    if (possibleMoves.length > 0) {
+        esimio.position = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+    }
+}
+
+function isEsimioCaught(esimio, playerData) {
+    const distance = calculateDistance(
+        esimio.position.x, esimio.position.y,
+        playerData.x, playerData.y
+    );
+    return distance <= 1.5;
+}
+
+
+// Función para procesar mensajes de esimios
+function processEsimioGameMessages(message) {
+    if (message.type === "esimio_game_update") {
+        const action = message.action;
+
+        switch (action) {
+            case "start":
+                if (!esimioGame.isActive) {
+                    const difficulty = message.difficulty || 1;
+                    const mapName = message.map || "esime";
+                    startEsimioGame(difficulty, mapName);
+                }
+                break;
+
+            case "stop":
+                if (esimioGame.isActive) {
+                    stopEsimioGame();
+                }
+                break;
+        }
+    }
+}
+
+// Rutas administrativas
+app.post("/admin/esimio/start", (req, res) => {
+    const difficulty = req.body.difficulty || 1;
+    const mapName = req.body.map || "esime";
+    startEsimioGame(difficulty, mapName);
+    res.json({ message: "Juego de esimios iniciado", state: esimioGame });
+});
+
+app.post("/admin/esimio/stop", (req, res) => {
+    stopEsimioGame();
+    res.json({ message: "Juego de esimios detenido", state: esimioGame });
+});
+
+app.get("/admin/esimio/state", (req, res) => {
+    res.json(esimioGame);
 });
 
 // Cleanup Prisma on shutdown

@@ -341,7 +341,7 @@ pasillosPrincipales.forEach(pasillo => {
 // ==================================
 //   Matriz de colisión para ESIME
 // ==================================
-const esimeCollisionMatrix = Array(40).fill().map(() => Array(40).fill(2)); 
+const esimeCollisionMatrix = Array(40).fill().map(() => Array(40).fill(2));
 
 // ========== BORDES DEL MAPA ==========
 for (let i = 0; i < 40; i++) {
@@ -491,7 +491,7 @@ esimeCollisionMatrix[17][8] = 0; // INTERACTIVE - Entrada Edificio 3
 // Punto de transición ESIME a Zacatenco (basado en ESIME_TO_ZACATENCO_POSITION)
 esimeCollisionMatrix[2][35] = 0; // INTERACTIVE - Salida a Zacatenco
 
-// Punto de transición Zacatenco a ESIME (basado en ZACATENCO_TO_ESIME_POSITION) 
+// Punto de transición Zacatenco a ESIME (basado en ZACATENCO_TO_ESIME_POSITION)
 esimeCollisionMatrix[38][2] = 0; // INTERACTIVE - Entrada desde Zacatenco
 
 // ========== ZONAS CAMINABLES GARANTIZADAS ==========
@@ -1425,7 +1425,7 @@ for (let j = 0; j < MAP_WIDTH; j++) {
 }
 
 
-// 4) PAREDES VERTICALES 
+// 4) PAREDES VERTICALES
 const ancho = 6;
 for (let i = 4; i < 36; i++)
     andenesMetroPolitecnicoCollisionMatrix[ancho][i] = WALL;
@@ -1558,6 +1558,7 @@ module.exports = {
     metroPolitecnicoCollisionMatrix,
     redMetroCollisionMatrix,
     andenesMetroPolitecnicoCollisionMatrix,
+    esimeCollisionMatrix,
     esimeCollisionMatrix,
     esiaCollisionMatrix,
     plazaVistaNorteCollisionMatrix,
