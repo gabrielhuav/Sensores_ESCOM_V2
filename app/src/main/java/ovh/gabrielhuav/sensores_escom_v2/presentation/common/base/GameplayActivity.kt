@@ -41,6 +41,8 @@ import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.gobier
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.lab.LaboratorioPosgradoActivity
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.GlobalMapActivity
 import kotlin.collections.iterator
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.zombie.ZombieGameManager
+
 
 class GameplayActivity : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,
@@ -62,7 +64,7 @@ class GameplayActivity : AppCompatActivity(),
         var isServer: Boolean = false,
         var isConnected: Boolean = false,
         var playerPosition: Pair<Int, Int> = Pair(1, 1),
-        var remotePlayerPositions: Map<String, PlayerInfo> = emptyMap(), // Cambiado para incluir mapa
+        var remotePlayerPositions: Map<String, PlayerInfo> = emptyMap(),
         var remotePlayerName: String? = null
     ) {
         data class PlayerInfo(
@@ -81,6 +83,42 @@ class GameplayActivity : AppCompatActivity(),
             }
         }
 
+    // === Listener global de zombies: dibuja SOLO los que estén en el mapa main ===
+    private val zombieListener = object : ZombieGameManager.Listener {
+        override fun onZombiePosition(zombieId: String, mapId: String, position: Pair<Int, Int>) {
+            val normalized = MapMatrixProvider.normalizeMapName(mapId)
+            if (normalized == MapMatrixProvider.MAP_MAIN) {
+                runOnUiThread {
+                    mapView.updateSpecialEntity(zombieId, position, normalized)
+                    mapView.invalidate()
+                }
+            } else {
+                runOnUiThread { mapView.removeSpecialEntity(zombieId) }
+            }
+        }
+
+        override fun onPlayerCaught(victimId: String) {
+            if (victimId == playerName) {
+                runOnUiThread {
+                    Toast.makeText(this@GameplayActivity, "¡Te atraparon!", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+        override fun onGameStopped(reason: String) {
+            runOnUiThread {
+                mapView.removeSpecialEntitiesByPrefix("zombie_")
+                mapView.removeSpecialEntity("zombie")
+                mapView.invalidate()
+            }
+        }
+    }
+    private fun clearZombiesInView() {
+        mapView.removeSpecialEntitiesByPrefix("zombie_")
+        mapView.removeSpecialEntity("zombie")
+        mapView.invalidate()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_gameplay)
@@ -88,19 +126,22 @@ class GameplayActivity : AppCompatActivity(),
         try {
             initializeComponents(savedInstanceState)
 
-            // Después de inicializar los componentes, configura el playerManager
+
             mapView.playerManager.apply {
-                setCurrentMap("main")
+                setCurrentMap(MapMatrixProvider.MAP_MAIN)
                 localPlayerId = playerName
-                gameState.playerPosition?.let { updateLocalPlayerPosition(it) }
+                updateLocalPlayerPosition(gameState.playerPosition)
             }
 
+            // Escuchar al manager global de zombies
+            ZombieGameManager.addListener(zombieListener)
         } catch (e: Exception) {
             Log.e(TAG, "Error en onCreate: ${e.message}")
             Toast.makeText(this, "Error inicializando la actividad.", Toast.LENGTH_LONG).show()
             finish()
         }
     }
+
 
     private fun initializeComponents(savedInstanceState: Bundle?) {
         playerName = intent.getStringExtra("PLAYER_NAME") ?: run {
@@ -111,7 +152,6 @@ class GameplayActivity : AppCompatActivity(),
 
         if (savedInstanceState == null) {
             gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
-            // Usar la posición inicial proporcionada
             gameState.playerPosition =
                 intent.getSerializableExtra("INITIAL_POSITION") as? Pair<Int, Int>
                     ?: Pair(1, 1)
@@ -125,12 +165,19 @@ class GameplayActivity : AppCompatActivity(),
         setupInitialConfiguration()
 
         mapView.apply {
-            playerManager.localPlayerId = playerName  // Establecer ID del jugador local
-            updateLocalPlayerPosition(gameState.playerPosition)  // Establecer posición inicial
+            playerManager.localPlayerId = playerName
+            updateLocalPlayerPosition(gameState.playerPosition)
         }
 
         // Configurar el bridge para el servidor websocket
         serverConnectionManager.onlineServerManager.setListener(this)
+
+        // Reportar presencia inicial al manager de zombis (por si ya hay juego corriendo)
+        ZombieGameManager.updatePlayer(
+            playerName,
+            MapMatrixProvider.MAP_MAIN,
+            gameState.playerPosition
+        )
     }
 
     private fun initializeViews() {
@@ -144,14 +191,14 @@ class GameplayActivity : AppCompatActivity(),
 
     private fun initializeManagers() {
         bluetoothManager =
-            BluetoothManager.Companion.getInstance(this, uiManager.tvBluetoothStatus).apply {
+            BluetoothManager.getInstance(this, uiManager.tvBluetoothStatus).apply {
                 setCallback(this@GameplayActivity)
             }
 
-        bluetoothBridge = BluetoothWebSocketBridge.Companion.getInstance()
+        bluetoothBridge = BluetoothWebSocketBridge.getInstance()
 
         // Configurar OnlineServerManager con el listener
-        val onlineServerManager = OnlineServerManager.Companion.getInstance(this).apply {
+        val onlineServerManager = OnlineServerManager.getInstance(this).apply {
             setListener(this@GameplayActivity)
         }
 
@@ -711,6 +758,13 @@ class GameplayActivity : AppCompatActivity(),
                         serverConnectionManager.sendUpdateMessage(playerName, position, "main")
                     }
 
+                    // Reportar posición al manager global para persecución
+                    ZombieGameManager.updatePlayer(
+                        playerName,
+                        MapMatrixProvider.MAP_MAIN,
+                        position
+                    )
+
                     checkPositionForMapChange(position)
                 } catch (e: Exception) {
                     Log.e(TAG, "Error en updatePlayerPosition: ${e.message}")
@@ -787,9 +841,11 @@ class GameplayActivity : AppCompatActivity(),
                                         gameState.remotePlayerPositions +
                                                 (playerId to GameState.PlayerInfo(position, map))
 
-                                    // Siempre actualizar la posición, permitiendo que PlayerManager
-                                    // determine si debe mostrarse o no
-                                    mapView.updateRemotePlayerPosition(playerId, position, map)
+                                    val normalizedMap = MapMatrixProvider.normalizeMapName(map)
+                                    mapView.updateRemotePlayerPosition(playerId, position, normalizedMap)
+                                    // Avisar al manager de zombis
+                                    ZombieGameManager.updatePlayer(playerId, normalizedMap, position)
+
                                     Log.d(
                                         TAG,
                                         "Updated from positions: player=$playerId, pos=$position, map=$map"
@@ -812,15 +868,18 @@ class GameplayActivity : AppCompatActivity(),
                                 } else if (jsonObject.has("currentmap")) {
                                     jsonObject.getString("currentmap")
                                 } else {
-                                    MapMatrixProvider.Companion.MAP_MAIN // Valor predeterminado
+                                    MapMatrixProvider.MAP_MAIN // Valor predeterminado
                                 }
 
                                 // Actualizar el estado del juego
                                 gameState.remotePlayerPositions = gameState.remotePlayerPositions +
                                         (playerId to GameState.PlayerInfo(position, map))
 
-                                // Siempre actualizar la posición en el mapa
-                                mapView.updateRemotePlayerPosition(playerId, position, map)
+                                val normalizedMap = MapMatrixProvider.normalizeMapName(map)
+                                mapView.updateRemotePlayerPosition(playerId, position, normalizedMap)
+
+                                // 🔑 Avisar al manager de zombies
+                                ZombieGameManager.updatePlayer(playerId, normalizedMap, position)
                                 Log.d(
                                     TAG,
                                     "Updated from update: player=$playerId, pos=$position, map=$map"
@@ -900,9 +959,10 @@ class GameplayActivity : AppCompatActivity(),
                     gameState.remotePlayerPositions = gameState.remotePlayerPositions +
                             (playerId to GameState.PlayerInfo(position, map))
 
-                    mapView.updateRemotePlayerPosition(playerId, position, map)
+                    val normalizedMap = MapMatrixProvider.normalizeMapName(map)
+                    mapView.updateRemotePlayerPosition(playerId, position, normalizedMap)
                     mapView.invalidate()
-
+                    ZombieGameManager.updatePlayer(playerId, normalizedMap, position)
                     Log.d(TAG, "Updated player $playerId position to $position in map $map")
                 }
             }
@@ -947,11 +1007,19 @@ class GameplayActivity : AppCompatActivity(),
             bluetoothManager.reconnect()
             movementManager.setPosition(gameState.playerPosition)
             updateRemotePlayersOnMap()
+
+            // Reafirma presencia en el main al volver al frente
+            ZombieGameManager.updatePlayer(
+                playerName,
+                MapMatrixProvider.MAP_MAIN,
+                gameState.playerPosition
+            )
         }
 
         override fun onDestroy() {
             super.onDestroy()
             bluetoothManager.cleanup()
+            ZombieGameManager.removeListener(zombieListener)
         }
 
         override fun onPause() {
