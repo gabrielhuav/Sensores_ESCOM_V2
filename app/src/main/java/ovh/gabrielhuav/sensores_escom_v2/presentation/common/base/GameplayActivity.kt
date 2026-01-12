@@ -1,5 +1,6 @@
 package ovh.gabrielhuav.sensores_escom_v2.presentation.common.base
 
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
 import android.content.res.Configuration
@@ -24,7 +25,7 @@ import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.ServerConn
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.BuildingEdificioIA
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.BuildingNumber2
 import ovh.gabrielhuav.sensores_escom_v2.presentation.components.PalapasISC
-import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.building4.BuildingNumber4
+import ovh.gabrielhuav.sensores_escom_v2.presentation.components.BuildingNumber4
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.cafeteria.Cafeteria
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.EstacionamientoEscom
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.Zacatenco
@@ -32,8 +33,16 @@ import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.buildi
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.buildingIA.PalapasIA
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.buildingIA.CanchaIA
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.cidetec.Cidetec
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.cidetec.labrv
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.OSMMapActivity
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.gobierno.EdificioGobierno
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.lab.LaboratorioPosgradoActivity
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.GlobalMapActivity
+import kotlin.collections.iterator
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.zombie.ZombieGameManager
+
 
 class GameplayActivity : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,
@@ -84,14 +93,12 @@ class GameplayActivity : AppCompatActivity(),
                     mapView.invalidate()
                 }
             } else {
-                // si el zombie pertenece a otro mapa, no lo mostramos en MAIN
                 runOnUiThread { mapView.removeSpecialEntity(zombieId) }
             }
         }
 
         override fun onPlayerCaught(victimId: String) {
             if (victimId == playerName) {
-                // Mostrar feedback y limpiar. El manager ya llama stopGame().
                 runOnUiThread {
                     Toast.makeText(this@GameplayActivity, "¡Te atraparon!", Toast.LENGTH_SHORT).show()
                 }
@@ -119,14 +126,14 @@ class GameplayActivity : AppCompatActivity(),
         try {
             initializeComponents(savedInstanceState)
 
-            // Configura el playerManager para el mapa main
+
             mapView.playerManager.apply {
                 setCurrentMap(MapMatrixProvider.MAP_MAIN)
                 localPlayerId = playerName
                 updateLocalPlayerPosition(gameState.playerPosition)
             }
 
-            // Escuchar al manager global de zombis
+            // Escuchar al manager global de zombies
             ZombieGameManager.addListener(zombieListener)
         } catch (e: Exception) {
             Log.e(TAG, "Error en onCreate: ${e.message}")
@@ -134,6 +141,7 @@ class GameplayActivity : AppCompatActivity(),
             finish()
         }
     }
+
 
     private fun initializeComponents(savedInstanceState: Bundle?) {
         playerName = intent.getStringExtra("PLAYER_NAME") ?: run {
@@ -144,8 +152,9 @@ class GameplayActivity : AppCompatActivity(),
 
         if (savedInstanceState == null) {
             gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
-            gameState.playerPosition = intent.getSerializableExtra("INITIAL_POSITION") as? Pair<Int, Int>
-                ?: Pair(1, 1)
+            gameState.playerPosition =
+                intent.getSerializableExtra("INITIAL_POSITION") as? Pair<Int, Int>
+                    ?: Pair(1, 1)
         } else {
             restoreState(savedInstanceState)
         }
@@ -160,7 +169,7 @@ class GameplayActivity : AppCompatActivity(),
             updateLocalPlayerPosition(gameState.playerPosition)
         }
 
-        // WebSocket listener
+        // Configurar el bridge para el servidor websocket
         serverConnectionManager.onlineServerManager.setListener(this)
 
         // Reportar presencia inicial al manager de zombis (por si ya hay juego corriendo)
@@ -181,12 +190,14 @@ class GameplayActivity : AppCompatActivity(),
     }
 
     private fun initializeManagers() {
-        bluetoothManager = BluetoothManager.getInstance(this, uiManager.tvBluetoothStatus).apply {
-            setCallback(this@GameplayActivity)
-        }
+        bluetoothManager =
+            BluetoothManager.getInstance(this, uiManager.tvBluetoothStatus).apply {
+                setCallback(this@GameplayActivity)
+            }
 
         bluetoothBridge = BluetoothWebSocketBridge.getInstance()
 
+        // Configurar OnlineServerManager con el listener
         val onlineServerManager = OnlineServerManager.getInstance(this).apply {
             setListener(this@GameplayActivity)
         }
@@ -200,8 +211,10 @@ class GameplayActivity : AppCompatActivity(),
             mapView = mapView
         ) { position -> updatePlayerPosition(position) }
 
+        // Establecer el ID del jugador local
         mapView.playerManager.localPlayerId = playerName
 
+        // Inicializar posición inicial
         updatePlayerPosition(gameState.playerPosition)
     }
 
@@ -209,15 +222,18 @@ class GameplayActivity : AppCompatActivity(),
         gameState.apply {
             isServer = savedInstanceState.getBoolean("IS_SERVER", false)
             isConnected = savedInstanceState.getBoolean("IS_CONNECTED", false)
-            playerPosition = savedInstanceState.getSerializable("PLAYER_POSITION") as? Pair<Int, Int>
-                ?: Pair(1, 1)
+            playerPosition =
+                savedInstanceState.getSerializable("PLAYER_POSITION") as? Pair<Int, Int>
+                    ?: Pair(1, 1)
             @Suppress("UNCHECKED_CAST")
             remotePlayerPositions = (savedInstanceState.getSerializable("REMOTE_PLAYER_POSITIONS")
                     as? HashMap<String, GameState.PlayerInfo>)?.toMap() ?: emptyMap()
             remotePlayerName = savedInstanceState.getString("REMOTE_PLAYER_NAME")
         }
 
+        // Restaurar conexiones si estaban activas
         if (gameState.isConnected) {
+            // Reconectar al servidor online
             serverConnectionManager.connectToServer { success ->
                 if (success) {
                     serverConnectionManager.onlineServerManager.sendJoinMessage(playerName)
@@ -226,8 +242,10 @@ class GameplayActivity : AppCompatActivity(),
             }
         }
 
+        // Restaurar conexión Bluetooth si existía
         val bluetoothState = savedInstanceState.getInt("BLUETOOTH_STATE")
         val connectedDevice = savedInstanceState.getParcelable<BluetoothDevice>("CONNECTED_DEVICE")
+
         if (bluetoothState == BluetoothManager.ConnectionState.CONNECTED.ordinal && connectedDevice != null) {
             bluetoothManager.connectToDevice(connectedDevice)
         }
@@ -237,8 +255,14 @@ class GameplayActivity : AppCompatActivity(),
         setupRole()
         setupButtonListeners()
 
+        // Reemplazamos la comprobación forzosa de Bluetooth por una más flexible
+        // Solo comprobamos si el usuario ha elegido ser servidor o conectarse explícitamente
         if (gameState.isServer) {
-            bluetoothManager.checkBluetoothSupport(enableBluetoothLauncher, false)
+            // Solo verificamos Bluetooth si somos servidor
+            bluetoothManager.checkBluetoothSupport(
+                enableBluetoothLauncher,
+                false
+            ) // Pasamos false para no forzar
         }
     }
 
@@ -246,11 +270,14 @@ class GameplayActivity : AppCompatActivity(),
         if (gameState.isServer) {
             setupServerFlow()
         } else {
+            // Comprobar si tiene un dispositivo seleccionado para conectarse
             val selectedDevice = intent.getParcelableExtra<BluetoothDevice>("SELECTED_DEVICE")
             if (selectedDevice != null) {
+                // Solo en este caso iniciamos la conexión Bluetooth
                 bluetoothManager.connectToDevice(selectedDevice)
                 mapView.setBluetoothServerMode(false)
             } else {
+                // Si no hay dispositivo seleccionado, solo conectamos al servidor online
                 setupServerFlow()
             }
         }
@@ -260,8 +287,10 @@ class GameplayActivity : AppCompatActivity(),
         serverConnectionManager.connectToServer { success ->
             gameState.isConnected = success
             if (success) {
+                // Enviar mensaje de unión al servidor
                 serverConnectionManager.onlineServerManager.apply {
                     sendJoinMessage(playerName)
+                    // Solicitar posiciones actuales
                     requestPositionsUpdate()
                 }
                 uiManager.updateBluetoothStatus("Conectado al servidor online. Puede iniciar servidor Bluetooth si lo desea.")
@@ -280,6 +309,7 @@ class GameplayActivity : AppCompatActivity(),
         }
     }
 
+
     private fun setupButtonListeners() {
         uiManager.apply {
             btnStartServer.setOnClickListener {
@@ -292,6 +322,7 @@ class GameplayActivity : AppCompatActivity(),
             btnEast.setOnTouchListener { _, event -> handleMovement(event, 1, 0); true }
             btnWest.setOnTouchListener { _, event -> handleMovement(event, -1, 0); true }
 
+            // Configurar el botón A para verificar la posición y dirigirse al mapa correspondiente
             buttonA.setOnClickListener {
                 if (canChangeMap) {
                     when (targetDestination) {
@@ -303,8 +334,15 @@ class GameplayActivity : AppCompatActivity(),
                         "zacatenco" -> startZacatencoActivity()
                         "Edificioiabajo" -> startEdificioIABajoActivity()
                         "palapas_ia" -> startPalapasIAActivity()
+                        "osm_view" -> startOSMActivity()
                         "palapas_isc" -> startPalapasISCActivity()
                         "edificio_gobierno" -> startEdificioGobiernoActivity()
+                        "cancha_ia" -> startCanchaIAActivity()
+                        "cidetec" -> startCidetecActivity()
+                        "labrv" -> startlabrvActivity()
+                        "laboratorio_posgrado" -> startLaboratorioPosgradoActivity()
+                        "global_map" -> startGlobalMapActivity()
+
                         else -> showToast("No hay interacción disponible en esta posición")
                     }
                 } else {
@@ -314,16 +352,29 @@ class GameplayActivity : AppCompatActivity(),
         }
     }
 
-    // Destinos/Activities
+    private fun startOSMActivity() {
+        val intent = Intent(this@GameplayActivity, OSMMapActivity::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_LAT", 19.504633)  // ESCOM coordinates
+            putExtra("INITIAL_LON", -99.146744)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
+
+    //  NUEVA FUNCIÓN PARA INICIAR EL EDIFICIO DE GOBIERNO
     private fun startEdificioGobiernoActivity() {
         val intent = Intent(this, EdificioGobierno::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(5, 20))
+            putExtra("INITIAL_POSITION", Pair(5, 20)) // Posición inicial dentro del edificio
             putExtra("PREVIOUS_POSITION", gameState.playerPosition)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
-        startActivity(intent); finish()
+        startActivity(intent)
+        finish()
     }
 
     private fun startPalapasIAActivity() {
@@ -331,22 +382,45 @@ class GameplayActivity : AppCompatActivity(),
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_POSITION", Pair(15, 37))
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
+
+    private fun startCanchaIAActivity() {
+        val intent = Intent(this, CanchaIA::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            // Coordenada donde aparecerá el jugador DENTRO de la cancha
+            // (Cerca de la salida que definimos en la matriz)
+            putExtra("INITIAL_POSITION", Pair(35, 38))
             putExtra("PREVIOUS_POSITION", gameState.playerPosition)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
-        startActivity(intent); finish()
+        startActivity(intent)
+        finish()
     }
 
+    // Función para iniciar la Activity de las Palapas ISC
     private fun startPalapasISCActivity() {
-        val initialPos = MapMatrixProvider.getInitialPositionForMap(MapMatrixProvider.MAP_PALAPAS_ISC)
+        // Obtenemos la posición inicial correcta desde el proveedor
+        val initialPos =
+            MapMatrixProvider.getInitialPositionForMap(MapMatrixProvider.MAP_PALAPAS_ISC)
+
         val intent = Intent(this, PalapasISC::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
+
+            // La pasamos en el Intent con la clave "INITIAL_POSITION"
             putExtra("INITIAL_POSITION", initialPos)
+
             putExtra("PREVIOUS_POSITION", gameState.playerPosition)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
-        startActivity(intent); finish()
+        startActivity(intent)
+        finish()
     }
 
     private fun startZacatencoActivity() {
@@ -354,10 +428,11 @@ class GameplayActivity : AppCompatActivity(),
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_POSITION", Pair(10, 12))
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition)
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
-        startActivity(intent); finish()
+        startActivity(intent)
+        finish()
     }
 
     private fun startEdificioIABajoActivity() {
@@ -365,10 +440,11 @@ class GameplayActivity : AppCompatActivity(),
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_POSITION", Pair(2, 36))
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition)
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
-        startActivity(intent); finish()
+        startActivity(intent)
+        finish()
     }
 
     private fun startCafeteriaActivity() {
@@ -376,10 +452,11 @@ class GameplayActivity : AppCompatActivity(),
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_POSITION", Pair(1, 1))
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition)
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
-        startActivity(intent); finish()
+        startActivity(intent)
+        finish()
     }
 
     private fun startBuilding2Activity() {
@@ -387,10 +464,11 @@ class GameplayActivity : AppCompatActivity(),
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_POSITION", Pair(1, 1))
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition)
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
-        startActivity(intent); finish()
+        startActivity(intent)
+        finish()
     }
 
     private fun startBuilding4Activity() {
@@ -398,350 +476,590 @@ class GameplayActivity : AppCompatActivity(),
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
             putExtra("INITIAL_POSITION", Pair(1, 1))
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition)
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
-        startActivity(intent); finish()
+        startActivity(intent)
+        finish()
     }
 
     private fun startEstacionamientoEscomActivity() {
         val intent = Intent(this, EstacionamientoEscom::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(4, 25))
-            putExtra("PREVIOUS_POSITION", gameState.playerPosition)
+            putExtra("INITIAL_POSITION", Pair(4, 25))  // Posición dentro del estacionamiento
+            putExtra(
+                "PREVIOUS_POSITION",
+                gameState.playerPosition
+            ) // Guarda posición actual para regreso
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
-        startActivity(intent); finish()
+        startActivity(intent)
+        finish()
     }
 
-    private var canChangeMap = false
-    private var targetDestination: String? = null
-
-    private fun checkPositionForMapChange(position: Pair<Int, Int>) {
-        when {
-            position.first == 15 && position.second == 10 -> {
-                canChangeMap = true; targetDestination = "edificio2"
-                runOnUiThread { Toast.makeText(this, "Presiona A para entrar al edificio 2", Toast.LENGTH_SHORT).show() }
-            }
-            position.first == 11 && position.second == 4 -> {
-                canChangeMap = true; targetDestination = "zacatenco"
-                runOnUiThread { Toast.makeText(this, "Presiona A para salir a Zacatenco", Toast.LENGTH_SHORT).show() }
-            }
-            position.first == 33 && position.second == 34 -> {
-                canChangeMap = true; targetDestination = "cafeteria"
-                runOnUiThread { Toast.makeText(this, "Presiona A para entrar a la cafetería", Toast.LENGTH_SHORT).show() }
-            }
-            position.first == 25 && position.second == 5 -> {
-                canChangeMap = true; targetDestination = "Estacionamiento"
-                runOnUiThread { Toast.makeText(this, "Presiona A para entrar al estacionamiento", Toast.LENGTH_SHORT).show() }
-            }
-            position.first == 27 && position.second == 28 -> {
-                canChangeMap = true; targetDestination = "salon1212"
-                runOnUiThread { Toast.makeText(this, "Presiona A para entrar al salón 1212", Toast.LENGTH_SHORT).show() }
-            }
-            position.first == 23 && position.second == 10 -> {
-                canChangeMap = true; targetDestination = "escom_building4_floor_2"
-                runOnUiThread { Toast.makeText(this, "Presiona A para entrar al salón 1212", Toast.LENGTH_SHORT).show() }
-            }
-            position.first == 31 && position.second == 21 -> {
-                canChangeMap = true; targetDestination = "Edificioiabajo"
-                runOnUiThread { Toast.makeText(this, "Presiona A para entrar al edificio de ia ", Toast.LENGTH_SHORT).show() }
-            }
-            position.first == 31 && position.second == 10 -> {
-                canChangeMap = true; targetDestination = "palapas_ia"
-                runOnUiThread { Toast.makeText(this, "Presiona A para entrar a Palapas de IA ", Toast.LENGTH_SHORT).show() }
-            }
-            position.first == 8 && position.second == 29 -> {
-                canChangeMap = true; targetDestination = "palapas_isc"
-                runOnUiThread { Toast.makeText(this, "Presiona A para entrar a Palapas ISC", Toast.LENGTH_SHORT).show() }
-            }
-            position.first == 10 && position.second == 18 -> {
-                canChangeMap = true; targetDestination = "edificio_gobierno"
-                runOnUiThread { Toast.makeText(this, "Presiona A para entrar al edificio de gobierno", Toast.LENGTH_SHORT).show() }
-            }
-            else -> { canChangeMap = false; targetDestination = null }
-        }
-    }
-
-    private fun startSalonPacmanActivity() {
-        val intent = Intent(this, SalonPacman::class.java).apply {
+    // NUEVA FUNCIÓN PARA INICIAR EL LABORATORIO DE POSGRADO
+    private fun startLaboratorioPosgradoActivity() {
+        val intent = Intent(this, LaboratorioPosgradoActivity::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
             putExtra("IS_SERVER", gameState.isServer)
-            putExtra("INITIAL_POSITION", Pair(20, 20))
+            putExtra(
+                "INITIAL_POSITION",
+                Pair(5, MapMatrixProvider.MAP_HEIGHT - 5)
+            ) // Posición inicial dentro del laboratorio
             putExtra("PREVIOUS_POSITION", gameState.playerPosition)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
-        startActivity(intent); finish()
+        startActivity(intent)
+        finish()
     }
 
-    private fun updatePlayerPosition(position: Pair<Int, Int>) {
-        runOnUiThread {
-            try {
-                gameState.playerPosition = position
-                mapView.updateLocalPlayerPosition(position, forceCenter = true)
+    private fun startCidetecActivity() {
+        val intent = Intent(this, Cidetec::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(3, 18))  // Posición dentro del estacionamiento
+            putExtra(
+                "PREVIOUS_POSITION",
+                gameState.playerPosition
+            ) // Guarda posición actual para regreso
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
 
-                if (gameState.isConnected) {
-                    serverConnectionManager.sendUpdateMessage(playerName, position, "main")
+    private fun startlabrvActivity() {
+        val intent = Intent(this, labrv::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("INITIAL_POSITION", Pair(7, 30))
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
+
+
+    private fun startGlobalMapActivity() {
+        val intent = Intent(this, GlobalMapActivity::class.java).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", gameState.isServer)
+            putExtra("PREVIOUS_POSITION", gameState.playerPosition) // Guarda la posición actual
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
+
+    private var canChangeMap = false  // Variable para controlar si se puede cambiar de mapa
+    private var targetDestination: String? = null  // Variable para almacenar el destino
+
+    private fun checkPositionForMapChange(position: Pair<Int, Int>) {
+        // Comprobar múltiples ubicaciones de transición
+        when {
+            position.first == 14 && position.second == 18 -> {
+                canChangeMap = true
+                targetDestination = "global_map"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para ir al mapa global", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+
+            position.first == 15 && position.second == 10 -> {
+                canChangeMap = true
+                targetDestination = "edificio2"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para entrar al edificio 2", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+
+            position.first == 11 && position.second == 4 -> {
+                canChangeMap = true
+                targetDestination = "zacatenco"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para salir a Zacatenco", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+
+            position.first == 33 && position.second == 34 -> {
+                canChangeMap = true
+                targetDestination = "cafeteria"
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        "Presiona A para entrar a la cafetería",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
+            position.first == 25 && position.second == 5 -> {
+                canChangeMap = true
+                targetDestination = "Estacionamiento"
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        "Presiona A para entrar al estacionamiento",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
+            position.first == 27 && position.second == 28 -> {
+                canChangeMap = true
+                targetDestination = "salon1212"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para entrar al edificio 3", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+
+            position.first == 23 && position.second == 10 -> {
+                canChangeMap = true
+                targetDestination = "escom_building4_floor_2"
+                runOnUiThread {
+                    Toast.makeText(this, "Presiona A para entrar al edificio 4", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+
+            position.first == 25 && position.second == 5 -> {
+                canChangeMap = true
+                targetDestination = "Estacionamiento"
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        "Presiona A para entrar al estacionamiento",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
+            position.first == 31 && position.second == 21 -> {
+                canChangeMap = true
+                targetDestination = "Edificioiabajo"
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        "Presiona A para entrar al edificio de ia ",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
+            position.first == 31 && position.second == 10 -> {
+                canChangeMap = true
+                targetDestination = "palapas_ia"
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        "Presiona A para entrar a Palapas de IA ",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
+            position.first == 33 && position.second == 28 -> {
+                canChangeMap = true
+                targetDestination = "cancha_ia"
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        "Presiona A para entrar a la Cancha de IA",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+                position.first == 11 && position.second == 1 -> {
+                    canChangeMap = true
+                    targetDestination = "osm_view"
+                    runOnUiThread {
+                        Toast.makeText(
+                            this,
+                            "Presiona A para vista de mapa real",
+                            Toast.LENGTH_SHORT
+                        )
+                            .show()
+                    }
+                }
+                position.first == 8 && position.second == 29 -> {
+                    canChangeMap = true
+                    targetDestination = "palapas_isc" // Un identificador único
+                    runOnUiThread {
+                        Toast.makeText(
+                            this,
+                            "Presiona A para entrar a Palapas ISC",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+                position.first == 10 && position.second == 18 -> {
+                    canChangeMap = true
+                    targetDestination = "edificio_gobierno"
+                    runOnUiThread {
+                        Toast.makeText(
+                            this,
+                            "Presiona A para entrar al edificio de gobierno",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 }
 
-                // 🔑 Reportar posición al manager global para persecución
-                ZombieGameManager.updatePlayer(
-                    playerName,
-                    MapMatrixProvider.MAP_MAIN,
-                    position
-                )
+                position.first == 24 && position.second == 12 -> {
+                    canChangeMap = true
+                    targetDestination = "laboratorio_posgrado"
+                    runOnUiThread {
+                        Toast.makeText(
+                            this,
+                            "Presiona A para entrar al Laboratorio de Posgrado",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+                else -> {
+                    canChangeMap = false
+                    targetDestination = null
+                }
 
-                checkPositionForMapChange(position)
-            } catch (e: Exception) {
-                Log.e(TAG, "Error en updatePlayerPosition: ${e.message}")
             }
         }
-    }
 
-    private fun handleMovement(event: MotionEvent, deltaX: Int, deltaY: Int) {
-        movementManager.handleMovement(event, deltaX, deltaY)
-    }
 
-    private fun updateRemotePlayersOnMap() {
-        runOnUiThread {
-            for ((id, playerInfo) in gameState.remotePlayerPositions) {
-                if (id != playerName) {
-                    mapView.updateRemotePlayerPosition(id, playerInfo.position, playerInfo.map)
+        private fun startSalonPacmanActivity() {
+            val intent = Intent(this, SalonPacman::class.java).apply {
+                putExtra("PLAYER_NAME", playerName)
+                putExtra("IS_SERVER", gameState.isServer)
+                putExtra("INITIAL_POSITION", Pair(20, 20)) // Starting position in salon
+                putExtra(
+                    "PREVIOUS_POSITION",
+                    gameState.playerPosition
+                ) // Store current position for return
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+            startActivity(intent)
+            finish()
+        }
+
+
+        private fun updatePlayerPosition(position: Pair<Int, Int>) {
+            runOnUiThread {
+                try {
+                    gameState.playerPosition = position
+
+                    // Actualizar posición y forzar centrado
+                    mapView.updateLocalPlayerPosition(position, forceCenter = true)
+
+                    if (gameState.isConnected) {
+                        serverConnectionManager.sendUpdateMessage(playerName, position, "main")
+                    }
+
+                    // Reportar posición al manager global para persecución
+                    ZombieGameManager.updatePlayer(
+                        playerName,
+                        MapMatrixProvider.MAP_MAIN,
+                        position
+                    )
+
+                    checkPositionForMapChange(position)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error en updatePlayerPosition: ${e.message}")
                 }
             }
         }
-    }
 
-    // Bluetooth Callbacks
-    override fun onBluetoothDeviceConnected(device: BluetoothDevice) {
-        gameState.remotePlayerName = device.name
-        uiManager.updateBluetoothStatus("Conectado a ${device.name}")
-    }
+        private fun handleMovement(event: MotionEvent, deltaX: Int, deltaY: Int) {
+            movementManager.handleMovement(event, deltaX, deltaY)
+        }
 
-    override fun onBluetoothConnectionFailed(error: String) {
-        uiManager.updateBluetoothStatus("Error: $error")
-        showToast(error)
-    }
+        private fun updateRemotePlayersOnMap() {
+            runOnUiThread {
+                for ((id, playerInfo) in gameState.remotePlayerPositions) {
+                    if (id != playerName) {
+                        mapView.updateRemotePlayerPosition(id, playerInfo.position, playerInfo.map)
+                    }
+                }
+            }
+        }
 
-    override fun onConnectionComplete() {
-        uiManager.updateBluetoothStatus("Conexión establecida completamente.")
-    }
+        // Bluetooth Callbacks
+        @SuppressLint("MissingPermission")
+        override fun onBluetoothDeviceConnected(device: BluetoothDevice) {
+            gameState.remotePlayerName = device.name
+            uiManager.updateBluetoothStatus("Conectado a ${device.name}")
+        }
 
-    override fun onConnectionFailed(message: String) {
-        onBluetoothConnectionFailed(message)
-    }
+        override fun onBluetoothConnectionFailed(error: String) {
+            uiManager.updateBluetoothStatus("Error: $error")
+            showToast(error)
+        }
 
-    override fun onDeviceConnected(device: BluetoothDevice) {
-        gameState.remotePlayerName = device.name
-    }
+        override fun onConnectionComplete() {
+            uiManager.updateBluetoothStatus("Conexión establecida completamente.")
+        }
 
-    override fun onMessageReceived(message: String) {
-        runOnUiThread {
-            try {
-                Log.d(TAG, "Received WebSocket message: $message")
-                val jsonObject = JSONObject(message)
+        override fun onConnectionFailed(message: String) {
+            onBluetoothConnectionFailed(message)
+        }
 
-                when (jsonObject.getString("type")) {
-                    "positions" -> {
-                        val players = jsonObject.getJSONObject("players")
-                        players.keys().forEach { playerId ->
+        @SuppressLint("MissingPermission")
+        override fun onDeviceConnected(device: BluetoothDevice) {
+            gameState.remotePlayerName = device.name
+        }
+
+// Modificación para GameplayActivity.kt en el método onMessageReceived
+
+        override fun onMessageReceived(message: String) {
+            runOnUiThread {
+                try {
+                    Log.d(TAG, "Received WebSocket message: $message")
+                    val jsonObject = JSONObject(message)
+
+                    when (jsonObject.getString("type")) {
+                        "positions" -> {
+                            val players = jsonObject.getJSONObject("players")
+                            players.keys().forEach { playerId ->
+                                if (playerId != playerName) {
+                                    val playerData = players.getJSONObject(playerId.toString())
+                                    val position = Pair(
+                                        playerData.getInt("x"),
+                                        playerData.getInt("y")
+                                    )
+
+                                    // Obtener el mapa del jugador, con 'main' como valor predeterminado
+                                    val map = playerData.optString(
+                                        "map",
+                                        MapMatrixProvider.Companion.MAP_MAIN
+                                    )
+
+                                    // Actualizar el estado del juego
+                                    gameState.remotePlayerPositions =
+                                        gameState.remotePlayerPositions +
+                                                (playerId to GameState.PlayerInfo(position, map))
+
+                                    val normalizedMap = MapMatrixProvider.normalizeMapName(map)
+                                    mapView.updateRemotePlayerPosition(playerId, position, normalizedMap)
+                                    // Avisar al manager de zombis
+                                    ZombieGameManager.updatePlayer(playerId, normalizedMap, position)
+
+                                    Log.d(
+                                        TAG,
+                                        "Updated from positions: player=$playerId, pos=$position, map=$map"
+                                    )
+                                }
+                            }
+                        }
+
+                        "update" -> {
+                            val playerId = jsonObject.getString("id")
                             if (playerId != playerName) {
-                                val playerData = players.getJSONObject(playerId.toString())
                                 val position = Pair(
-                                    playerData.getInt("x"),
-                                    playerData.getInt("y")
+                                    jsonObject.getInt("x"),
+                                    jsonObject.getInt("y")
                                 )
-                                val map = playerData.optString("map", MapMatrixProvider.MAP_MAIN)
 
+                                // Obtener el mapa, primero intentando 'map', luego 'currentmap', con 'main' como valor predeterminado
+                                val map = if (jsonObject.has("map")) {
+                                    jsonObject.getString("map")
+                                } else if (jsonObject.has("currentmap")) {
+                                    jsonObject.getString("currentmap")
+                                } else {
+                                    MapMatrixProvider.MAP_MAIN // Valor predeterminado
+                                }
+
+                                // Actualizar el estado del juego
                                 gameState.remotePlayerPositions = gameState.remotePlayerPositions +
                                         (playerId to GameState.PlayerInfo(position, map))
 
                                 val normalizedMap = MapMatrixProvider.normalizeMapName(map)
                                 mapView.updateRemotePlayerPosition(playerId, position, normalizedMap)
 
-                                // 🔑 Avisar al manager de zombis
+                                // 🔑 Avisar al manager de zombies
                                 ZombieGameManager.updatePlayer(playerId, normalizedMap, position)
-                                Log.d(TAG, "Updated from positions: player=$playerId, pos=$position, map=$map")
+                                Log.d(
+                                    TAG,
+                                    "Updated from update: player=$playerId, pos=$position, map=$map"
+                                )
                             }
                         }
-                    }
-                    "update" -> {
-                        val playerId = jsonObject.getString("id")
-                        if (playerId != playerName) {
-                            val position = Pair(
-                                jsonObject.getInt("x"),
-                                jsonObject.getInt("y")
+
+                        "join" -> {
+                            // Un jugador se unió, solicitar actualización de posiciones
+                            val newPlayerId = jsonObject.getString("id")
+                            Log.d(TAG, "Player joined: $newPlayerId")
+                            serverConnectionManager.onlineServerManager.requestPositionsUpdate()
+
+                            // También enviamos nuestra posición actual
+                            serverConnectionManager.sendUpdateMessage(
+                                playerName,
+                                gameState.playerPosition,
+                                "main"
                             )
-                            val map = if (jsonObject.has("map")) {
-                                jsonObject.getString("map")
-                            } else if (jsonObject.has("currentmap")) {
-                                jsonObject.getString("currentmap")
-                            } else {
-                                MapMatrixProvider.MAP_MAIN
+                        }
+
+                        "disconnect" -> {
+                            // Manejar desconexión de jugador
+                            val disconnectedId = jsonObject.getString("id")
+                            if (disconnectedId != playerName) {
+                                gameState.remotePlayerPositions =
+                                    gameState.remotePlayerPositions - disconnectedId
+                                mapView.removeRemotePlayer(disconnectedId)
+                                Log.d(TAG, "Player disconnected: $disconnectedId")
                             }
-
-                            gameState.remotePlayerPositions = gameState.remotePlayerPositions +
-                                    (playerId to GameState.PlayerInfo(position, map))
-
-                            val normalizedMap = MapMatrixProvider.normalizeMapName(map)
-                            mapView.updateRemotePlayerPosition(playerId, position, normalizedMap)
-
-                            // 🔑 Avisar al manager de zombis
-                            ZombieGameManager.updatePlayer(playerId, normalizedMap, position)
-                            Log.d(TAG, "Updated from update: player=$playerId, pos=$position, map=$map")
                         }
                     }
-                    "join" -> {
-                        val newPlayerId = jsonObject.getString("id")
-                        Log.d(TAG, "Player joined: $newPlayerId")
-                        serverConnectionManager.onlineServerManager.requestPositionsUpdate()
-                        serverConnectionManager.sendUpdateMessage(playerName, gameState.playerPosition, "main")
-                    }
-                    "disconnect" -> {
-                        val disconnectedId = jsonObject.getString("id")
-                        if (disconnectedId != playerName) {
-                            gameState.remotePlayerPositions = gameState.remotePlayerPositions - disconnectedId
-                            mapView.removeRemotePlayer(disconnectedId)
-                            Log.d(TAG, "Player disconnected: $disconnectedId")
-                        }
-                    }
-                }
-                mapView.invalidate()
-            } catch (e: Exception) {
-                Log.e(TAG, "Error processing message: ${e.message}")
-            }
-        }
-    }
-
-    private fun handlePositionsMessage(jsonObject: JSONObject) {
-        runOnUiThread {
-            val players = jsonObject.getJSONObject("players")
-            val newPositions = mutableMapOf<String, GameState.PlayerInfo>()
-
-            players.keys().forEach { playerId ->
-                val playerData = players.getJSONObject(playerId)
-                val position = Pair(
-                    playerData.getInt("x"),
-                    playerData.getInt("y")
-                )
-                val map = playerData.getString("map")
-
-                if (playerId != playerName) {
-                    newPositions[playerId] = GameState.PlayerInfo(position, map)
-                }
-            }
-
-            gameState.remotePlayerPositions = newPositions
-            updateRemotePlayersOnMap()
-            mapView.invalidate()
-        }
-    }
-
-    private fun handleUpdateMessage(jsonObject: JSONObject) {
-        runOnUiThread {
-            val playerId = jsonObject.getString("id")
-            if (playerId != playerName) {
-                val position = Pair(
-                    jsonObject.getInt("x"),
-                    jsonObject.getInt("y")
-                )
-                val map = jsonObject.getString("currentmap")
-
-                gameState.remotePlayerPositions = gameState.remotePlayerPositions +
-                        (playerId to GameState.PlayerInfo(position, map))
-
-                val normalizedMap = MapMatrixProvider.normalizeMapName(map)
-                mapView.updateRemotePlayerPosition(playerId, position, normalizedMap)
-                mapView.invalidate()
-
-                // 🔑 Avisar al manager de zombis
-                ZombieGameManager.updatePlayer(playerId, normalizedMap, position)
-
-                Log.d(TAG, "Updated player $playerId position to $position in map $map")
-            }
-        }
-    }
-
-    private fun handleJoinMessage(jsonObject: JSONObject) {
-        val newPlayerId = jsonObject.getString("id")
-        Log.d(TAG, "Player joined: $newPlayerId")
-        serverConnectionManager.onlineServerManager.requestPositionsUpdate()
-    }
-
-    override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
-        runOnUiThread {
-            val deviceName = device.name ?: "Unknown"
-            val currentMap = mapView.playerManager.getCurrentMap()
-            mapView.updateRemotePlayerPosition(deviceName, Pair(x, y), currentMap)
-            Log.d("GameplayActivity", "Recibida posición del dispositivo $deviceName: ($x, $y)")
-            mapView.invalidate()
-        }
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.apply {
-            putBoolean("IS_SERVER", gameState.isServer)
-            putBoolean("IS_CONNECTED", gameState.isConnected)
-            putSerializable("PLAYER_POSITION", gameState.playerPosition)
-            putSerializable("REMOTE_PLAYER_POSITIONS", HashMap(gameState.remotePlayerPositions))
-            putString("REMOTE_PLAYER_NAME", gameState.remotePlayerName)
-            putInt("BLUETOOTH_STATE", bluetoothManager.getConnectionState().ordinal)
-            bluetoothManager.getConnectedDevice()?.let { device ->
-                putParcelable("CONNECTED_DEVICE", device)
-            }
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        bluetoothManager.reconnect()
-        movementManager.setPosition(gameState.playerPosition)
-        updateRemotePlayersOnMap()
-
-        // Reafirma presencia en el main al volver al frente
-        ZombieGameManager.updatePlayer(
-            playerName,
-            MapMatrixProvider.MAP_MAIN,
-            gameState.playerPosition
-        )
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        bluetoothManager.cleanup()
-        ZombieGameManager.removeListener(zombieListener)
-    }
-
-    override fun onPause() {
-        super.onPause()
-        movementManager.stopMovement()
-    }
-
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
-
-        try {
-            Handler(Looper.getMainLooper()).postDelayed({
-                try {
-                    movementManager.setPosition(gameState.playerPosition)
-                    mapView.forceRecenterOnPlayer()
-                    updateRemotePlayersOnMap()
+                    mapView.invalidate()
                 } catch (e: Exception) {
-                    Log.e(TAG, "Error al actualizar después de cambio de orientación: ${e.message}")
+                    Log.e(TAG, "Error processing message: ${e.message}")
                 }
-            }, 300)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error en onConfigurationChanged: ${e.message}")
+            }
+        }
+
+        // Actualiza handlePositionsMessage
+        private fun handlePositionsMessage(jsonObject: JSONObject) {
+            runOnUiThread {
+                val players = jsonObject.getJSONObject("players")
+                val newPositions = mutableMapOf<String, GameState.PlayerInfo>()
+
+                players.keys().forEach { playerId ->
+                    val playerData = players.getJSONObject(playerId)
+                    val position = Pair(
+                        playerData.getInt("x"),
+                        playerData.getInt("y")
+                    )
+                    val map = playerData.getString("map")
+
+                    if (playerId != playerName) {
+                        newPositions[playerId] = GameState.PlayerInfo(position, map)
+                    }
+                }
+
+                gameState.remotePlayerPositions = newPositions
+                updateRemotePlayersOnMap()
+                mapView.invalidate()
+            }
+        }
+
+        // Actualiza handleUpdateMessage
+        private fun handleUpdateMessage(jsonObject: JSONObject) {
+            runOnUiThread {
+                val playerId = jsonObject.getString("id")
+                if (playerId != playerName) {
+                    val position = Pair(
+                        jsonObject.getInt("x"),
+                        jsonObject.getInt("y")
+                    )
+                    val map =
+                        jsonObject.getString("currentmap")  // Cambiado de "currentmap" a "map"
+
+                    gameState.remotePlayerPositions = gameState.remotePlayerPositions +
+                            (playerId to GameState.PlayerInfo(position, map))
+
+                    val normalizedMap = MapMatrixProvider.normalizeMapName(map)
+                    mapView.updateRemotePlayerPosition(playerId, position, normalizedMap)
+                    mapView.invalidate()
+                    ZombieGameManager.updatePlayer(playerId, normalizedMap, position)
+                    Log.d(TAG, "Updated player $playerId position to $position in map $map")
+                }
+            }
+        }
+
+        private fun handleJoinMessage(jsonObject: JSONObject) {
+            val newPlayerId = jsonObject.getString("id")
+            Log.d(TAG, "Player joined: $newPlayerId")
+            serverConnectionManager.onlineServerManager.requestPositionsUpdate()
+        }
+
+        @SuppressLint("MissingPermission")
+        override fun onPositionReceived(device: BluetoothDevice, x: Int, y: Int) {
+            runOnUiThread {
+                val deviceName = device.name ?: "Unknown"
+                val currentMap = mapView.playerManager.getCurrentMap()
+                mapView.updateRemotePlayerPosition(deviceName, Pair(x, y), currentMap)
+                Log.d("GameplayActivity", "Recibida posición del dispositivo $deviceName: ($x, $y)")
+                mapView.invalidate()
+            }
+        }
+
+
+        override fun onSaveInstanceState(outState: Bundle) {
+            super.onSaveInstanceState(outState)
+            outState.apply {
+                putBoolean("IS_SERVER", gameState.isServer)
+                putBoolean("IS_CONNECTED", gameState.isConnected)
+                putSerializable("PLAYER_POSITION", gameState.playerPosition)
+                putSerializable("REMOTE_PLAYER_POSITIONS", HashMap(gameState.remotePlayerPositions))
+                putString("REMOTE_PLAYER_NAME", gameState.remotePlayerName)
+                // Guardar el estado de la conexión Bluetooth
+                putInt("BLUETOOTH_STATE", bluetoothManager.getConnectionState().ordinal)
+                bluetoothManager.getConnectedDevice()?.let { device ->
+                    putParcelable("CONNECTED_DEVICE", device)
+                }
+            }
+        }
+
+        override fun onResume() {
+            super.onResume()
+            bluetoothManager.reconnect()
+            movementManager.setPosition(gameState.playerPosition)
+            updateRemotePlayersOnMap()
+
+            // Reafirma presencia en el main al volver al frente
+            ZombieGameManager.updatePlayer(
+                playerName,
+                MapMatrixProvider.MAP_MAIN,
+                gameState.playerPosition
+            )
+        }
+
+        override fun onDestroy() {
+            super.onDestroy()
+            bluetoothManager.cleanup()
+            ZombieGameManager.removeListener(zombieListener)
+        }
+
+        override fun onPause() {
+            super.onPause()
+            movementManager.stopMovement()
+        }
+
+        override fun onConfigurationChanged(newConfig: Configuration) {
+            super.onConfigurationChanged(newConfig)
+
+            try {
+                // Evitamos llamar directamente a las funciones que podrían causar problemas
+                // En su lugar, programamos una tarea para cuando la UI esté lista
+                Handler(Looper.getMainLooper()).postDelayed({
+                    try {
+                        // Recuperar el estado actual
+                        movementManager.setPosition(gameState.playerPosition)
+
+                        // Actualizar el estado del mapa para la nueva orientación
+                        mapView.forceRecenterOnPlayer()
+
+                        // Actualizar jugadores remotos
+                        updateRemotePlayersOnMap()
+                    } catch (e: Exception) {
+                        Log.e(
+                            TAG,
+                            "Error al actualizar después de cambio de orientación: ${e.message}"
+                        )
+                    }
+                }, 300) // Pequeño retraso para asegurar que la vista se ha actualizado
+            } catch (e: Exception) {
+                Log.e(TAG, "Error en onConfigurationChanged: ${e.message}")
+            }
+        }
+
+        private fun showToast(message: String) {
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        }
+
+        companion object {
+            private const val TAG = "GameplayActivity"
         }
     }
-
-    private fun showToast(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-    }
-
-    companion object {
-        private const val TAG = "GameplayActivity"
-    }
-}

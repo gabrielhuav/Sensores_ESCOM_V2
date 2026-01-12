@@ -119,7 +119,9 @@ class OnlineServerManager private constructor(private val context: Context) {
     interface WebSocketListener {
         fun onMessageReceived(message: String)
     }
-
+    fun send(message: String) {
+        webSocket?.send(message)
+    }
     fun setOnConnectionCompleteListener(listener: () -> Unit) {
         onConnectionCompleteListener = listener
     }

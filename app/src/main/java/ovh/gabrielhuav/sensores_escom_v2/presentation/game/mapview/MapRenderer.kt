@@ -30,7 +30,7 @@ class MapRenderer {
 
                 // Paso 3: Dibujar el bitmap del mapa con cierta transparencia
                 // Usar transparencia para que se vea la matriz debajo
-                val alphaPaint = Paint().apply { alpha = 180 }  // 70% opaco
+                val alphaPaint = Paint().apply { alpha = 160 }  // 63% opaco - más transparente para ver mejor las colisiones
                 canvas.drawBitmap(bitmap, 0f, 0f, alphaPaint)
 
                 canvas.restore()
