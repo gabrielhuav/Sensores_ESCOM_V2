@@ -15,7 +15,8 @@ import kotlin.random.Random
  */
 class CafeteriaZombieController(
     private val onZombiePositionChanged: (String, Pair<Int, Int>) -> Unit,
-    private val onPlayerCaught: () -> Unit
+    private val onPlayerCaught: () -> Unit,
+    private val getMapIdForZombie: () -> String = { MapMatrixProvider.MAP_CAFETERIA }
 ) {
     companion object {
         private const val TAG = "ZombieController"
@@ -182,10 +183,10 @@ class CafeteriaZombieController(
         }
 
         private fun addMove(list: MutableList<Pair<Int, Int>>, x: Int, y: Int) {
-            val newPosition = Pair(x.coerceIn(0, 39), y.coerceIn(0, 39))
-            if (!list.contains(newPosition)) {
-                list.add(newPosition)
-            }
+            val newX = x.coerceIn(0, MapMatrixProvider.MAP_WIDTH - 1)
+            val newY = y.coerceIn(0, MapMatrixProvider.MAP_HEIGHT - 1)
+            val newPosition = Pair(newX, newY)
+            if (!list.contains(newPosition)) list.add(newPosition)
         }
 
         private fun moveRandomly() {
