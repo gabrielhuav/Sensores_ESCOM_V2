@@ -11,6 +11,12 @@
         android:layout_height="match_parent"
         android:background="@drawable/game_court_bg" />
 
+    <!-- Trayectoria visual del balón -->
+    <ovh.gabrielhuav.sensores_escom_v2.presentation.game.basketball.TrajectoryView
+        android:id="@+id/trajectoryView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
     <ImageView
         android:id="@+id/imgPlayer"
         android:layout_width="60dp"

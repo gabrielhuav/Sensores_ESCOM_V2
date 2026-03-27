@@ -2,6 +2,9 @@ package ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.build
 
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
 import android.os.Bundle
 import android.util.Log
 import android.view.MotionEvent
@@ -43,7 +46,6 @@ class CanchaIA : AppCompatActivity(),
     private lateinit var btnBackToHome: Button
     private lateinit var tvBluetoothStatus: TextView
 
-    // Si usas el mismo layout que Palapas, necesitas definir estos aunque no los uses mucho
     private lateinit var buttonA: Button
     private lateinit var btnB1: Button
     private lateinit var btnB2: Button
@@ -53,37 +55,83 @@ class CanchaIA : AppCompatActivity(),
 
     // Estado del juego
     private var gameState = BuildingNumber2.GameState()
+    private var isGameDialogShowing = false 
+    
+    // Control de retorno inteligente: Evita salir apenas entras
+    private var hasLeftStartingPoint = false
+    private val START_X = 35
+    private val START_Y = 38
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_palapas_ia)
 
         try {
-            // Inicializar el mapView
+            initializeManagersEarly()
+            
+            playerName = intent.getStringExtra("PLAYER_NAME") ?: "Jugador"
+            if (savedInstanceState == null) {
+                gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
+                gameState.isConnected = intent.getBooleanExtra("IS_CONNECTED", false)
+                gameState.playerPosition = intent.getSerializableExtra("INITIAL_POSITION") as? Pair<Int, Int>
+                    ?: Pair(START_X, START_Y)
+            } else {
+                restoreState(savedInstanceState)
+            }
+
+            initializeViews()
+
             mapView = MapView(
                 context = this,
                 mapResourceId = R.drawable.escom_cancha_ia
             )
-            findViewById<FrameLayout>(R.id.map_container).addView(mapView)
+            
+            // CONFIGURAR DIBUJO DEL CUADRO VERDE DE SALIDA
+            mapView.setCustomDrawCallback(object : MapView.CustomDrawCallback {
+                override fun onCustomDraw(canvas: Canvas, cellWidth: Float, cellHeight: Float) {
+                    if (mapView.getCurrentMapId() == MapMatrixProvider.MAP_CANCHA_IA) {
+                        val paint = Paint().apply {
+                            color = Color.argb(150, 0, 255, 0) // Verde semitransparente
+                            style = Paint.Style.FILL
+                        }
+                        
+                        val x = START_X * cellWidth
+                        val y = START_Y * cellHeight
+                        
+                        // Dibujar cuadro relleno
+                        canvas.drawRect(x, y, x + cellWidth, y + cellHeight, paint)
+                        
+                        // Dibujar borde sólido
+                        paint.style = Paint.Style.STROKE
+                        paint.color = Color.GREEN
+                        paint.strokeWidth = 3f
+                        canvas.drawRect(x, y, x + cellWidth, y + cellHeight, paint)
+                    }
+                }
+            })
+            
+            val container = findViewById<FrameLayout>(R.id.map_container)
+            container.addView(mapView)
 
-            initializeComponents(savedInstanceState)
+            initializeMovementManager()
+            setupButtonListeners()
 
             mapView.post {
-                // Configurar el mapa para Cancha IA
-                mapView.setCurrentMap(MapMatrixProvider.Companion.MAP_CANCHA_IA, R.drawable.escom_cancha_ia) // CAMBIAR DRAWABLE AQUI TAMBIEN
-
+                mapView.setCurrentMap(MapMatrixProvider.Companion.MAP_CANCHA_IA, R.drawable.escom_cancha_ia)
                 mapView.playerManager.apply {
                     setCurrentMap(MapMatrixProvider.Companion.MAP_CANCHA_IA)
                     localPlayerId = playerName
                     updateLocalPlayerPosition(gameState.playerPosition)
                 }
-
-                Log.d(TAG, "Set map to: " + MapMatrixProvider.Companion.MAP_CANCHA_IA)
-
+                
+                mapView.setMapTransitionListener(this)
+                updatePlayerPosition(gameState.playerPosition)
+                
                 if (gameState.isConnected) {
-                    serverConnectionManager.sendUpdateMessage(playerName, gameState.playerPosition, MapMatrixProvider.Companion.MAP_CANCHA_IA)
+                    connectToOnlineServer()
                 }
             }
+            
         } catch (e: Exception) {
             Log.e(TAG, "Error en onCreate: ${e.message}")
             Toast.makeText(this, "Error inicializando Cancha IA.", Toast.LENGTH_LONG).show()
@@ -91,29 +139,64 @@ class CanchaIA : AppCompatActivity(),
         }
     }
 
-    private fun initializeComponents(savedInstanceState: Bundle?) {
-        playerName = intent.getStringExtra("PLAYER_NAME") ?: run {
-            finish()
-            return
+    private fun initializeManagersEarly() {
+        tvBluetoothStatus = findViewById(R.id.tvBluetoothStatus)
+        bluetoothManager = BluetoothManager.Companion.getInstance(this, tvBluetoothStatus).apply {
+            setCallback(this@CanchaIA)
         }
-
-        if (savedInstanceState == null) {
-            gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
-            gameState.isConnected = intent.getBooleanExtra("IS_CONNECTED", false)
-            gameState.playerPosition = intent.getSerializableExtra("INITIAL_POSITION") as? Pair<Int, Int>
-                ?: Pair(20, 20)
-        } else {
-            restoreState(savedInstanceState)
+        bluetoothBridge = BluetoothWebSocketBridge.Companion.getInstance()
+        
+        val onlineServerManager = OnlineServerManager.Companion.getInstance(this).apply {
+            setListener(this@CanchaIA)
         }
+        
+        serverConnectionManager = ServerConnectionManager(
+            context = this,
+            onlineServerManager = onlineServerManager
+        )
+    }
 
-        initializeViews()
-        initializeManagers()
-        setupButtonListeners()
+    private fun initializeMovementManager() {
+        movementManager = MovementManager(
+            mapView = mapView
+        ) { position -> updatePlayerPosition(position) }
+    }
 
-        mapView.playerManager.localPlayerId = playerName
-        updatePlayerPosition(gameState.playerPosition)
+    private fun initializeViews() {
+        btnNorth = findViewById(R.id.button_north)
+        btnSouth = findViewById(R.id.button_south)
+        btnEast = findViewById(R.id.button_east)
+        btnWest = findViewById(R.id.button_west)
+        btnBackToHome = findViewById(R.id.button_back_to_home)
+        tvBluetoothStatus = findViewById(R.id.tvBluetoothStatus)
 
-        connectToOnlineServer()
+        buttonA = findViewById(R.id.button_a)
+        btnB1 = findViewById(R.id.button_small_1)
+        btnB2 = findViewById(R.id.button_small_2)
+
+        tvBluetoothStatus.text = "Cancha IA - Iniciando..."
+    }
+
+    private fun setupButtonListeners() {
+        btnNorth.setOnTouchListener { _, event -> handleMovement(event, 0, -1); true }
+        btnSouth.setOnTouchListener { _, event -> handleMovement(event, 0, 1); true }
+        btnEast.setOnTouchListener { _, event -> handleMovement(event, 1, 0); true }
+        btnWest.setOnTouchListener { _, event -> handleMovement(event, -1, 0); true }
+
+        btnBackToHome.setOnClickListener { returnToMainMap() }
+        btnB2.setOnClickListener { returnToMainMap() }
+
+        // El Botón A ahora sirve para iniciar el juego si estás en la canasta
+        buttonA.setOnClickListener {
+            val hoopX = 13
+            val hoopY = 14
+            val pos = gameState.playerPosition
+            if (Math.abs(pos.first - hoopX) <= 2 && Math.abs(pos.second - hoopY) <= 2) {
+                showBasketballGame()
+            } else {
+                Toast.makeText(this, "¡Estás en la Cancha de IA!", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun connectToOnlineServer() {
@@ -137,59 +220,8 @@ class CanchaIA : AppCompatActivity(),
         }
     }
 
-    private fun initializeViews() {
-        btnNorth = findViewById(R.id.button_north)
-        btnSouth = findViewById(R.id.button_south)
-        btnEast = findViewById(R.id.button_east)
-        btnWest = findViewById(R.id.button_west)
-        btnBackToHome = findViewById(R.id.button_back_to_home)
-        tvBluetoothStatus = findViewById(R.id.tvBluetoothStatus)
-
-        // Botones extra del layout (opcionales en funcionalidad)
-        buttonA = findViewById(R.id.button_a)
-        btnB1 = findViewById(R.id.button_small_1)
-        btnB2 = findViewById(R.id.button_small_2)
-
-        tvBluetoothStatus.text = "Cancha IA - Iniciando..."
-    }
-
-    private fun initializeManagers() {
-        bluetoothManager = BluetoothManager.Companion.getInstance(this, tvBluetoothStatus).apply {
-            setCallback(this@CanchaIA)
-        }
-        bluetoothBridge = BluetoothWebSocketBridge.Companion.getInstance()
-        val onlineServerManager = OnlineServerManager.Companion.getInstance(this).apply {
-            setListener(this@CanchaIA)
-        }
-        serverConnectionManager = ServerConnectionManager(
-            context = this,
-            onlineServerManager = onlineServerManager
-        )
-        movementManager = MovementManager(
-            mapView = mapView
-        ) { position -> updatePlayerPosition(position) }
-
-        mapView.setMapTransitionListener(this)
-    }
-
-    private fun setupButtonListeners() {
-        btnNorth.setOnTouchListener { _, event -> handleMovement(event, 0, -1); true }
-        btnSouth.setOnTouchListener { _, event -> handleMovement(event, 0, 1); true }
-        btnEast.setOnTouchListener { _, event -> handleMovement(event, 1, 0); true }
-        btnWest.setOnTouchListener { _, event -> handleMovement(event, -1, 0); true }
-
-        btnBackToHome.setOnClickListener { returnToMainMap() }
-        btnB2.setOnClickListener { returnToMainMap() }
-
-        // Botón de acción genérico (por si quieres poner algo interactivo después)
-        buttonA.setOnClickListener {
-            Toast.makeText(this, "¡Estás en la Cancha de IA!", Toast.LENGTH_SHORT).show()
-        }
-    }
-
     private fun returnToMainMap() {
-        // Por defecto regresa al pasillo principal o a donde decidas
-        val previousPosition = Pair(15, 16)
+        val previousPosition = Pair(33, 28)
 
         val intent = Intent(this, GameplayActivity::class.java).apply {
             putExtra("PLAYER_NAME", playerName)
@@ -198,20 +230,21 @@ class CanchaIA : AppCompatActivity(),
             putExtra("INITIAL_POSITION", previousPosition)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
-        mapView.playerManager.cleanup()
+        if (::mapView.isInitialized) mapView.playerManager.cleanup()
         startActivity(intent)
         finish()
     }
 
     private fun handleMovement(event: MotionEvent, deltaX: Int, deltaY: Int) {
-        movementManager.handleMovement(event, deltaX, deltaY)
+        if (::movementManager.isInitialized) {
+            movementManager.handleMovement(event, deltaX, deltaY)
+        }
     }
 
     private fun updatePlayerPosition(position: Pair<Int, Int>) {
         runOnUiThread {
-            val x = position.first
-            val y = position.second
-
+            if (!::mapView.isInitialized) return@runOnUiThread
+            
             gameState.playerPosition = position
             mapView.updateLocalPlayerPosition(position)
             mapView.forceRecenterOnPlayer()
@@ -220,15 +253,34 @@ class CanchaIA : AppCompatActivity(),
                 serverConnectionManager.sendUpdateMessage(playerName, position, MapMatrixProvider.Companion.MAP_CANCHA_IA)
             }
 
-            // --- DETECCIÓN DEL JUEGO DE BASKET ---
-            if (x == 13 && y == 14) {
+            // --- LÓGICA DE RETORNO INTELIGENTE ---
+            // 1. Detectar cuando el jugador SALE del cuadro de aparición por primera vez
+            if (!hasLeftStartingPoint) {
+                if (position.first != START_X || position.second != START_Y) {
+                    hasLeftStartingPoint = true
+                    Log.d(TAG, "Jugador salió del punto de inicio. Retorno habilitado.")
+                }
+            } 
+            // 2. Si ya salió y REGRESA, activar el retorno al mapa de ESCOM
+            else if (position.first == START_X && position.second == START_Y) {
+                returnToMainMap()
+            }
+
+            // --- DETECCIÓN DEL JUEGO DE BASKET (Área de 2x2 alrededor de la canasta) ---
+            val hoopX = 13
+            val hoopY = 14
+            if (!isGameDialogShowing && Math.abs(position.first - hoopX) <= 2 && Math.abs(position.second - hoopY) <= 2) {
                 showBasketballGame()
             }
         }
     }
 
     private fun showBasketballGame() {
+        isGameDialogShowing = true
         val gameDialog = BasketballGame(this)
+        gameDialog.setOnDismissListener {
+            isGameDialogShowing = false
+        }
         gameDialog.show()
     }
 
@@ -236,16 +288,15 @@ class CanchaIA : AppCompatActivity(),
         gameState.apply {
             isServer = savedInstanceState.getBoolean("IS_SERVER", false)
             isConnected = savedInstanceState.getBoolean("IS_CONNECTED", false)
-            playerPosition = savedInstanceState.getSerializable("PLAYER_POSITION") as? Pair<Int, Int> ?: Pair(20, 20)
+            playerPosition = savedInstanceState.getSerializable("PLAYER_POSITION") as? Pair<Int, Int> ?: Pair(START_X, START_Y)
         }
-        if (gameState.isConnected) connectToOnlineServer()
+        hasLeftStartingPoint = savedInstanceState.getBoolean("HAS_LEFT_START", false)
     }
 
     private fun updateBluetoothStatus(status: String) {
         runOnUiThread { tvBluetoothStatus.text = status }
     }
 
-    // Implementación de Listeners (WebSocket, Bluetooth, Transition)
     override fun onMapTransitionRequested(targetMap: String, initialPosition: Pair<Int, Int>) {
         if (targetMap == MapMatrixProvider.Companion.MAP_MAIN) {
             returnToMainMap()
@@ -256,11 +307,8 @@ class CanchaIA : AppCompatActivity(),
         runOnUiThread {
             try {
                 val jsonObject = JSONObject(message)
-                // Lógica simplificada de recepción de posiciones
                 if (jsonObject.getString("type") == "update" || jsonObject.getString("type") == "positions") {
-                    // Aquí va la lógica estándar de actualizar otros jugadores (similar a PalapasIA)
-                    // Si necesitas el código completo de parsing avísame, pero es igual al de PalapasIA
-                    // solo asegurándote de filtrar por MAP_CANCHA_IA
+                    // Actualizar remotos...
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error message: ${e.message}")
@@ -268,7 +316,6 @@ class CanchaIA : AppCompatActivity(),
         }
     }
 
-    // Callbacks vacíos o básicos requeridos por las interfaces
     override fun onBluetoothDeviceConnected(device: BluetoothDevice) {}
     override fun onBluetoothConnectionFailed(error: String) {}
     override fun onConnectionComplete() {}
@@ -281,27 +328,32 @@ class CanchaIA : AppCompatActivity(),
         outState.putBoolean("IS_SERVER", gameState.isServer)
         outState.putBoolean("IS_CONNECTED", gameState.isConnected)
         outState.putSerializable("PLAYER_POSITION", gameState.playerPosition)
+        outState.putBoolean("HAS_LEFT_START", hasLeftStartingPoint)
     }
 
     override fun onResume() {
         super.onResume()
-        movementManager.setPosition(gameState.playerPosition)
+        if (::movementManager.isInitialized) {
+            movementManager.setPosition(gameState.playerPosition)
+        }
         if (gameState.isConnected) connectToOnlineServer()
     }
 
     override fun onPause() {
         super.onPause()
-        movementManager.stopMovement()
+        if (::movementManager.isInitialized) {
+            movementManager.stopMovement()
+        }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        bluetoothManager.cleanup()
+        if (::bluetoothManager.isInitialized) {
+            bluetoothManager.cleanup()
+        }
     }
 
     companion object {
         private const val TAG = "Cancha IA"
     }
 }
-
-
