@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0B6623">
+
+    <!-- Texto -->
+    <TextView
+        android:id="@+id/txtResultado"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Desliza para tirar"
+        android:textSize="24sp"
+        android:textColor="#FFFFFF"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="40dp"/>
+
+    <!-- Portero -->
+
+    <ImageView
+        android:id="@+id/imgPorteria"
+        android:layout_width="match_parent"
+        android:layout_height="202dp"
+        android:layout_below="@id/txtResultado"
+        android:layout_marginTop="-3dp"
+        android:src="@drawable/goal" />
+
+    <ImageView
+        android:id="@+id/imgPortero"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:src="@drawable/goalkeeper"
+        android:layout_below="@id/txtResultado"
+        android:layout_marginTop="80dp"
+        android:layout_centerHorizontal="true"/>
+
+    <!-- Balón -->
+    <ImageView
+        android:id="@+id/imgBalon"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:src="@drawable/ball"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="80dp"
+        android:layout_centerHorizontal="true"/>
+
+</RelativeLayout>
+

@@ -164,6 +164,17 @@
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:screenOrientation="sensorLandscape"
             android:exported="false" />
+
+        <activity
+            android:name=".presentation.locations.buildings.gobierno.Canchasgestion"
+            android:screenOrientation="landscape"
+            android:exported="false" />
+
+        <activity
+            android:name=".presentation.game.penales.PenalesActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:screenOrientation="portrait"
+            android:exported="false" />
     </application>
 
 </manifest>
