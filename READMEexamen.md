@@ -23,8 +23,8 @@
 
 ---
 
-# 📝 PRÁCTICA
-## *“Implementación y Lógica de Minijuegos Interactivos”*
+# 📝 Examen
+## *“Área deportiva e Implementación y Lógica de Minijuegos Interactivos”*
 
 ---
 
@@ -40,9 +40,12 @@
 * **Muciño Torres Diego Ivan**
 
 ### 📅 FECHA DE ENTREGA:
-**[Ingresar Fecha]**
+**27/03/2026**
 
 ---
+## General
+
+Se implemento las áreas deportivas, siendo estas las canchas de IA y las de gestión escolar. Para este proceso sucedieron 2 cosas distintas, siendo que en canchas de IA aunque ya tenia la información, al interactuar te sacaba del juego, por lo que se llevo un proceso de análisis para evitar que esto surgiera, a su vez que se hizo el cambio respectivo para que funcionara el minijuego. Por otra parte, las canchas de gestión se realizo desde 0, por lo que llevo la creación de un fondo y la programación pertinente para que funcionara igual que los otros escenarios.
 
 ## 🎮 Funcionamiento de los Minijuegos
 
@@ -84,8 +87,24 @@ Un minijuego de *timing* (ritmo) que pone a prueba la sincronización del usuari
 ## 📸 Capturas de Pantalla
 
 <details>
-<summary><b>Ver Galería de Minijuegos</b></summary>
+<summary><b>Antes del cambio</b></summary>
 <br>
 <p align="center">
-  </p>
+<img width="921" height="414" alt="image" src="https://github.com/user-attachments/assets/5a42d561-fab3-4b64-8588-9431852c9b7f" />
+<img width="921" height="414" alt="image" src="https://github.com/user-attachments/assets/a91f6b50-c1d7-48eb-823d-1aa8a835b88d" />
+<img width="921" height="414" alt="image" src="https://github.com/user-attachments/assets/065d9a58-364f-469d-8bed-549658ead599" />
+</p>
+</details>
+
+<details>
+<summary><b>Despues del cambio</b></summary>
+<br>
+<p align="center">
+<img width="800" height="360" alt="main" src="https://github.com/user-attachments/assets/e3769bae-e828-4da7-b973-0baefbc04dbe" />
+<img width="800" height="360" alt="canchasIA" src="https://github.com/user-attachments/assets/a94ebbfd-b313-4e37-a94d-5663bd5b02bf" />
+<img width="800" height="360" alt="basketball" src="https://github.com/user-attachments/assets/071bc752-a332-473b-bacb-17bad83c9509" />
+<img width="800" height="360" alt="Canchasgestion" src="https://github.com/user-attachments/assets/b330f6d2-943f-4d0f-a569-817baed40402" />
+<img width="360" height="800" alt="futbol" src="https://github.com/user-attachments/assets/9762ea62-72c3-4d20-912a-9897d071cda2" />
+<img width="800" height="360" alt="barras" src="https://github.com/user-attachments/assets/414c9f80-8a2b-4237-b357-5d088e07caed" />
+</p>
 </details>
