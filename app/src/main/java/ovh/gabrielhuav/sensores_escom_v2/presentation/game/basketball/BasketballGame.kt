@@ -169,25 +169,25 @@ class BasketballGame(context: Context) : Dialog(context) {
 
     private val angleRunnable = object : Runnable {
         override fun run() {
-            // Ajuste de velocidad: incrementamos la frecuencia bajando el delay a 30ms
-            currentAngle += 1 * angleDirection
+            // Ajuste de velocidad: MUCHO MÁS RÁPIDO (10ms delay + incremento de 2)
+            currentAngle += 2 * angleDirection
             if (currentAngle >= 100) { currentAngle = 100; angleDirection = -1 }
             else if (currentAngle <= 0) { currentAngle = 0; angleDirection = 1 }
             progressAngle.progress = currentAngle
             updateTrajectoryPreview()
-            handler.postDelayed(this, 30) 
+            handler.postDelayed(this, 10) 
         }
     }
 
     private val powerRunnable = object : Runnable {
         override fun run() {
-            // Ajuste de velocidad: incrementamos la frecuencia bajando el delay a 30ms
-            currentPower += 1 * powerDirection
+            // Ajuste de velocidad: MUCHO MÁS RÁPIDO (10ms delay + incremento de 3)
+            currentPower += 3 * powerDirection
             if (currentPower >= 100) { currentPower = 100; powerDirection = -1 }
             else if (currentPower <= 0) { currentPower = 0; powerDirection = 1 }
             progressPower.progress = currentPower
             updateTrajectoryPreview()
-            handler.postDelayed(this, 30)
+            handler.postDelayed(this, 10)
         }
     }
 

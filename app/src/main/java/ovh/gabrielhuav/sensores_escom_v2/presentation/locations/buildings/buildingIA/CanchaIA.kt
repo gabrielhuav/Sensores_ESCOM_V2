@@ -2,6 +2,9 @@ package ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.build
 
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
 import android.os.Bundle
 import android.util.Log
 import android.view.MotionEvent
@@ -52,7 +55,12 @@ class CanchaIA : AppCompatActivity(),
 
     // Estado del juego
     private var gameState = BuildingNumber2.GameState()
-    private var isGameDialogShowing = false // Bandera para evitar múltiples diálogos
+    private var isGameDialogShowing = false 
+    
+    // Control de retorno inteligente: Evita salir apenas entras
+    private var hasLeftStartingPoint = false
+    private val START_X = 35
+    private val START_Y = 38
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,7 +74,7 @@ class CanchaIA : AppCompatActivity(),
                 gameState.isServer = intent.getBooleanExtra("IS_SERVER", false)
                 gameState.isConnected = intent.getBooleanExtra("IS_CONNECTED", false)
                 gameState.playerPosition = intent.getSerializableExtra("INITIAL_POSITION") as? Pair<Int, Int>
-                    ?: Pair(20, 20)
+                    ?: Pair(START_X, START_Y)
             } else {
                 restoreState(savedInstanceState)
             }
@@ -77,6 +85,30 @@ class CanchaIA : AppCompatActivity(),
                 context = this,
                 mapResourceId = R.drawable.escom_cancha_ia
             )
+            
+            // CONFIGURAR DIBUJO DEL CUADRO VERDE DE SALIDA
+            mapView.setCustomDrawCallback(object : MapView.CustomDrawCallback {
+                override fun onCustomDraw(canvas: Canvas, cellWidth: Float, cellHeight: Float) {
+                    if (mapView.getCurrentMapId() == MapMatrixProvider.MAP_CANCHA_IA) {
+                        val paint = Paint().apply {
+                            color = Color.argb(150, 0, 255, 0) // Verde semitransparente
+                            style = Paint.Style.FILL
+                        }
+                        
+                        val x = START_X * cellWidth
+                        val y = START_Y * cellHeight
+                        
+                        // Dibujar cuadro relleno
+                        canvas.drawRect(x, y, x + cellWidth, y + cellHeight, paint)
+                        
+                        // Dibujar borde sólido
+                        paint.style = Paint.Style.STROKE
+                        paint.color = Color.GREEN
+                        paint.strokeWidth = 3f
+                        canvas.drawRect(x, y, x + cellWidth, y + cellHeight, paint)
+                    }
+                }
+            })
             
             val container = findViewById<FrameLayout>(R.id.map_container)
             container.addView(mapView)
@@ -154,8 +186,16 @@ class CanchaIA : AppCompatActivity(),
         btnBackToHome.setOnClickListener { returnToMainMap() }
         btnB2.setOnClickListener { returnToMainMap() }
 
+        // El Botón A ahora sirve para iniciar el juego si estás en la canasta
         buttonA.setOnClickListener {
-            Toast.makeText(this, "¡Estás en la Cancha de IA!", Toast.LENGTH_SHORT).show()
+            val hoopX = 13
+            val hoopY = 14
+            val pos = gameState.playerPosition
+            if (Math.abs(pos.first - hoopX) <= 2 && Math.abs(pos.second - hoopY) <= 2) {
+                showBasketballGame()
+            } else {
+                Toast.makeText(this, "¡Estás en la Cancha de IA!", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -213,6 +253,19 @@ class CanchaIA : AppCompatActivity(),
                 serverConnectionManager.sendUpdateMessage(playerName, position, MapMatrixProvider.Companion.MAP_CANCHA_IA)
             }
 
+            // --- LÓGICA DE RETORNO INTELIGENTE ---
+            // 1. Detectar cuando el jugador SALE del cuadro de aparición por primera vez
+            if (!hasLeftStartingPoint) {
+                if (position.first != START_X || position.second != START_Y) {
+                    hasLeftStartingPoint = true
+                    Log.d(TAG, "Jugador salió del punto de inicio. Retorno habilitado.")
+                }
+            } 
+            // 2. Si ya salió y REGRESA, activar el retorno al mapa de ESCOM
+            else if (position.first == START_X && position.second == START_Y) {
+                returnToMainMap()
+            }
+
             // --- DETECCIÓN DEL JUEGO DE BASKET (Área de 2x2 alrededor de la canasta) ---
             val hoopX = 13
             val hoopY = 14
@@ -235,8 +288,9 @@ class CanchaIA : AppCompatActivity(),
         gameState.apply {
             isServer = savedInstanceState.getBoolean("IS_SERVER", false)
             isConnected = savedInstanceState.getBoolean("IS_CONNECTED", false)
-            playerPosition = savedInstanceState.getSerializable("PLAYER_POSITION") as? Pair<Int, Int> ?: Pair(20, 20)
+            playerPosition = savedInstanceState.getSerializable("PLAYER_POSITION") as? Pair<Int, Int> ?: Pair(START_X, START_Y)
         }
+        hasLeftStartingPoint = savedInstanceState.getBoolean("HAS_LEFT_START", false)
     }
 
     private fun updateBluetoothStatus(status: String) {
@@ -274,6 +328,7 @@ class CanchaIA : AppCompatActivity(),
         outState.putBoolean("IS_SERVER", gameState.isServer)
         outState.putBoolean("IS_CONNECTED", gameState.isConnected)
         outState.putSerializable("PLAYER_POSITION", gameState.playerPosition)
+        outState.putBoolean("HAS_LEFT_START", hasLeftStartingPoint)
     }
 
     override fun onResume() {
