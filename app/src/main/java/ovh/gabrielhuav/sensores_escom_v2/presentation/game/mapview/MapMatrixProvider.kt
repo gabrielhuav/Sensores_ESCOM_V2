@@ -2717,13 +2717,37 @@ class MapMatrixProvider {
             return matrix
         }
         /**
-         * NUEVO MAPA: Edificio Gobierno
+         * REFACTORED: Edificio Gobierno
+         * Matriz de colisiones rediseñada basada en el plano real del edificio.
+         * 
+         * Layout del edificio (40x40):
+         * ┌─────────────────┬────────────────┬─────────────┐
+         * │ Sala de juntas   │ Recepción/Hall │ Oficina Dir │  Filas 0-13
+         * │ (mesas redondas) │ (mostrador)    │ (TV+escrit) │
+         * ├──────┬──────┬───┼────────────────┼──────┬──────┤
+         * │Ofic  │Ofic  │   │ Hall central   │Ofic  │Ofic  │  Filas 14-23
+         * │peq1  │peq2  │   │ (alfombras)    │peq3  │peq4  │
+         * ├──────┴──────┤   ├────────────────┼──────┼──────┤
+         * │ Auditorio/  │   │ Pasillo        │Ofic  │Ofic  │  Filas 24-32
+         * │ Sala grande │   │ (alfombra roja)│peq5  │peq6  │
+         * ├─────────────┤   ├────────────────┼──────┴──────┤
+         * │ Sala inf    │   │ Pasillo inf    │ Oficinas    │  Filas 33-39
+         * │ (gestión)   │   │                │ inferiores  │
+         * └─────────────┴───┴────────────────┴─────────────┘
+         *
+         * Columnas clave:
+         * 0-16: Zona izquierda (salas, oficinas pequeñas, auditorio)
+         * 17: Pared vertical divisoria izquierda (con puertas)
+         * 18-23: Pasillo central / hall
+         * 24-27: Zona de transición / pasillos
+         * 28-39: Zona derecha (oficinas, hall con alfombras)
          */
         private fun createEdificioGobiernoMatrix(): Array<Array<Int>> {
-            // Empezar con todo como PATH (caminable) en lugar de WALL
             val matrix = Array(MAP_HEIGHT) { Array(MAP_WIDTH) { PATH } }
 
-            // Solo los bordes exteriores son muros
+            // ═══════════════════════════════════════════════════════════
+            // 1. BORDES EXTERIORES DEL EDIFICIO
+            // ═══════════════════════════════════════════════════════════
             for (i in 0 until MAP_HEIGHT) {
                 matrix[i][0] = WALL
                 matrix[i][MAP_WIDTH - 1] = WALL
@@ -2733,286 +2757,468 @@ class MapMatrixProvider {
                 matrix[MAP_HEIGHT - 1][j] = WALL
             }
 
-            // Oficinas y obstáculos basados en la imagen
-            // Oficina superior izquierda
-            // Sala superior izquierda - 6 mesas separadas (ejemplo)
-
-// Mesa 1 (arriba-izquierda)
-            for (i in 2..4) {
-                for (j in 2..4) {
-                    matrix[i][j] = INACCESSIBLE
-                }
+            // ═══════════════════════════════════════════════════════════
+            // 2. PARED HORIZONTAL SUPERIOR - divide zona sup e inf (fila 13)
+            // ═══════════════════════════════════════════════════════════
+            for (j in 1..16) {
+                matrix[13][j] = WALL
             }
+            // Puerta en la pared horizontal superior izquierda
+            matrix[13][8] = PATH   // puerta hacia sala de juntas
+            matrix[13][9] = PATH
 
-// Mesa 2 (arriba-centro)
-            for (i in 2..4) {
-                for (j in 6..8) {
-                    matrix[i][j] = INACCESSIBLE
-                }
+            // Pared horizontal fila 13, zona derecha
+            for (j in 28..38) {
+                matrix[13][j] = WALL
             }
+            // Puerta zona derecha
+            matrix[13][31] = PATH
+            matrix[13][32] = PATH
 
-// Mesa 3 (arriba-derecha)
-            for (i in 2..4) {
-                for (j in 10..12) {
-                    matrix[i][j] = INACCESSIBLE
-                }
+            // ═══════════════════════════════════════════════════════════
+            // 3. PARED VERTICAL IZQUIERDA PRINCIPAL (columna 17)
+            //    Separa zona izquierda del pasillo central
+            // ═══════════════════════════════════════════════════════════
+            for (i in 1..12) {
+                matrix[i][17] = WALL
             }
+            // Puerta superior en pared vertical col 17
+            matrix[5][17] = PATH
+            matrix[6][17] = PATH
 
-// Mesa 4 (abajo-izquierda)
-            for (i in 9..11) {
-                for (j in 2..4) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-
-// Mesa 5 (abajo-centro)
-            for (i in 9..11) {
-                for (j in 6..8) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-
-// Mesa 6 (abajo-derecha)
-            for (i in 9..11) {
-                for (j in 10..12) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-
-            //Colision de auditorio,gestion y enfermeria
             for (i in 14..38) {
-                for (j in 1..23) {
+                matrix[i][17] = WALL
+            }
+            // Puertas en la pared vertical inferior
+            matrix[16][17] = PATH  // puerta a oficina pequeña 1
+            matrix[17][17] = PATH
+            matrix[24][17] = PATH  // puerta al auditorio/sala grande
+            matrix[25][17] = PATH
+            matrix[34][17] = PATH  // puerta a sala inferior
+            matrix[35][17] = PATH
+
+            // ═══════════════════════════════════════════════════════════
+            // 4. PARED VERTICAL DERECHA (columna 27)
+            //    Separa pasillo central de zona de oficinas derecha
+            // ═══════════════════════════════════════════════════════════
+            for (i in 1..4) {
+                matrix[i][27] = WALL
+            }
+            // Zona superior - pared con puerta
+            matrix[3][27] = PATH
+
+            for (i in 14..38) {
+                matrix[i][27] = WALL
+            }
+            // Puertas en la pared vertical derecha
+            matrix[16][27] = PATH
+            matrix[17][27] = PATH
+            matrix[22][27] = PATH  // puerta hacia oficinas
+            matrix[23][27] = PATH
+            matrix[28][27] = PATH  // puerta hacia oficinas inferiores
+            matrix[29][27] = PATH
+            matrix[35][27] = PATH
+            matrix[36][27] = PATH
+
+            // ═══════════════════════════════════════════════════════════
+            // 5. ZONA SUPERIOR IZQUIERDA - Sala de juntas (filas 1-12, cols 1-16)
+            //    6 mesas: 2 filas × 3 columnas
+            // ═══════════════════════════════════════════════════════════
+
+            // Fila de mesas superior (mesas redondas con sillas)
+            // Mesa 1 (arriba-izquierda) 
+            for (i in 2..4) {
+                for (j in 2..4) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            // Mesa 2 (arriba-centro)
+            for (i in 2..4) {
+                for (j in 7..9) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            // Mesa 3 (arriba-derecha)
+            for (i in 2..4) {
+                for (j in 12..14) {
                     matrix[i][j] = INACCESSIBLE
                 }
             }
 
-            //recepcion
-            for (i in 11..12) {
-                for (j in 17..23) {
+            // Fila de mesas inferior
+            // Mesa 4 (abajo-izquierda)
+            for (i in 8..10) {
+                for (j in 2..4) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            // Mesa 5 (abajo-centro)
+            for (i in 8..10) {
+                for (j in 7..9) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            // Mesa 6 (abajo-derecha)
+            for (i in 8..10) {
+                for (j in 12..14) {
                     matrix[i][j] = INACCESSIBLE
                 }
             }
 
-            //mochilas
-            for (i in 18..20) {
-                for (j in 17..23) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
+            // ═══════════════════════════════════════════════════════════
+            // 6. ZONA SUPERIOR CENTRO - Recepción/Hall (filas 1-12, cols 18-26)
+            // ═══════════════════════════════════════════════════════════
 
-            //mesa
-            for (i in 24..27) {
-                for (j in 30..38) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-
-            for (i in 33..36) {
-                for (j in 31..38) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-
-            //
-            for (i in 1..3) {
+            // Escritorio/mesa de recepción superior
+            for (i in 2..3) {
                 for (j in 21..23) {
                     matrix[i][j] = INACCESSIBLE
                 }
             }
-//mesas sillon
-            for (i in 4..5) {
-                for (j in 33..37) {
+
+            // Mostrador/barra horizontal
+            for (i in 10..11) {
+                for (j in 19..23) {
                     matrix[i][j] = INACCESSIBLE
                 }
             }
-            for (i in 7..7) {
+
+            // Mesas redondas beige en hall central
+            matrix[7][20] = INACCESSIBLE  // mesa redonda 1
+            matrix[7][21] = INACCESSIBLE
+            matrix[5][24] = INACCESSIBLE  // mesa redonda 2
+            matrix[5][25] = INACCESSIBLE
+
+            // ═══════════════════════════════════════════════════════════
+            // 7. ZONA SUPERIOR DERECHA - Oficina del director (filas 1-12, cols 28-38)
+            // ═══════════════════════════════════════════════════════════
+
+            // Pared que separa las sub-oficinas superiores derechas
+            for (j in 28..38) {
+                matrix[4][j] = WALL
+            }
+            matrix[4][30] = PATH  // puerta
+            matrix[4][31] = PATH
+
+            // TV/pantalla (esquina superior derecha)
+            for (i in 1..2) {
                 for (j in 33..35) {
                     matrix[i][j] = INACCESSIBLE
                 }
             }
-            for (i in 6..8) {
+
+            // Escritorio director
+            for (i in 2..3) {
+                for (j in 29..31) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            // Silla
+            matrix[1][37] = INACCESSIBLE
+            matrix[1][38] = INACCESSIBLE
+
+            // Mesas en sub-oficina derecha inferior
+            for (i in 6..7) {
+                for (j in 29..30) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            for (i in 6..7) {
+                for (j in 33..34) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            for (i in 10..11) {
+                for (j in 29..30) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            for (i in 10..11) {
+                for (j in 33..34) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            // Pared interna superior derecha vertical
+            for (i in 5..12) {
+                matrix[i][36] = WALL
+            }
+            matrix[7][36] = PATH  // puerta
+            matrix[8][36] = PATH
+
+            // ═══════════════════════════════════════════════════════════
+            // 8. ZONA MEDIA IZQUIERDA - Oficinas pequeñas (filas 14-23, cols 1-16)
+            // ═══════════════════════════════════════════════════════════
+
+            // Pared horizontal que divide oficinas medias
+            for (j in 1..9) {
+                matrix[19][j] = WALL
+            }
+            matrix[19][4] = PATH  // puerta
+            matrix[19][5] = PATH
+
+            // Pared vertical interna que divide oficinas izq
+            for (i in 14..18) {
+                matrix[i][9] = WALL
+            }
+            matrix[16][9] = PATH  // puerta
+
+            for (i in 20..23) {
+                matrix[i][9] = WALL
+            }
+            matrix[21][9] = PATH  // puerta
+
+            // Escritorios en oficinas pequeñas
+            // Oficina 1 (sup-izq)
+            for (i in 15..16) {
+                for (j in 3..5) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            // Oficina 2 (sup-der)
+            for (i in 15..16) {
+                for (j in 12..14) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            // Oficina 3 (inf-izq)
+            for (i in 21..22) {
+                for (j in 3..5) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            // Oficina 4 (inf-der)
+            for (i in 21..22) {
+                for (j in 12..14) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            // Escaleras (triángulos en el plano)
+            matrix[18][3] = INTERACTIVE   // escalera 1
+            matrix[18][4] = INTERACTIVE
+            matrix[22][3] = INTERACTIVE   // escalera 2
+            matrix[22][4] = INTERACTIVE
+
+            // ═══════════════════════════════════════════════════════════
+            // 9. ZONA MEDIA CENTRAL - Hall con alfombras rojas
+            //    (filas 14-38, cols 18-26)
+            // ═══════════════════════════════════════════════════════════
+
+            // Pared horizontal que cruza el hall (fila 23)
+            for (j in 18..26) {
+                matrix[23][j] = WALL
+            }
+            matrix[23][21] = PATH  // puerta del hall
+            matrix[23][22] = PATH
+
+            // Mostrador/barra con mochilas en hall superior
+            for (i in 15..16) {
+                for (j in 20..22) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            // Mesas redondas beige en hall
+            matrix[18][20] = INACCESSIBLE
+            matrix[18][21] = INACCESSIBLE
+            matrix[19][20] = INACCESSIBLE
+            matrix[20][22] = INACCESSIBLE
+            matrix[20][23] = INACCESSIBLE
+
+            // Alfombras rojas (son decorativas, no bloquean)
+            // - La alfombra grande está en el centro del hall inferior
+            // - NO las marcamos como INACCESSIBLE para que el jugador pase
+
+            // Barra/mostrador en hall inferior
+            for (i in 28..29) {
+                for (j in 20..22) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            // ═══════════════════════════════════════════════════════════
+            // 10. ZONA INFERIOR IZQUIERDA - Auditorio/Salas grandes
+            //     (filas 24-38, cols 1-16)
+            // ═══════════════════════════════════════════════════════════
+
+            // Pared horizontal que divide la zona inferior izquierda
+            for (j in 1..16) {
+                matrix[28][j] = WALL
+            }
+            matrix[28][7] = PATH   // puerta
+            matrix[28][8] = PATH
+
+            for (j in 1..16) {
+                matrix[33][j] = WALL
+            }
+            matrix[33][4] = PATH   // puerta
+            matrix[33][5] = PATH
+
+            // Pared vertical que divide las salas inferiores
+            for (i in 24..27) {
+                matrix[i][9] = WALL
+            }
+            matrix[26][9] = PATH  // puerta
+
+            for (i in 29..32) {
+                matrix[i][9] = WALL
+            }
+            matrix[30][9] = PATH  // puerta
+
+            // Escritorios en sala inferior izquierda
+            for (i in 25..26) {
+                for (j in 3..5) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            for (i in 25..26) {
+                for (j in 12..14) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+
+            // Salas pequeñas inferiores
+            for (i in 35..37) {
+                for (j in 3..5) {
+                    matrix[i][j] = INACCESSIBLE  // mobiliario
+                }
+            }
+            for (i in 35..37) {
+                for (j in 12..14) {
+                    matrix[i][j] = INACCESSIBLE  // mobiliario
+                }
+            }
+
+            // ═══════════════════════════════════════════════════════════
+            // 11. ZONA INFERIOR CENTRAL - Pasillos (filas 24-38, cols 18-26)
+            // ═══════════════════════════════════════════════════════════
+
+            // Pared horizontal inferior del hall
+            for (j in 18..26) {
+                matrix[32][j] = WALL
+            }
+            matrix[32][21] = PATH  // puerta
+            matrix[32][22] = PATH
+
+            // Alfombra roja grande (decorativa, caminable)
+            // No bloqueamos - el jugador puede pasar
+
+            // Mesa/alfombra roja inferior
+            // (solo la alfombra más pequeña en la esquina inferior)
+
+            // ═══════════════════════════════════════════════════════════
+            // 12. ZONA DERECHA - Oficinas (filas 14-38, cols 28-38)
+            // ═══════════════════════════════════════════════════════════
+
+            // Pared horizontal que divide oficinas derechas
+            for (j in 28..38) {
+                matrix[20][j] = WALL
+            }
+            matrix[20][30] = PATH  // puerta
+            matrix[20][31] = PATH
+
+            for (j in 28..38) {
+                matrix[26][j] = WALL
+            }
+            matrix[26][30] = PATH
+            matrix[26][31] = PATH
+
+            for (j in 28..38) {
+                matrix[32][j] = WALL
+            }
+            matrix[32][30] = PATH
+            matrix[32][31] = PATH
+
+            // Pared vertical interna derecha
+            for (i in 14..19) {
+                matrix[i][34] = WALL
+            }
+            matrix[17][34] = PATH  // puerta
+
+            for (i in 21..25) {
+                matrix[i][34] = WALL
+            }
+            matrix[23][34] = PATH
+
+            for (i in 27..31) {
+                matrix[i][34] = WALL
+            }
+            matrix[29][34] = PATH
+
+            for (i in 33..38) {
+                matrix[i][34] = WALL
+            }
+            matrix[35][34] = PATH
+
+            // Escritorios zona derecha
+            // Oficina derecha superior
+            for (i in 15..16) {
+                for (j in 29..31) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            for (i in 15..16) {
                 for (j in 36..38) {
                     matrix[i][j] = INACCESSIBLE
                 }
             }
 
-            for (i in 7..9) {
-                for (j in 28..29) {
+            // Mesas de reunión redondas zona derecha
+            matrix[17][36] = INACCESSIBLE
+            matrix[17][37] = INACCESSIBLE
+            matrix[18][37] = INACCESSIBLE
+
+            // Oficina derecha media-superior
+            for (i in 22..23) {
+                for (j in 29..31) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            for (i in 22..23) {
+                for (j in 36..38) {
                     matrix[i][j] = INACCESSIBLE
                 }
             }
 
+            // Oficina derecha media-inferior
             for (i in 28..29) {
-                for (j in 25..26) {
+                for (j in 29..31) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            for (i in 28..29) {
+                for (j in 36..38) {
                     matrix[i][j] = INACCESSIBLE
                 }
             }
 
-            for (i in 36..37) {
-                for (j in 25..26) {
+            // Oficina derecha inferior
+            for (i in 34..35) {
+                for (j in 29..31) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            for (i in 34..35) {
+                for (j in 36..38) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            for (i in 37..38) {
+                for (j in 29..31) {
+                    matrix[i][j] = INACCESSIBLE
+                }
+            }
+            for (i in 37..38) {
+                for (j in 36..38) {
                     matrix[i][j] = INACCESSIBLE
                 }
             }
 
-            for (i in 30..30) {
-                for (j in 33..33) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-
-            for (i in 30..30) {
-                for (j in 35..35) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-
-            for (i in 30..30) {
-                for (j in 37..37) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-
-            for (i in 16..16) {
-                for (j in 25..25) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-
-            for (i in 19..19) {
-                for (j in 25..25) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-            for (i in 21..21) {
-                for (j in 25..25) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-
-
-
-            for (i in 38..38) {
-                for (j in 35..35) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-
-            for (i in 38..38) {
-                for (j in 37..37) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-
-            for (i in 38..38) {
-                for (j in 38..38) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-
-            for (i in 13..13) {
-                for (j in 32..32) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-
-            for (i in 13..13) {
-                for (j in 37..37) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-
-            for (i in 10..10) {
-                for (j in 37..37) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-
-            for (i in 10..10) {
-                for (j in 36..36) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-
-            for (i in 10..10) {
-                for (j in 34..34) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-
-            for (i in 15..22) {
-                for (j in 29..30) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-//paredes
-            for (i in 23..23) {
-                for (j in 24..27) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-
-            for (i in 6..13) {
-                for (j in 17..17) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-            for (i in 14..22) {
-                for (j in 27..27) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-            for (i in 27..32) {
-                for (j in 27..27) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-            for (i in 32..32) {
-                for (j in 24..27) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-            for (i in 36..38) {
-                for (j in 27..27) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-            for (i in 4..4) {
-                for (j in 26..28) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-            for (i in 1..4) {
-                for (j in 27..27) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-            for (i in 11..11) {
-                for (j in 30..34) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-            for (i in 11..14) {
-                for (j in 34..34) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-            for (i in 14..14) {
-                for (j in 31..38) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-            for (i in 11..11) {
-                for (j in 37..38) {
-                    matrix[i][j] = INACCESSIBLE
-                }
-            }
-
-
-
-
-
-
-            // Punto interactivo para salir al mapa principal
+            // ═══════════════════════════════════════════════════════════
+            // 13. PUNTO INTERACTIVO - Salida al mapa principal
+            // ═══════════════════════════════════════════════════════════
             matrix[2][20] = INTERACTIVE
 
             return matrix
