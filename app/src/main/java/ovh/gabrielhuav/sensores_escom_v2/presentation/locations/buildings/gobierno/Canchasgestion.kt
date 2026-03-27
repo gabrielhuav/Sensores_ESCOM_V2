@@ -3,6 +3,9 @@ package ovh.gabrielhuav.sensores_escom_v2.presentation.locations.buildings.gobie
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
 import android.os.Bundle
 import android.util.Log
 import android.view.MotionEvent
@@ -23,12 +26,14 @@ import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProv
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
 import ovh.gabrielhuav.sensores_escom_v2.presentation.common.base.GameplayActivity
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.penales.PenalesActivity
+import ovh.gabrielhuav.sensores_escom_v2.presentation.game.pesas.PesasFragment
 
 class Canchasgestion : AppCompatActivity(),
     BluetoothManager.BluetoothManagerCallback,
     BluetoothGameManager.ConnectionListener,
     OnlineServerManager.WebSocketListener,
-    MapView.MapTransitionListener {
+    MapView.MapTransitionListener,
+    MapView.CustomDrawCallback {
 
     private lateinit var bluetoothManager: BluetoothManager
     private lateinit var movementManager: MovementManager
@@ -214,6 +219,7 @@ class Canchasgestion : AppCompatActivity(),
         mapView.playerManager.localPlayerId = playerName
         movementManager = MovementManager(mapView) { position -> updatePlayerPosition(position) }
         mapView.setMapTransitionListener(this)
+        mapView.setCustomDrawCallback(this)
     }
 
     private fun setupButtonListeners() {
@@ -237,6 +243,14 @@ class Canchasgestion : AppCompatActivity(),
                     MapMatrixProvider.Companion.MAP_MAIN -> {
                         onMapTransitionRequested(MapMatrixProvider.Companion.MAP_MAIN, Pair(8, 35))
                     }
+                    "ejercitar" -> {
+                        val fragment = PesasFragment()
+                        supportFragmentManager.beginTransaction()
+                            .replace(R.id.map_container, fragment)
+                            .addToBackStack(null)
+                            .commit()
+                        Toast.makeText(this, "¡Has comenzado a ejercitarte!", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         }
@@ -259,7 +273,12 @@ class Canchasgestion : AppCompatActivity(),
                 canChangeMap = true
                 targetDestination = MapMatrixProvider.Companion.MAP_MAIN
                 Toast.makeText(this, "Presiona A para Salir", Toast.LENGTH_SHORT).show()
-            } else {
+            }
+            else if (x == 25 && y == 25) {
+                canChangeMap = true
+                targetDestination = "ejercitar"
+                Toast.makeText(this, "Presiona A para ejercitar", Toast.LENGTH_SHORT).show()
+            }else {
                 canChangeMap = false
                 targetDestination = null
             }
@@ -299,5 +318,24 @@ class Canchasgestion : AppCompatActivity(),
             startActivity(intent)
             finish()
         }
+    }
+
+    override fun onCustomDraw(canvas: Canvas, cellWidth: Float, cellHeight: Float) {
+        val paint = Paint().apply {
+            color = Color.argb(100, 0, 150, 255) // Celeste semi-transparente
+            style = Paint.Style.FILL
+        }
+        val x = 25 * cellWidth
+        val y = 25 * cellHeight
+        
+        // Dibujar el recuadro interactivo en 25,25
+        canvas.drawRect(x, y, x + cellWidth, y + cellHeight, paint)
+        
+        paint.apply {
+            color = Color.BLUE
+            style = Paint.Style.STROKE
+            strokeWidth = 3f
+        }
+        canvas.drawRect(x, y, x + cellWidth, y + cellHeight, paint)
     }
 }
