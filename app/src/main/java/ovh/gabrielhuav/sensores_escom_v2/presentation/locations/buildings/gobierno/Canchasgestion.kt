@@ -8,12 +8,13 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.os.Bundle
 import android.util.Log
-import android.view.MotionEvent
+import android.view.View
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
 import org.json.JSONObject
 import ovh.gabrielhuav.sensores_escom_v2.R
 import ovh.gabrielhuav.sensores_escom_v2.data.map.Bluetooth.BluetoothGameManager
@@ -48,6 +49,7 @@ class Canchasgestion : AppCompatActivity(),
     private lateinit var tvBluetoothStatus: TextView
     private lateinit var btnB2: Button
     private lateinit var btnA: Button
+    private lateinit var controlsContainer: ConstraintLayout
     private lateinit var playerName: String
     private var gameState = BuildingNumber2.GameState()
 
@@ -184,6 +186,7 @@ class Canchasgestion : AppCompatActivity(),
         initializeManagers()
         movementManager.setPosition(gameState.playerPosition)
         setupButtonListeners()
+        setupBackStackListener()
 
         if (gameState.isConnected) connectToOnlineServer()
 
@@ -205,6 +208,7 @@ class Canchasgestion : AppCompatActivity(),
         tvBluetoothStatus = findViewById(R.id.tvBluetoothStatus)
         btnB2 = findViewById(R.id.button_small_2)
         btnA = findViewById(R.id.button_a)
+        controlsContainer = findViewById(R.id.controls_container)
         tvBluetoothStatus.text = "Canchas Gestión - Conectando..."
     }
 
@@ -244,14 +248,23 @@ class Canchasgestion : AppCompatActivity(),
                         onMapTransitionRequested(MapMatrixProvider.Companion.MAP_MAIN, Pair(8, 35))
                     }
                     "ejercitar" -> {
+                        controlsContainer.visibility = View.GONE
                         val fragment = PesasFragment()
                         supportFragmentManager.beginTransaction()
                             .replace(R.id.map_container, fragment)
-                            .addToBackStack(null)
+                            .addToBackStack("pesas")
                             .commit()
                         Toast.makeText(this, "¡Has comenzado a ejercitarte!", Toast.LENGTH_SHORT).show()
                     }
                 }
+            }
+        }
+    }
+
+    private fun setupBackStackListener() {
+        supportFragmentManager.addOnBackStackChangedListener {
+            if (supportFragmentManager.backStackEntryCount == 0) {
+                controlsContainer.visibility = View.VISIBLE
             }
         }
     }
