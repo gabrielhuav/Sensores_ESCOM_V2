@@ -18,6 +18,10 @@ import ovh.gabrielhuav.sensores_escom_v2.presentation.common.managers.ServerConn
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapMatrixProvider
 import ovh.gabrielhuav.sensores_escom_v2.presentation.game.mapview.MapView
 import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.Zacatenco
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.esime.buildings.Edificio1Activity
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.esime.buildings.Edificio2Activity
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.esime.buildings.Edificio4Activity
+import ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.esime.buildings.Edificio5Activity
 
 class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapView.MapTransitionListener {
 
@@ -40,6 +44,14 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
     private var canChangeMap = false
     private var canEnterBuilding = false
     private var currentBuilding: Int? = null
+
+    // Mapa de activities por número de edificio
+    private val buildingActivityMap = mapOf(
+        1 to Edificio1Activity::class.java,
+        2 to Edificio2Activity::class.java,
+        4 to Edificio4Activity::class.java,
+        5 to Edificio5Activity::class.java
+    )
 
     // 🔴 POSICIONES FIJAS de los edificios
     private val buildingLocations = mapOf(
@@ -119,65 +131,74 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
         try {
             collisionAreas.clear()
 
-            // 🔴 DEFINIR RECTÁNGULOS GRANDES PARA BLOQUEAR ACCESO A EDIFICIOS
-            // Cada edificio tiene un área rectangular grande bloqueada alrededor de su entrada
-            //Pasillo (15,y)
-            //Pasillo (18,y)
-            //Pasillo (30,y)
-            //Pasillo (x,33)
-            //Pasillo (x,30)
-            //Pasillo (x,27)
-            //Pasillo (x,24)
-            //Pasillo (x,21)
-            //Pasillo (x,17)
-            //Pasillo (x,14)
-            //Pasillo (x,11)
-            //Pasillo (x,8)
-            //Pasillo (x,5)
+            // =====================================================================
+            // LAYOUT DEL MAPA ESIME
+            // Pasillos horizontales en Y: 5, 8, 11, 14, 17, 21, 24, 27, 30, 33
+            // Pasillos verticales en X:  15, 18, 30
+            // Edificios en columna X=8: (8,30), (8,24), (8,17), (8,11), (8,5)
+            // Entrada de cada edificio: X=7-8 en la fila Y del edificio
+            // Interior (fondo) de cada edificio: X=9-14 (bloqueado)
+            // =====================================================================
 
-            // Edificio 1 - Rectángulo grande bloqueado (desde X=8 hacia la derecha)
-            collisionAreas.add(Rect(7, 28, 14 ,29))   // Rectángulo grande desde entrada del Edificio 1
-            collisionAreas.add(Rect(16, 28, 17, 29))  //Cuadrado que deja pasillo
-            collisionAreas.add(Rect(7, 31, 14, 32))   //Parte inferior
+            // -------------------------------------------------------
+            // EDIFICIO 1  —  posición base (8, 30)
+            // -------------------------------------------------------
+            collisionAreas.add(Rect(7, 28, 14, 29))  // Pared superior (2 filas)
+            collisionAreas.add(Rect(7, 31, 14, 32))  // Pared inferior (2 filas)
+            collisionAreas.add(Rect(9, 30, 14, 30))  // Interior fondo: bloquea X=9-14 en Y=30
+            collisionAreas.add(Rect(16, 28, 17, 29)) // Separador corredor vertical derecho
 
-            // Edificio 2 - Rectángulo grande bloqueado (desde X=8 hacia la derecha)
-            collisionAreas.add(Rect(7, 22, 14, 23))   // Rectángulo grande desde entrada del Edificio 2
-            collisionAreas.add(Rect(16, 22, 17, 23))  //Cuadrado que deja pasillo
-            collisionAreas.add(Rect(7, 25, 14, 26))   //Parte inferior
+            // -------------------------------------------------------
+            // EDIFICIO 2  —  posición base (8, 24)
+            // -------------------------------------------------------
+            collisionAreas.add(Rect(7, 22, 14, 23))  // Pared superior (2 filas)
+            collisionAreas.add(Rect(7, 25, 14, 26))  // Pared inferior (2 filas)
+            collisionAreas.add(Rect(9, 24, 14, 24))  // Interior fondo: bloquea X=9-14 en Y=24
+            collisionAreas.add(Rect(16, 22, 17, 23)) // Separador corredor vertical derecho
 
-            // Edificio 3 - Solo bloquear área derecha, dejar entrada libre frontal
-            collisionAreas.add(Rect(7, 15, 14, 16))   // Área derecha bloqueada del Edificio 3
-            collisionAreas.add(Rect(16, 15, 17, 16))  //Cuadrado que deja pasillo
-            collisionAreas.add(Rect(7, 18, 14, 19))   //Parte inferior
-            // NOTA: La entrada frontal (X=8, Y=17) permanece accesible
+            // -------------------------------------------------------
+            // EDIFICIO 3  —  posición base (8, 17)
+            // -------------------------------------------------------
+            collisionAreas.add(Rect(7, 15, 14, 16))  // Pared superior (2 filas)
+            collisionAreas.add(Rect(7, 18, 14, 19))  // Pared inferior (2 filas)
+            collisionAreas.add(Rect(9, 17, 14, 17))  // Interior fondo: bloquea X=9-14 en Y=17
+            collisionAreas.add(Rect(16, 15, 17, 16)) // Separador corredor vertical derecho
+            // Relleno: entre pared inferior de Ed3 (Y=18-19) y corredor (Y=21) hay Y=20 abierto
+            collisionAreas.add(Rect(7, 20, 14, 20))  // Cierra hueco Y=20 en zona de edificios
 
-            // Edificio 4 - Rectángulo grande bloqueado (desde X=8 hacia la derecha)
-            collisionAreas.add(Rect(7, 9, 14, 10))    // Rectángulo grande desde entrada del Edificio 4
-            collisionAreas.add(Rect(16, 9, 17, 10))   //Cuadrado que deja pasillo
-            collisionAreas.add(Rect(7, 12, 14, 13))   //Parte inferior
+            // -------------------------------------------------------
+            // EDIFICIO 4  —  posición base (8, 11)
+            // -------------------------------------------------------
+            collisionAreas.add(Rect(7, 9, 14, 10))   // Pared superior (2 filas)
+            collisionAreas.add(Rect(7, 12, 14, 13))  // Pared inferior (2 filas)
+            collisionAreas.add(Rect(9, 11, 14, 11))  // Interior fondo: bloquea X=9-14 en Y=11
+            collisionAreas.add(Rect(16, 9, 17, 10))  // Separador corredor vertical derecho
 
-            // Edificio 5 - Rectángulo grande bloqueado (desde X=8 hacia la derecha)
-            collisionAreas.add(Rect(7, 3, 14, 4))    // Rectángulo grande desde entrada del Edificio 5
-            collisionAreas.add(Rect(16, 3, 17, 4))   // Cuadrado que deja pasillo
-            collisionAreas.add(Rect(7, 6, 14, 7))
+            // -------------------------------------------------------
+            // EDIFICIO 5  —  posición base (8, 5)
+            // (La zona inaccesible norte Rect(7,1,38,4) ya cubre la pared superior)
+            // -------------------------------------------------------
+            collisionAreas.add(Rect(7, 6, 14, 7))    // Pared inferior (2 filas)
+            collisionAreas.add(Rect(9, 5, 14, 5))    // Interior fondo: bloquea X=9-14 en Y=5
+            collisionAreas.add(Rect(16, 3, 17, 4))   // Separador corredor vertical derecho
 
-            //Pastos
-            collisionAreas.add(Rect(7, 34, 38, 38))
-            collisionAreas.add(Rect(32, 29, 38, 38))
-            collisionAreas.add(Rect(24, 6, 29, 18))
+            // -------------------------------------------------------
+            // ZONAS NATURALES / INACCESIBLES
+            // -------------------------------------------------------
+            collisionAreas.add(Rect(7, 34, 38, 38))  // Pasto sur
+            collisionAreas.add(Rect(32, 29, 38, 38)) // Pasto esquina sureste
+            collisionAreas.add(Rect(24, 6, 29, 18))  // Estructura central del campus
+            collisionAreas.add(Rect(7, 1, 38, 4))    // Zona inaccesible norte
 
-            //Zona inaccesible
-            collisionAreas.add(Rect(7, 1, 38, 4))
-
-            // BORDES DEL MAPA - Para evitar que el jugador se salga
-            collisionAreas.add(Rect(0, 0, 0, 40))     // Borde izquierdo
-            collisionAreas.add(Rect(40, 0, 40, 40))   // Borde derecho
-            collisionAreas.add(Rect(0, 0, 40, 0))     // Borde superior
-            collisionAreas.add(Rect(0, 40, 40, 40))   // Borde inferior
+            // -------------------------------------------------------
+            // BORDES DEL MAPA
+            // -------------------------------------------------------
+            collisionAreas.add(Rect(0, 0, 0, 40))    // Borde izquierdo
+            collisionAreas.add(Rect(40, 0, 40, 40))  // Borde derecho
+            collisionAreas.add(Rect(0, 0, 40, 0))    // Borde superior
+            collisionAreas.add(Rect(0, 40, 40, 40))  // Borde inferior
 
             Log.d("ESIME_COLLISIONS", "✅ ${collisionAreas.size} áreas de colisión configuradas")
-
-            // Mostrar información de debug
             showCollisionAreasDebug()
 
         } catch (e: Exception) {
@@ -194,8 +215,8 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
         Log.d("ESIME_COLLISIONS", debugMessage.toString())
 
         Toast.makeText(this,
-            "🚫 Áreas bloqueadas configuradas\n" +
-                    "Solo Edificio 3 es accesible",
+            "🏢 Todos los edificios son accesibles\n" +
+                    "Acércate a cualquier edificio y presiona A",
             Toast.LENGTH_LONG
         ).show()
     }
@@ -272,8 +293,7 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
     private fun showBuildingLocationsDebug() {
         val debugMessage = StringBuilder("🏢 EDIFICIOS (FIJOS en X=8):\n")
         buildingLocations.entries.sortedByDescending { it.value.second }.forEach { (building, pos) ->
-            val status = if (building == 3) "✅ INTERACTIVO" else "❌ No disponible"
-            debugMessage.append("Edificio $building: (${pos.first}, ${pos.second}) - $status\n")
+            debugMessage.append("Edificio $building: (${pos.first}, ${pos.second}) - ✅ INTERACTIVO\n")
         }
 
         Log.d("ESIME_DEBUG", debugMessage.toString())
@@ -281,9 +301,7 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
         // Mostrar organización en Toast
         Toast.makeText(this,
             "🏢 Edificios en columna X=8\n" +
-                    "⬆️ Y=30 (Edif 1) - BLOQUEADO\n" +
-                    "⬇️ Y=5 (Edif 5) - BLOQUEADO\n" +
-                    "Solo Edificio 3 es interactivo",
+                    "✅ Todos los edificios son accesibles",
             Toast.LENGTH_LONG
         ).show()
     }
@@ -364,8 +382,7 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
         buttonA.setOnClickListener {
             when {
                 canChangeMap -> returnToZacatenco()
-                canEnterBuilding -> enterBuilding3()
-                currentBuilding != null -> showBuildingNotAvailable(currentBuilding!!)
+                canEnterBuilding -> enterBuilding(currentBuilding!!)
                 else -> Toast.makeText(this, "No hay interacción disponible aquí", Toast.LENGTH_SHORT).show()
             }
         }
@@ -476,15 +493,11 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
     private fun checkPositionForBuildingInteraction(position: Pair<Int, Int>) {
         val buildingNumber = detectBuildingAtPosition(position)
         currentBuilding = buildingNumber
-        canEnterBuilding = (buildingNumber == 3)
+        canEnterBuilding = (buildingNumber != null)
 
         if (buildingNumber != null) {
             runOnUiThread {
-                if (buildingNumber == 3) {
-                    Toast.makeText(this, "Presiona A para entrar al Edificio 3", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this, "Edificio $buildingNumber - No disponible", Toast.LENGTH_SHORT).show()
-                }
+                Toast.makeText(this, "Presiona A para entrar al Edificio $buildingNumber", Toast.LENGTH_SHORT).show()
             }
         } else {
             canEnterBuilding = false
@@ -506,14 +519,26 @@ class Esime : AppCompatActivity(), OnlineServerManager.WebSocketListener, MapVie
         return null
     }
 
-    private fun enterBuilding3() {
-        // TODO: Implementar navegación al Edificio 3 cuando esté disponible
-        Toast.makeText(this, "Acceso al Edificio 3 - En desarrollo", Toast.LENGTH_LONG).show()
-        Log.d("Esime", "Intento de acceso al Edificio 3 desde posición: $playerPosition")
-    }
+    private fun enterBuilding(buildingNumber: Int) {
+        Log.d("Esime", "Entrando al Edificio $buildingNumber")
 
-    private fun showBuildingNotAvailable(buildingNumber: Int) {
-        Toast.makeText(this, "Edificio $buildingNumber: No se ha creado base de edificio", Toast.LENGTH_LONG).show()
+        val activityClass: Class<*> = when (buildingNumber) {
+            1 -> Edificio1Activity::class.java
+            2 -> Edificio2Activity::class.java
+            3 -> ovh.gabrielhuav.sensores_escom_v2.presentation.locations.outdoor.locations.esime.buildings.Edificio3Activity::class.java
+            4 -> Edificio4Activity::class.java
+            5 -> Edificio5Activity::class.java
+            else -> {
+                Toast.makeText(this, "Edificio $buildingNumber: No disponible", Toast.LENGTH_SHORT).show()
+                return
+            }
+        }
+
+        val intent = Intent(this, activityClass).apply {
+            putExtra("PLAYER_NAME", playerName)
+            putExtra("IS_SERVER", isServer)
+        }
+        startActivity(intent)
     }
 
     override fun onMapTransitionRequested(targetMap: String, initialPosition: Pair<Int, Int>) {

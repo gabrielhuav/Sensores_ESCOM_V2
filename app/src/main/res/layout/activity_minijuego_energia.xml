@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#1A1A1A"
+    android:gravity="center"
+    android:padding="32dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="PANEL DE ENERGÍA PRINCIPAL"
+        android:textColor="#FF3333"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:id="@+id/tvEstadoFusible"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="ESTADO: FUSIBLE 50A INSERTADO"
+        android:textColor="#4CAF50"
+        android:textSize="16sp"
+        android:layout_marginBottom="32dp" />
+
+    <TextView
+        android:id="@+id/tvPista"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Ingresa el PIN de 4 dígitos para restaurar:"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp"
+        android:layout_marginBottom="16dp" />
+
+    <EditText
+        android:id="@+id/etPin"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:inputType="numberPassword"
+        android:maxLength="4"
+        android:textSize="32sp"
+        android:textColor="#FFFFFF"
+        android:gravity="center"
+        android:backgroundTint="#FF3333"
+        android:layout_marginBottom="32dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnRestaurar"
+        android:layout_width="250dp"
+        android:layout_height="60dp"
+        android:text="RESTAURAR ENERGÍA"
+        android:backgroundTint="#FF3333"
+        android:textSize="18sp"
+        android:layout_marginBottom="16dp"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnCancelar"
+        android:layout_width="250dp"
+        android:layout_height="60dp"
+        android:text="CANCELAR / SALIR"
+        android:backgroundTint="#555555"
+        android:textSize="18sp"/>
+
+</LinearLayout>

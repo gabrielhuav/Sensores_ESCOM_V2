@@ -87,7 +87,21 @@
             android:name=".presentation.locations.outdoor.Esime"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
         <activity
+            android:name=".presentation.locations.outdoor.esime.buildings.MinijuegoEnergiaActivity" />
+        <activity
             android:name=".presentation.locations.outdoor.locations.esime.buildings.Edificio3Activity"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+        <activity
+            android:name=".presentation.locations.outdoor.esime.buildings.Edificio1Activity"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+        <activity
+            android:name=".presentation.locations.outdoor.esime.buildings.Edificio2Activity"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+        <activity
+            android:name=".presentation.locations.outdoor.esime.buildings.Edificio4Activity"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+        <activity
+            android:name=".presentation.locations.outdoor.esime.buildings.Edificio5Activity"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
         <activity
             android:name=".presentation.locations.buildings.plaza.PlazaVistaNorte"
